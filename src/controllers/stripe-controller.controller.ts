@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/camelcase */
-import { post } from '@loopback/rest';
+import { post, requestBody } from '@loopback/rest';
 import moment from 'moment';
+import { SignupPayload } from '../models';
 
 export class StripeControllerController {
 
@@ -10,14 +11,16 @@ export class StripeControllerController {
   constructor() {
   }
 
-  // Map to `GET /ping`
+  // Map to `POST / members`
   @post('/members')
-  signupMember() {
+  async signupMember(
+    @requestBody() payload: SignupPayload
+  ): Promise<any> {
 
     // Check if customer already exists
     this.stripe.customers.list(
       {
-        email: 'geahaad+005@gmail.com',
+        email: payload.email,
         limit: 1
       })
       .then((customerArray: any) => {
@@ -28,7 +31,7 @@ export class StripeControllerController {
           this.createSubscription(customerID);
         } else {
           // Create new customer in Stripe
-          this.createCustomer();
+          this.createCustomer(payload);
         }
       })
       .catch((err: any) => {
@@ -37,13 +40,13 @@ export class StripeControllerController {
       });
   }
 
-  private createCustomer() {
+  private createCustomer(payload: SignupPayload) {
     this.stripe.customers.create({
-      name: 'Gerhard Dinhof',
-      email: 'geahaad+005@gmail.com',
-      phone: '069910629413',
+      name: payload.name,
+      email: payload.email,
+      phone: payload.phone,
       address: {
-        line1: 'Bahnhofstr 62-64/4/7, 3002 Purkersdorf',
+        line1: payload.address,
       },
     })
       .then((customer: any) => {
@@ -81,6 +84,9 @@ export class StripeControllerController {
       days_until_due: 14,
       // set billing cycle to start of upcoming year
       billing_cycle_anchor: moment().add(1, 'year').startOf('year').unix(),
+      prorate: false,
+      // set the start of the subscription to beginning of the year
+      // backdate_start_date: moment().startOf('year').unix()
     })
       .then((subscription: any) => {
         const subscriptionID = subscription.id;
