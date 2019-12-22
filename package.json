@@ -36,7 +36,7 @@
     "type": "git"
   },
   "author": "Vegane Gesellschaft Oesterreich, Team Vegan.at",
-  "license": "MIT License",
+  "license": "MIT",
   "files": [
     "README.md",
     "index.js",
@@ -53,6 +53,7 @@
     "@loopback/rest": "^1.25.0",
     "@loopback/rest-explorer": "^1.4.6",
     "@loopback/service-proxy": "^1.3.13",
+    "moment": "^2.24.0",
     "stripe": "^7.14.0"
   },
   "devDependencies": {

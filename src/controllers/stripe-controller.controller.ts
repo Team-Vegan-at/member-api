@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/camelcase */
 import { post } from '@loopback/rest';
+import moment from 'moment';
 
 export class StripeControllerController {
 
@@ -40,6 +41,8 @@ export class StripeControllerController {
             ],
             collection_method: "send_invoice",
             days_until_due: 14,
+            // set billing cycle to start of upcoming year
+            billing_cycle_anchor: moment().add(1, 'year').startOf('year').unix(),
           })
           .then((subscription: any) => {
             const subscriptionID = subscription.id;
