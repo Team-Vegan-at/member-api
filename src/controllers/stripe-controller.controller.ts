@@ -29,6 +29,7 @@ export class StripeControllerController {
         const customerID = customer.id;
         console.debug(`New customer ${customerID} created`);
 
+        // Create subscription in Stripe
         this.stripe.subscriptions.create(
           {
             customer: customerID,
@@ -37,11 +38,16 @@ export class StripeControllerController {
                 plan: 'plan_GMfg76J8Cr4xb0'
               }
             ],
+            "collection_method": "send_invoice",
+            days_until_due: 14,
           })
           .then((subscription) => {
             const subscriptionID = subscription.id;
 
             console.debug(`New subscription ${subscriptionID} customer ${customerID} created`);
+
+            // Create subscription schedule in Stripe
+            // this.stripe.subscriptionSchedules.
           })
           .catch((err) => {
             console.error(err);
