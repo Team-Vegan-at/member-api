@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/camelcase */
 import { post } from '@loopback/rest';
-import Stripe from 'stripe';
 
 export class StripeControllerController {
 
-  private stripe = new Stripe("sk_test_AlPMuXYwxA0Awgrdx17JSAy100VrPPzmP2");
+  private stripe = require("stripe")("sk_test_AlPMuXYwxA0Awgrdx17JSAy100VrPPzmP2");
 
   constructor() {
   }
@@ -25,7 +25,7 @@ export class StripeControllerController {
           line1: 'Bahnhofstr 62-64/4/7, 3002 Purkersdorf',
         },
       })
-      .then((customer) => {
+      .then((customer: any) => {
         const customerID = customer.id;
         console.debug(`New customer ${customerID} created`);
 
@@ -38,10 +38,10 @@ export class StripeControllerController {
                 plan: 'plan_GMfg76J8Cr4xb0'
               }
             ],
-            "collection_method": "send_invoice",
+            collection_method: "send_invoice",
             days_until_due: 14,
           })
-          .then((subscription) => {
+          .then((subscription: any) => {
             const subscriptionID = subscription.id;
 
             console.debug(`New subscription ${subscriptionID} customer ${customerID} created`);
@@ -49,7 +49,7 @@ export class StripeControllerController {
             // Create subscription schedule in Stripe
             // this.stripe.subscriptionSchedules.
           })
-          .catch((err) => {
+          .catch((err: any) => {
             console.error(err);
             return {
               error: err,
@@ -57,17 +57,17 @@ export class StripeControllerController {
             }
           });
       })
-      .then((source) => {
+      .then((source: any) => {
         // return this.stripe.charges.create({
         //   amount: 1600,
         //   currency: 'usd',
         //   customer: source.customer,
         // });
       })
-      .then((charge) => {
+      .then((charge: any) => {
         // New charge created on a new customer
       })
-      .catch((err) => {
+      .catch((err: any) => {
         // Deal with an error
         console.error(err);
         return {
