@@ -73,26 +73,28 @@ export class StripeControllerController {
   }
 
   private createSubscription(customerID: any) {
-    this.stripe.subscriptions.create({
+
+    // Create subscription schedule starting beginning of the current year - recurring
+    this.stripe.subscriptionSchedules.create({
       customer: customerID,
-      items: [
+      start_date: moment().utc().startOf('year').unix(),
+      phases: [
         {
-          plan: 'plan_GMfg76J8Cr4xb0'
-        }
+          plans: [
+            {
+              plan: 'plan_GMfg76J8Cr4xb0',
+            }
+          ],
+          collection_method: 'send_invoice',
+          invoice_settings: {
+            days_until_due: 14,
+          },
+        },
       ],
-      collection_method: "send_invoice",
-      days_until_due: 14,
-      // set billing cycle to start of upcoming year
-      billing_cycle_anchor: moment().add(1, 'year').startOf('year').unix(),
-      prorate: false,
-      // set the start of the subscription to beginning of the year
-      // backdate_start_date: moment().startOf('year').unix()
     })
       .then((subscription: any) => {
         const subscriptionID = subscription.id;
         console.debug(`New subscription ${subscriptionID} customer ${customerID} created`);
-        // Create subscription schedule in Stripe
-        // this.stripe.subscriptionSchedules.
       })
       .catch((err: any) => {
         console.error(err);
