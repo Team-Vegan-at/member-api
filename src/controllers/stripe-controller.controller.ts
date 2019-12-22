@@ -6,7 +6,7 @@ import { SignupPayload } from '../models';
 
 export class StripeControllerController {
 
-  private stripe = require("stripe")("sk_test_AlPMuXYwxA0Awgrdx17JSAy100VrPPzmP2");
+  private stripe = require("stripe")(process.env.STRIPE_API_KEY);
 
   constructor() {
   }
@@ -42,7 +42,7 @@ export class StripeControllerController {
 
   private createCustomer(payload: SignupPayload) {
     this.stripe.customers.create({
-      name: payload.name,
+      name: payload.membername,
       email: payload.email,
       phone: payload.phone,
       address: {
