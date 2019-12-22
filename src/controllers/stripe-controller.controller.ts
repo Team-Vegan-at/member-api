@@ -18,11 +18,10 @@ export class StripeControllerController {
   ): Promise<any> {
 
     // Check if customer already exists
-    this.stripe.customers.list(
-      {
-        email: payload.email,
-        limit: 1
-      })
+    this.stripe.customers.list({
+      email: payload.email,
+      limit: 1
+    })
       .then((customerArray: any) => {
         if (customerArray.data.length > 0) {
           const customerID = customerArray.data[0] ? customerArray.data[0].id : null;
@@ -48,22 +47,16 @@ export class StripeControllerController {
       address: {
         line1: payload.address,
       },
+      preferred_locales: [
+        'de-DE',
+        'en-US',
+      ],
     })
       .then((customer: any) => {
         const customerID = customer.id;
         console.debug(`New customer ${customerID} created`);
         // Create subscription in Stripe
         this.createSubscription(customerID);
-      })
-      .then((source: any) => {
-        // return this.stripe.charges.create({
-        //   amount: 1600,
-        //   currency: 'usd',
-        //   customer: source.customer,
-        // });
-      })
-      .then((charge: any) => {
-        // New charge created on a new customer
       })
       .catch((err: any) => {
         // Deal with an error
@@ -82,7 +75,7 @@ export class StripeControllerController {
         {
           plans: [
             {
-              plan: 'plan_GMfg76J8Cr4xb0',
+              plan: process.env.STRIPE_SUBSCRIPTION_PLAN,
             }
           ],
           collection_method: 'send_invoice',
