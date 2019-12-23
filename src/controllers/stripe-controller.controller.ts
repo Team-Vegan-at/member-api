@@ -111,6 +111,8 @@ export class StripeControllerController {
             // Immediately send invoice mail
             this.sendInvoice(invoiceID);
           });
+        } else {
+          console.warn(`No draft invoice found for customer ${customerID}`);
         }
       })
       .catch((err: any) => {
