@@ -90,36 +90,45 @@ export class StripeControllerController {
         console.debug(`New subscription ${subscriptionID} customer ${customerID} created`);
 
         // Retrieve draft invoice
-        this.stripe.invoices.list({
-          customer: customerID,
-          status: 'draft'
-        })
-          .then((invoiceArray: any) => {
-            if (invoiceArray.data.length > 0) {
-              const invoiceID = invoiceArray.data[0] ? invoiceArray.data[0].id : null;
-              console.debug(`Invoice ${invoiceID} found`);
-
-              // Immediately send invoice mail
-              if (invoiceID) {
-                this.stripe.invoices.sendInvoice(invoiceID)
-                  .then((result: any) => {
-                    console.debug(`Mail for invoice ${invoiceID} sent successfully`);
-                  })
-                  .catch((err: any) => {
-                    console.error(err);
-                    throw (err);
-                  });
-              }
-            }
-          })
-          .catch((err: any) => {
-            console.error(err);
-            throw (err);
-          });
+        this.retrieveDraftInvoices(customerID);
       })
       .catch((err: any) => {
         console.error(err);
         throw (err);
       });
+  }
+
+  private retrieveDraftInvoices(customerID: any) {
+    this.stripe.invoices.list({
+      customer: customerID,
+      status: 'draft'
+    })
+      .then((invoiceArray: any) => {
+        if (invoiceArray.data.length > 0) {
+          invoiceArray.data.forEach((invoice: { id: string; }) => {
+            const invoiceID = invoice.id;
+            console.debug(`Invoice ${invoiceID} found`);
+            // Immediately send invoice mail
+            this.sendInvoice(invoiceID);
+          });
+        }
+      })
+      .catch((err: any) => {
+        console.error(err);
+        throw (err);
+      });
+  }
+
+  private sendInvoice(invoiceID: any) {
+    if (invoiceID) {
+      this.stripe.invoices.sendInvoice(invoiceID)
+        .then((result: any) => {
+          console.debug(`Mail for invoice ${invoiceID} sent successfully`);
+        })
+        .catch((err: any) => {
+          console.error(err);
+          throw (err);
+        });
+    }
   }
 }
