@@ -499,13 +499,6 @@
   resolved "https://registry.yarnpkg.com/@types/sinon/-/sinon-7.5.1.tgz#d27b81af0d1cfe1f9b24eebe7a24f74ae40f5b7c"
   integrity sha512-EZQUP3hSZQyTQRfiLqelC9NMWd1kqLcmQE0dMiklxBkgi84T+cHOhnKpgk4NnOWpGX863yE6+IaGnOXUNFqDnQ==
 
-"@types/stripe@^7.13.18":
-  version "7.13.18"
-  resolved "https://registry.yarnpkg.com/@types/stripe/-/stripe-7.13.18.tgz#ea265d13155261cf873a54ef0a5f69b44dbdd696"
-  integrity sha512-uK4Pktv+Q00JOj6t7ZGkNRoFbH3NZllYNNTLQ7wu7v5i7Ylyjc06zbVsz1TRVDjazauUB1orhG74VNulmq+qcQ==
-  dependencies:
-    "@types/node" "*"
-
 "@types/superagent@*":
   version "4.1.4"
   resolved "https://registry.yarnpkg.com/@types/superagent/-/superagent-4.1.4.tgz#63f74955a28073870cfd9c100bcacb26d72b3764"
@@ -2237,6 +2230,11 @@ mocha@^6.2.2:
     yargs "13.3.0"
     yargs-parser "13.1.1"
     yargs-unparser "1.6.0"
+
+moment@^2.24.0:
+  version "2.24.0"
+  resolved "https://registry.yarnpkg.com/moment/-/moment-2.24.0.tgz#0d055d53f5052aa653c9f6eb68bb5d12bf5c2b5b"
+  integrity sha512-bV7f+6l2QigeBBZSM/6yTNq4P2fNpSWj/0e7jQcy87A8e7o2nAfP/34/2ky5Vw4B9S446EtIhodAzkFCcR4dQg==
 
 ms@2.0.0:
   version "2.0.0"
