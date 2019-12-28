@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/camelcase */
-import { post, requestBody } from '@loopback/rest';
+import { get, post, requestBody, param, HttpErrors } from '@loopback/rest';
 import moment from 'moment';
 import { SignupPayload } from '../models';
 
@@ -9,6 +10,86 @@ export class StripeControllerController {
   private stripe = require("stripe")(process.env.STRIPE_API_KEY);
 
   constructor() {
+  }
+
+  @get('/stripe/checkout-session', {
+    parameters: [{ name: 'email', schema: { type: 'string' }, in: 'query' }],
+    responses: {
+      '200': {
+        description: 'session',
+        content: {
+          'application/json': {
+            schema: { type: 'string' },
+          },
+        },
+      },
+    }
+  })
+  async stripeCheckoutSession(
+    @param.query.string('email') email: string
+  ): Promise<any> {
+    let session;
+
+    console.debug(`/stripe/checkout-session?email=${email}`);
+
+    // Check if customer already exists
+    await this.stripe.customers.list({
+      email: email,
+      limit: 1
+    })
+      .then(async (customerArray: any) => {
+        if (customerArray.data.length > 0) {
+          const customerID = customerArray.data[0] ? customerArray.data[0].id : null;
+          console.debug(`Customer ${customerID} already exists`);
+
+          await this.stripe.checkout.sessions.create({
+            customer: customerID,
+            // success_url: 'https://api-qs.teamvegan.at/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+            // cancel_url: 'https://api-qs.teamvegan.at/stripe/checkout/cancel',
+            success_url: 'http://localhost:3000/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'http://localhost:3000/stripe/checkout/cancel',
+            payment_method_types: ['card'],
+            subscription_data: {
+              items: [{
+                plan: process.env.STRIPE_SUBSCRIPTION_PLAN,
+              }],
+            },
+          }).then(async (stripeSession: any) => {
+            console.debug(`stripe session: ${JSON.stringify(stripeSession)}`);
+            session = stripeSession.id;
+          }).catch((err: any) => {
+            console.error(err);
+            throw new HttpErrors.ServiceUnavailable(err);
+          });
+        } else {
+          await this.stripe.checkout.sessions.create({
+            customer_email: email,
+            // success_url: 'https://api-qs.teamvegan.at/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+            // cancel_url: 'https://api-qs.teamvegan.at/stripe/checkout/cancel',
+            success_url: 'http://localhost:3000/stripe/checkout/success?session_id={CHECKOUT_SESSION_ID}',
+            cancel_url: 'http://localhost:3000/stripe/checkout/cancel',
+            payment_method_types: ['card'],
+            subscription_data: {
+              items: [{
+                plan: process.env.STRIPE_SUBSCRIPTION_PLAN,
+              }],
+            },
+          }).then(async (stripeSession: any) => {
+            console.debug(`stripe session: ${JSON.stringify(stripeSession)}`);
+            session = stripeSession.id;
+          }).catch((err: any) => {
+            console.error(err);
+            throw new HttpErrors.ServiceUnavailable(err);
+          });
+        }
+      })
+      .catch((err: any) => {
+        console.error(err);
+        throw (err);
+      });
+
+    console.debug(`Returning stripe session: ${session}`);
+    return session;
   }
 
   // Map to `POST / members`
