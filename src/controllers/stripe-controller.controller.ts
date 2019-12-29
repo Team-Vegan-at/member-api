@@ -44,7 +44,8 @@ export class StripeControllerController {
           console.debug(`Customer ${customerID} already exists`);
         } else {
           customerID = await this.createCustomer(new SignupPayload({
-            membername: 'mr x',
+            firstname: 'mr',
+            lastname: 'x',
             email: email
           }));
           console.debug(`New customer ${customerID} created`);
@@ -118,11 +119,13 @@ export class StripeControllerController {
     let customerID = '';
 
     await this.stripe.customers.create({
-      name: payload.membername,
+      name: `${payload.firstname} ${payload.lastname}`,
       email: payload.email,
       phone: payload.phone,
       address: {
         line1: payload.address,
+        city: payload.city,
+        postal_code: payload.plz
       },
       preferred_locales: [
         'de-DE',
@@ -144,11 +147,13 @@ export class StripeControllerController {
 
   private async createCustomerAndSubsription(payload: SignupPayload): Promise<any> {
     await this.stripe.customers.create({
-      name: payload.membername,
+      name: `${payload.firstname} ${payload.lastname}`,
       email: payload.email,
       phone: payload.phone,
       address: {
         line1: payload.address,
+        city: payload.city,
+        postal_code: payload.plz
       },
       preferred_locales: [
         'de-DE',
@@ -183,7 +188,7 @@ export class StripeControllerController {
           ],
           collection_method: 'send_invoice',
           invoice_settings: {
-            days_until_due: 14,
+            days_until_due: 7,
           },
         },
       ],
