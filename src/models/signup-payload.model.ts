@@ -5,7 +5,12 @@ export class SignupPayload extends Model {
   @property({
     type: 'string',
   })
-  membername?: string;
+  firstname?: string;
+
+  @property({
+    type: 'string',
+  })
+  lastname?: string;
 
   @property({
     type: 'string',
@@ -16,6 +21,16 @@ export class SignupPayload extends Model {
     type: 'string',
   })
   address?: string;
+
+  @property({
+    type: 'string',
+  })
+  plz?: string;
+
+  @property({
+    type: 'string',
+  })
+  city?: string;
 
   @property({
     type: 'string',
