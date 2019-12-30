@@ -5,7 +5,7 @@ import { get, post, requestBody, param, HttpErrors } from '@loopback/rest';
 import moment from 'moment';
 import { SignupPayload } from '../models';
 
-export class StripeControllerController {
+export class StripeController {
 
   private stripe = require("stripe")(process.env.STRIPE_API_KEY);
 

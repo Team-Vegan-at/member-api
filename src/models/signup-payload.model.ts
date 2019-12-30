@@ -5,17 +5,17 @@ export class SignupPayload extends Model {
   @property({
     type: 'string',
   })
-  firstname?: string;
+  firstname: string;
 
   @property({
     type: 'string',
   })
-  lastname?: string;
+  lastname: string;
 
   @property({
     type: 'string',
   })
-  email?: string;
+  email: string;
 
   @property({
     type: 'string',
@@ -41,6 +41,21 @@ export class SignupPayload extends Model {
     type: 'string',
   })
   phone?: string;
+
+  @property({
+    type: 'string',
+  })
+  consumerName: string;
+
+  @property({
+    type: 'string',
+  })
+  consumerAccount: string;
+
+  @property({
+    type: 'string',
+  })
+  consumerBic: string;
 
   constructor(data?: Partial<SignupPayload>) {
     super(data);
