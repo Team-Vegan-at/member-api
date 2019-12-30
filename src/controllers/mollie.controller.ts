@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { createMollieClient, Customer, List, Locale, MandateMethod, Mandate, Subscription } from '@mollie/api-client';
-import { get, post, requestBody, HttpErrors } from '@loopback/rest';
+import { createMollieClient, Customer, List, Locale, MandateMethod, Mandate, Subscription, Payment } from '@mollie/api-client';
+import { get, post, requestBody, HttpErrors, param } from '@loopback/rest';
 import { SignupPayload } from '../models';
 import moment from 'moment';
 
@@ -9,6 +9,69 @@ export class MollieController {
   private mollieClient = createMollieClient({ apiKey: process.env.MOLLIE_API_KEY as string });
 
   constructor() { }
+
+  @get('/mollie/checkout', {
+    parameters: [
+      { name: 'email', schema: { type: 'string' }, in: 'query' },
+      { name: 'firstname', schema: { type: 'string' }, in: 'query' },
+      { name: 'lastname', schema: { type: 'string' }, in: 'query' },
+    ],
+    responses: {
+      '200': {
+        description: 'Mollie Checkout URL',
+        content: {
+          'application/json': {
+            schema: { type: 'string' },
+          },
+        },
+      },
+    }
+  })
+  async checkout(
+    @param.query.string('email') email: string,
+    @param.query.string('firstname') firstname: string,
+    @param.query.string('lastname') lastname: string
+  ): Promise<string | null> {
+    console.debug(`/mollie/checkout`);
+
+    let checkoutUrl: string | null = null;
+
+    await this.mollieClient.customers.create({
+      name: `${unescape(firstname)} ${unescape(lastname)}`,
+      email: unescape(email),
+      locale: Locale.de_AT,
+      metadata: `{since:${moment().format()}}`,
+    }).then(async (customer: Customer) => {
+      console.debug(`Customer ${customer.id} created`);
+
+      await this.mollieClient.payments.create({
+        customerId: customer.id,
+        billingEmail: customer.email,
+        dueDate: moment().add(14, 'days').format('YYYY-MM-DD'),
+        amount: {
+          currency: 'EUR',
+          value: '30.00',
+        },
+        description: '[QS - TEST] Team Vegan.at Jahresmitgliedschaft',
+        locale: Locale.de_AT,
+        redirectUrl: 'https://www-qs.teamvegan.at/mitgliedschaft-final/',
+        webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
+      }).then((payment: Payment) => {
+        console.debug(`Payment ${payment.id} for ${customer.id} created`);
+
+        checkoutUrl = payment.getCheckoutUrl();
+        // TODO: send mail
+      }).catch((reason) => {
+        console.error(reason);
+        throw new HttpErrors.InternalServerError(reason);
+      });
+    }).catch((reason) => {
+      console.error(reason);
+      throw new HttpErrors.InternalServerError(reason);
+    });
+
+    return checkoutUrl;
+  }
 
   @post('/mollie/members', {
     responses: {

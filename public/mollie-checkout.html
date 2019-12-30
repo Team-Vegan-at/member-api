@@ -1,0 +1,55 @@
+<html>
+
+<body>
+  <div>
+    <p id="info">Bitte um einen Moment Geduld, während wir die Zahlungsseite vorbereiten</p>
+    <p id="error"></p>
+  </div>
+</body>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+<script type="text/javascript" language="javascript">
+  function parseQuerstring(search) {
+    var params = {};
+    var qs = search.substr(1);
+    qs.split('&').reduce((a, b) => {
+      let [key, val] = b.split('=');
+      a[key] = val;
+      return a;
+    }, params);
+    return params;
+  }
+
+  var urlParams = parseQuerstring(window.location.search);
+
+  var emailParam = urlParams['email'];
+  var firstnameParam = urlParams['firstname'];
+  var lastnameParam = urlParams['lastname'];
+
+  console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}`);
+
+  $.ajax({
+    "url": 'https://api-qs.teamvegan.at/mollie/checkout',
+    "data": {
+      "email": emailParam,
+      "firstname": firstnameParam,
+      "lastname": lastnameParam
+    },
+    success: async function (checkoutURL) {
+      console.trace(`Redirect to Mollie Checkout - URL: ${checkoutURL}`);
+
+      $("#info").html(`Du wirst in wenigen Sekunden zu der Zahlungsseite weitergeleitet.<br/>
+      Bitte klicke den folgenden Link, falls du nicht automatisch weitergeleitet wirst:
+      <a href="${checkoutURL}">${checkoutURL}`);
+
+      window.location.replace(checkoutURL);
+    },
+    error: function (reason) {
+      $("#error").html(reason.responseText);
+    },
+  })
+</script>
+
+</html>
