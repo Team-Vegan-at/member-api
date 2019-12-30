@@ -54,7 +54,7 @@ export class MollieController {
         },
         description: '[QS - TEST] Team Vegan.at Jahresmitgliedschaft',
         locale: Locale.de_AT,
-        redirectUrl: 'https://www-qs.teamvegan.at/mitgliedschaft-final/',
+        redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
         webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
       }).then((payment: Payment) => {
         console.debug(`Payment ${payment.id} for ${customer.id} created`);
