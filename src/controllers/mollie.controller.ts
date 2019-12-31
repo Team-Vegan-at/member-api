@@ -9,8 +9,8 @@ import {
   Subscription,
   Payment,
 } from '@mollie/api-client';
-import {get, post, requestBody, HttpErrors, param} from '@loopback/rest';
-import {SignupPayload} from '../models';
+import { get, requestBody, HttpErrors, param } from '@loopback/rest';
+import { SignupPayload } from '../models';
 import moment from 'moment';
 
 export class MollieController {
@@ -18,20 +18,20 @@ export class MollieController {
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
 
-  constructor() {}
+  constructor() { }
 
   @get('/mollie/checkout', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query'},
-      {name: 'firstname', schema: {type: 'string'}, in: 'query'},
-      {name: 'lastname', schema: {type: 'string'}, in: 'query'},
+      { name: 'email', schema: { type: 'string' }, in: 'query' },
+      { name: 'firstname', schema: { type: 'string' }, in: 'query' },
+      { name: 'lastname', schema: { type: 'string' }, in: 'query' },
     ],
     responses: {
       '200': {
         description: 'Mollie Checkout URL',
         content: {
           'application/json': {
-            schema: {type: 'string'},
+            schema: { type: 'string' },
           },
         },
       },
@@ -91,12 +91,12 @@ export class MollieController {
     return checkoutUrl;
   }
 
-  @post('/mollie/members', {
-    responses: {
-      '200': {},
-    },
-  })
-  async createMemberSubscription(
+  // @post('/mollie/members', {
+  //   responses: {
+  //     '200': {},
+  //   },
+  // })
+  private async createMemberSubscription(
     @requestBody() payload: SignupPayload,
   ): Promise<any> {
     console.debug(`/mollie/members`);
@@ -165,12 +165,12 @@ export class MollieController {
       });
   }
 
-  @get('/mollie/customers', {
-    responses: {
-      '200': {},
-    },
-  })
-  async listCustomers(): Promise<any> {
+  // @get('/mollie/customers', {
+  //   responses: {
+  //     '200': {},
+  //   },
+  // })
+  private async listCustomers(): Promise<any> {
     console.debug(`/mollie/customers`);
 
     let customerList: List<Customer> | undefined;
