@@ -9,29 +9,30 @@ import {
   Subscription,
   Payment,
 } from '@mollie/api-client';
-import {get, requestBody, HttpErrors, param} from '@loopback/rest';
-import {SignupPayload} from '../models';
+import { get, requestBody, HttpErrors, param } from '@loopback/rest';
+import { SignupPayload } from '../models';
 import moment from 'moment';
 
 export class MollieController {
+  private debug = require('debug')('api:MollieController');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
 
-  constructor() {}
+  constructor() { }
 
   @get('/mollie/checkout', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query'},
-      {name: 'firstname', schema: {type: 'string'}, in: 'query'},
-      {name: 'lastname', schema: {type: 'string'}, in: 'query'},
+      { name: 'email', schema: { type: 'string' }, in: 'query' },
+      { name: 'firstname', schema: { type: 'string' }, in: 'query' },
+      { name: 'lastname', schema: { type: 'string' }, in: 'query' },
     ],
     responses: {
       '200': {
         description: 'Mollie Checkout URL',
         content: {
           'application/json': {
-            schema: {type: 'string'},
+            schema: { type: 'string' },
           },
         },
       },
@@ -42,7 +43,7 @@ export class MollieController {
     @param.query.string('firstname') firstname: string,
     @param.query.string('lastname') lastname: string,
   ): Promise<string | null> {
-    console.debug(`/mollie/checkout`);
+    this.debug(`/mollie/checkout`);
 
     let checkoutUrl: string | null = null;
 
@@ -54,7 +55,7 @@ export class MollieController {
         metadata: `{since:${moment().format()}}`,
       })
       .then(async (customer: Customer) => {
-        console.debug(`Customer ${customer.id} created`);
+        this.debug(`Customer ${customer.id} created`);
 
         await this.mollieClient.payments
           .create({
@@ -73,18 +74,18 @@ export class MollieController {
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
           })
           .then((payment: Payment) => {
-            console.debug(`Payment ${payment.id} for ${customer.id} created`);
+            this.debug(`Payment ${payment.id} for ${customer.id} created`);
 
             checkoutUrl = payment.getCheckoutUrl();
             // TODO: send mail
           })
           .catch(reason => {
-            console.error(reason);
+            this.debug(reason);
             throw new HttpErrors.InternalServerError(reason);
           });
       })
       .catch(reason => {
-        console.error(reason);
+        this.debug(reason);
         throw new HttpErrors.InternalServerError(reason);
       });
 
@@ -99,7 +100,7 @@ export class MollieController {
   private async createMemberSubscription(
     @requestBody() payload: SignupPayload,
   ): Promise<any> {
-    console.debug(`/mollie/members`);
+    this.debug(`/mollie/members`);
 
     // TODO check if customer already exists
 
@@ -111,7 +112,7 @@ export class MollieController {
         metadata: `{since:${moment().format()}}`,
       })
       .then(async (customer: Customer) => {
-        console.debug(`Customer ${customer.id} created`);
+        this.debug(`Customer ${customer.id} created`);
 
         await this.mollieClient.customers_mandates
           .create({
@@ -126,7 +127,7 @@ export class MollieController {
             )}`,
           })
           .then(async (mandate: Mandate) => {
-            console.debug(
+            this.debug(
               `Mandate ${mandate.id} for customer ${customer.id} created`,
             );
 
@@ -143,24 +144,24 @@ export class MollieController {
                 webhookUrl: process.env.MOLLIE_WEBHOOK_SUBSCRIPTION,
               })
               .then((subscription: Subscription) => {
-                console.debug(
+                this.debug(
                   `Subscription ${subscription.id} for ${customer.id} created`,
                 );
 
                 // TODO: send mail
               })
               .catch(reason => {
-                console.error(reason);
+                this.debug(reason);
                 throw new HttpErrors.InternalServerError(reason);
               });
           })
           .catch(reason => {
-            console.error(reason);
+            this.debug(reason);
             throw new HttpErrors.InternalServerError(reason);
           });
       })
       .catch(reason => {
-        console.error(reason);
+        this.debug(reason);
         throw new HttpErrors.InternalServerError(reason);
       });
   }
@@ -171,19 +172,19 @@ export class MollieController {
   //   },
   // })
   private async listCustomers(): Promise<any> {
-    console.debug(`/mollie/customers`);
+    this.debug(`/mollie/customers`);
 
     let customerList: List<Customer> | undefined;
 
     await this.mollieClient.customers
       .page()
       .then(async (customers: List<Customer>) => {
-        console.debug(`Fetched ${customers.count} customer entries`);
+        this.debug(`Fetched ${customers.count} customer entries`);
 
         customerList = customers;
 
         // while (nextPageCustomers.count > 0) {
-        // console.debug(`Fetched next ${nextPageCustomers.count} customer entries`);
+        // this.debug(`Fetched next ${nextPageCustomers.count} customer entries`);
 
         // customers.push(nextPageCustomers);
         // nextPageCustomers = await nextPageCustomers.nextPage();
@@ -193,7 +194,7 @@ export class MollieController {
         // return customers;
       })
       .catch(reason => {
-        console.error(reason);
+        this.debug(reason);
         throw new HttpErrors.InternalServerError(reason);
       });
 
