@@ -2,6 +2,8 @@ import {post, requestBody} from '@loopback/rest';
 import util from 'util';
 
 export class WebhooksController {
+  private debug = require('debug')('api:WebhooksController');
+
   constructor() {}
 
   @post('/mollie/payments/webhook', {
@@ -27,8 +29,8 @@ export class WebhooksController {
       id: string;
     },
   ): Promise<string> {
-    console.debug(`Webhook: ${util.inspect(payload, false, null, true)}`);
-    console.info(`Webhook: Payment ${payload.id} received`);
+    this.debug(`${util.inspect(payload, false, null, true)}`);
+    this.debug(`Payment ${payload.id} received`);
 
     return '';
   }
@@ -56,8 +58,8 @@ export class WebhooksController {
       subscriptionId: string;
     },
   ): Promise<string> {
-    console.debug(`Webhook: ${util.inspect(payload, false, null, true)}`);
-    console.info(`Webhook: Subscription ${payload.subscriptionId} received`);
+    this.debug(`${util.inspect(payload, false, null, true)}`);
+    this.debug(`Subscription ${payload.subscriptionId} received`);
 
     return '';
   }

@@ -1,4 +1,5 @@
 const application = require('./dist');
+const debug = require('debug')('api:index');
 
 module.exports = application;
 
@@ -21,7 +22,7 @@ if (require.main === module) {
     },
   };
   application.main(config).catch(err => {
-    console.error('Cannot start the application.', err);
+    debug(`Cannot start the application: ${err}`);
     process.exit(1);
   });
 }
