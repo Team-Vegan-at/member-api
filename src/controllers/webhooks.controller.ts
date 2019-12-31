@@ -1,11 +1,10 @@
-import { post, requestBody } from '@loopback/rest';
+import {post, requestBody} from '@loopback/rest';
 import util from 'util';
 
 export class WebhooksController {
-
   private debug = require('debug')('api:WebhooksController');
 
-  constructor() { }
+  constructor() {}
 
   @post('/mollie/payments/webhook', {
     responses: {
@@ -20,7 +19,7 @@ export class WebhooksController {
           schema: {
             type: 'object',
             properties: {
-              id: { type: 'string' },
+              id: {type: 'string'},
             },
           },
         },
@@ -49,7 +48,7 @@ export class WebhooksController {
           schema: {
             type: 'object',
             properties: {
-              subscriptionId: { type: 'string' },
+              subscriptionId: {type: 'string'},
             },
           },
         },

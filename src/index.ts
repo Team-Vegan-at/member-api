@@ -1,7 +1,7 @@
-import { MemberApiApplication } from './application';
-import { ApplicationConfig } from '@loopback/core';
+import {MemberApiApplication} from './application';
+import {ApplicationConfig} from '@loopback/core';
 
-export { MemberApiApplication };
+export {MemberApiApplication};
 
 export async function main(options: ApplicationConfig = {}) {
   const debug = require('debug')('api:app');
