@@ -27,18 +27,18 @@ export class WebhooksController {
       id: string;
     },
   ): Promise<string> {
-    console.debug(util.inspect(payload, false, null, true));
-    console.info(`Paymend ${payload.id} received`);
+    console.debug(`Webhook: ${util.inspect(payload, false, null, true)}`);
+    console.info(`Webhook: Payment ${payload.id} received`);
 
     return '';
   }
 
-  @post('/mollie/payments/webhook', {
+  @post('/mollie/subscriptions/webhook', {
     responses: {
       '200': {},
     },
   })
-  async mollieSubscriptionWebhook(
+  async mollieSubscriptionsWebhook(
     @requestBody({
       required: true,
       content: {
@@ -56,8 +56,8 @@ export class WebhooksController {
       subscriptionId: string;
     },
   ): Promise<string> {
-    console.debug(util.inspect(payload, false, null, true));
-    console.info(`Subscription ${payload.subscriptionId} received`);
+    console.debug(`Webhook: ${util.inspect(payload, false, null, true)}`);
+    console.info(`Webhook: Subscription ${payload.subscriptionId} received`);
 
     return '';
   }
