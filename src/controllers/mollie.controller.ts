@@ -9,7 +9,7 @@ import {
   Subscription,
   Payment,
 } from '@mollie/api-client';
-import {get, post, requestBody, HttpErrors, param} from '@loopback/rest';
+import {get, requestBody, HttpErrors, param} from '@loopback/rest';
 import {SignupPayload} from '../models';
 import moment from 'moment';
 
@@ -91,12 +91,12 @@ export class MollieController {
     return checkoutUrl;
   }
 
-  @post('/mollie/members', {
-    responses: {
-      '200': {},
-    },
-  })
-  async createMemberSubscription(
+  // @post('/mollie/members', {
+  //   responses: {
+  //     '200': {},
+  //   },
+  // })
+  private async createMemberSubscription(
     @requestBody() payload: SignupPayload,
   ): Promise<any> {
     console.debug(`/mollie/members`);
@@ -165,12 +165,12 @@ export class MollieController {
       });
   }
 
-  @get('/mollie/customers', {
-    responses: {
-      '200': {},
-    },
-  })
-  async listCustomers(): Promise<any> {
+  // @get('/mollie/customers', {
+  //   responses: {
+  //     '200': {},
+  //   },
+  // })
+  private async listCustomers(): Promise<any> {
     console.debug(`/mollie/customers`);
 
     let customerList: List<Customer> | undefined;
