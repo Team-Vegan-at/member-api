@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createMollieClient,
@@ -17,6 +18,30 @@ export class MollieController {
   private debug = require('debug')('api:MollieController');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
+  });
+  private redisClient = require('redis').createClient({
+    retry_strategy: function(options: {
+      error: {code: string};
+      total_retry_time: number;
+      attempt: number;
+    }) {
+      if (options.error && options.error.code === 'ECONNREFUSED') {
+        // End reconnecting on a specific error and flush all commands with
+        // a individual error
+        return new Error('The server refused the connection');
+      }
+      if (options.total_retry_time > 1000 * 60 * 60) {
+        // End reconnecting after a specific timeout and flush all commands
+        // with a individual error
+        return new Error('Retry time exhausted');
+      }
+      if (options.attempt > 10) {
+        // End reconnecting with built in error
+        return undefined;
+      }
+      // reconnect after
+      return Math.min(options.attempt * 100, 3000);
+    },
   });
 
   constructor() {}
@@ -57,6 +82,30 @@ export class MollieController {
       .then(async (customer: Customer) => {
         this.debug(`Customer ${customer.id} created`);
 
+        // Store in Redis
+        const redisCustomerPayload = {
+          timestamp: moment().utc(),
+          controller: 'mollie',
+          method: 'checkout',
+          data: customer,
+        };
+        this.redisClient.set(
+          `mollie-customer-${customer.id}`,
+          JSON.stringify(redisCustomerPayload),
+          (err: any, _reply: any) => {
+            if (err) {
+              this.debug(`Redis: ${err}`);
+            } else {
+              this.redisClient.get(
+                `mollie-customer-${customer.id}`,
+                (_err: any, reply: any) => {
+                  this.debug(`Redis wrote: ${reply}`);
+                },
+              );
+            }
+          },
+        );
+
         await this.mollieClient.payments
           .create({
             customerId: customer.id,
@@ -68,13 +117,37 @@ export class MollieController {
               currency: 'EUR',
               value: '30.00',
             },
-            description: '[QS - TEST] Team Vegan.at Jahresmitgliedschaft',
+            description: `[QS - TEST] Team Vegan.at Jahresmitgliedschaft ${moment().year()}`,
             locale: Locale.de_AT,
             redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
           })
           .then((payment: Payment) => {
             this.debug(`Payment ${payment.id} for ${customer.id} created`);
+
+            // Store in Redis
+            const redisPaymentPayload = {
+              timestamp: moment().utc(),
+              controller: 'mollie',
+              method: 'checkout',
+              data: payment,
+            };
+            this.redisClient.set(
+              `mollie-payment-${payment.id}`,
+              JSON.stringify(redisPaymentPayload),
+              (err: any, _reply: any) => {
+                if (err) {
+                  this.debug(`Redis: ${err}`);
+                } else {
+                  this.redisClient.get(
+                    `mollie-payment-${payment.id}`,
+                    (_err: any, reply: any) => {
+                      this.debug(`Redis wrote: ${reply}`);
+                    },
+                  );
+                }
+              },
+            );
 
             checkoutUrl = payment.getCheckoutUrl();
             // TODO: send mail
