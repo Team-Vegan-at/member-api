@@ -10,8 +10,8 @@ import {
   Subscription,
   Payment,
 } from '@mollie/api-client';
-import {get, requestBody, HttpErrors, param} from '@loopback/rest';
-import {SignupPayload} from '../models';
+import { get, requestBody, HttpErrors, param } from '@loopback/rest';
+import { SignupPayload } from '../models';
 import moment from 'moment';
 
 export class MollieController {
@@ -23,8 +23,8 @@ export class MollieController {
     process.env.REDIS_PORT,
     process.env.REDIS_HOST,
     {
-      retry_strategy: function(options: {
-        error: {code: string};
+      retry_strategy: function (options: {
+        error: { code: string };
         total_retry_time: number;
         attempt: number;
       }) {
@@ -48,20 +48,20 @@ export class MollieController {
     },
   );
 
-  constructor() {}
+  constructor() { }
 
   @get('/mollie/checkout', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query'},
-      {name: 'firstname', schema: {type: 'string'}, in: 'query'},
-      {name: 'lastname', schema: {type: 'string'}, in: 'query'},
+      { name: 'email', schema: { type: 'string' }, in: 'query' },
+      { name: 'firstname', schema: { type: 'string' }, in: 'query' },
+      { name: 'lastname', schema: { type: 'string' }, in: 'query' },
     ],
     responses: {
       '200': {
         description: 'Mollie Checkout URL',
         content: {
           'application/json': {
-            schema: {type: 'string'},
+            schema: { type: 'string' },
           },
         },
       },
@@ -119,9 +119,9 @@ export class MollieController {
               .format('YYYY-MM-DD'),
             amount: {
               currency: 'EUR',
-              value: '30.00',
+              value: process.env.MOLLIE_PAYMENT_AMOUNT!,
             },
-            description: `[QS - TEST] Team Vegan.at Jahresmitgliedschaft ${moment().year()}`,
+            description: `${process.env.MOLLIE_PAYMENT_DESCRIPTION} ${moment().year()}`,
             locale: Locale.de_AT,
             redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
