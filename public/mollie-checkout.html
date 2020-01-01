@@ -1,0 +1,89 @@
+<html>
+
+<head>
+  <style>
+    .center {
+      margin: auto;
+      max-width: 50%;
+      border: 6px solid #5fa82b;
+      padding: 20px;
+    }
+
+    img {
+      max-width: 100%;
+      height: auto;
+      width: auto\9;
+      display: block;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    p {
+      text-align: center;
+      font-family: sans-serif;
+      line-height: 2em;
+    }
+
+    #error {
+      color: red;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="center">
+    <img src="./assets/teamveganat_logo_gruen.png" />
+    <p id="info">Bitte um einen Moment Geduld, während wir die Zahlungsseite vorbereiten</p>
+    <p id="error"></p>
+  </div>
+</body>
+
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"
+  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+
+<script type="text/javascript" language="javascript">
+  function parseQuerstring(search) {
+    var params = {};
+    var qs = search.substr(1);
+    qs.split('&').reduce((a, b) => {
+      let [key, val] = b.split('=');
+      a[key] = val;
+      return a;
+    }, params);
+    return params;
+  }
+
+  var urlParams = parseQuerstring(window.location.search);
+
+  var emailParam = urlParams['email'];
+  var firstnameParam = urlParams['firstname'];
+  var lastnameParam = urlParams['lastname'];
+
+  console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}`);
+
+  $.ajax({
+    "url": 'https://api.teamvegan.at/mollie/checkout',
+    "data": {
+      "email": emailParam,
+      "firstname": firstnameParam,
+      "lastname": lastnameParam
+    },
+    success: async function (checkoutURL) {
+      console.trace(`Redirect to Mollie Checkout - URL: ${checkoutURL}`);
+
+      $("#info").html(`Du wirst in wenigen Sekunden zu der Zahlungsseite weitergeleitet.<br/>
+      Bitte klicke den folgenden Link, falls du nicht automatisch weitergeleitet wirst:
+      <a href="${checkoutURL}">${checkoutURL}`);
+
+      window.location.replace(checkoutURL);
+    },
+    error: function (reason) {
+      $("#info").html(
+        `Entschuldige bitte, da ist etwas schief gegangen.<br/>Keine Sorge, wir haben deine Anmeldung erhalten und melden uns in K&uuml;rze bei dir!`
+      );
+      $("#error").html(reason.responseText);
+    },
+  })
+</script>
+
+</html>

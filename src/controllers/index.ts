@@ -1,2 +1,3 @@
 export * from './ping.controller';
-export * from './stripe-controller.controller';
+export * from './mollie.controller';
+export * from './webhooks.controller';
