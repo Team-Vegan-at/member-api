@@ -119,9 +119,11 @@ export class MollieController {
               .format('YYYY-MM-DD'),
             amount: {
               currency: 'EUR',
-              value: '30.00',
+              value: process.env.MOLLIE_PAYMENT_AMOUNT!,
             },
-            description: `[QS - TEST] Team Vegan.at Jahresmitgliedschaft ${moment().year()}`,
+            description: `${
+              process.env.MOLLIE_PAYMENT_DESCRIPTION
+            } ${moment().year()}`,
             locale: Locale.de_AT,
             redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
