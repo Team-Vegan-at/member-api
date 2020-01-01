@@ -1,6 +1,6 @@
 {
   "name": "member-api",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "Team Vegan.at Member API",
   "keywords": [
     "loopback-application",
