@@ -319,4 +319,33 @@ export class MollieController {
 
     return customerList;
   }
+
+  @get('/redis/customer', {
+    parameters: [
+      { name: 'customerId', schema: { type: 'string' }, in: 'query', required: true },
+    ],
+    responses: {
+      '200': {},
+    },
+  })
+  public async redisGetCustomer(
+    @param.query.string('customerId') customerId: string,
+  ): Promise<any> {
+
+    const { promisify } = require('util');
+    const getAsync = promisify(this.redisClient.get).bind(this.redisClient);
+
+    const custObj = await getAsync(`mollie-customer-${customerId}`)
+      .then((reply: any) => {
+        this.debug(`Return ${reply}`);
+        return JSON.parse(reply);
+      })
+      .catch((err: any) => {
+        if (err) {
+          this.debug(`Redis: ${err}`);
+        }
+      });
+
+    return custObj;
+  }
 }
