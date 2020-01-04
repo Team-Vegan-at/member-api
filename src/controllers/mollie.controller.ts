@@ -48,9 +48,10 @@ export class MollieController {
 
   @get('/mollie/checkout', {
     parameters: [
-      { name: 'email', schema: { type: 'string' }, in: 'query' },
-      { name: 'firstname', schema: { type: 'string' }, in: 'query' },
-      { name: 'lastname', schema: { type: 'string' }, in: 'query' },
+      { name: 'email', schema: { type: 'string' }, in: 'query', required: true },
+      { name: 'firstname', schema: { type: 'string' }, in: 'query', required: true },
+      { name: 'lastname', schema: { type: 'string' }, in: 'query', required: true },
+      { name: 'dob', schema: { type: 'string' }, in: 'query' },
     ],
     responses: {
       '200': {
@@ -67,6 +68,7 @@ export class MollieController {
     @param.query.string('email') email: string,
     @param.query.string('firstname') firstname: string,
     @param.query.string('lastname') lastname: string,
+    @param.query.string('dob') dob: string,
   ): Promise<string | null> {
     this.debug(`/mollie/checkout`);
 
@@ -77,7 +79,9 @@ export class MollieController {
         name: `${unescape(firstname)} ${unescape(lastname)}`,
         email: unescape(email),
         locale: Locale.de_AT,
-        metadata: `{since:${moment().format()}}`,
+        metadata: JSON.stringify({
+          dob: dob
+        }),
       })
       .then(async (customer: Customer) => {
         this.debug(`Customer ${customer.id} created`);
