@@ -43,8 +43,12 @@ export class MollieController {
       },
     },
   );
+  private redisGetAsync: any;
 
-  constructor() { }
+  constructor() {
+    const { promisify } = require('util');
+    this.redisGetAsync = promisify(this.redisClient.get).bind(this.redisClient);
+  }
 
   @get('/mollie/checkout', {
     parameters: [
@@ -332,10 +336,7 @@ export class MollieController {
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
 
-    const { promisify } = require('util');
-    const getAsync = promisify(this.redisClient.get).bind(this.redisClient);
-
-    const custObj = await getAsync(`mollie-customer-${customerId}`)
+    const custObj = await this.redisGetAsync(`mollie-customer-${customerId}`)
       .then((reply: any) => {
         this.debug(`Return ${reply}`);
         return JSON.parse(reply);
