@@ -5,13 +5,9 @@ import {
   Customer,
   List,
   Locale,
-  MandateMethod,
-  Mandate,
-  Subscription,
   Payment,
 } from '@mollie/api-client';
-import {get, requestBody, HttpErrors, param} from '@loopback/rest';
-import {SignupPayload} from '../models';
+import { get, HttpErrors, param } from '@loopback/rest';
 import moment from 'moment';
 
 export class MollieController {
@@ -23,8 +19,8 @@ export class MollieController {
     process.env.REDIS_PORT,
     process.env.REDIS_HOST,
     {
-      retry_strategy: function(options: {
-        error: {code: string};
+      retry_strategy: function (options: {
+        error: { code: string };
         total_retry_time: number;
         attempt: number;
       }) {
@@ -48,20 +44,20 @@ export class MollieController {
     },
   );
 
-  constructor() {}
+  constructor() { }
 
   @get('/mollie/checkout', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query'},
-      {name: 'firstname', schema: {type: 'string'}, in: 'query'},
-      {name: 'lastname', schema: {type: 'string'}, in: 'query'},
+      { name: 'email', schema: { type: 'string' }, in: 'query' },
+      { name: 'firstname', schema: { type: 'string' }, in: 'query' },
+      { name: 'lastname', schema: { type: 'string' }, in: 'query' },
     ],
     responses: {
       '200': {
         description: 'Mollie Checkout URL',
         content: {
           'application/json': {
-            schema: {type: 'string'},
+            schema: { type: 'string' },
           },
         },
       },
@@ -123,7 +119,7 @@ export class MollieController {
             },
             description: `${
               process.env.MOLLIE_PAYMENT_DESCRIPTION
-            } ${moment().year()}`,
+              } ${moment().year()}`,
             locale: Locale.de_AT,
             redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
@@ -176,102 +172,142 @@ export class MollieController {
   //     '200': {},
   //   },
   // })
-  private async createMemberSubscription(
-    @requestBody() payload: SignupPayload,
-  ): Promise<any> {
-    this.debug(`/mollie/members`);
+  // private async createMemberSubscription(
+  //   @requestBody() payload: SignupPayload,
+  // ): Promise<any> {
+  //   this.debug(`/mollie/members`);
 
-    // TODO check if customer already exists
+  //   // TODO check if customer already exists
 
-    await this.mollieClient.customers
-      .create({
-        name: `${payload.firstname} ${payload.lastname}`,
-        email: payload.email,
-        locale: Locale.de_AT,
-        metadata: `{since:${moment().format()}}`,
-      })
-      .then(async (customer: Customer) => {
-        this.debug(`Customer ${customer.id} created`);
+  //   await this.mollieClient.customers
+  //     .create({
+  //       name: `${payload.firstname} ${payload.lastname}`,
+  //       email: payload.email,
+  //       locale: Locale.de_AT,
+  //       metadata: `{since:${moment().format()}}`,
+  //     })
+  //     .then(async (customer: Customer) => {
+  //       this.debug(`Customer ${customer.id} created`);
 
-        await this.mollieClient.customers_mandates
-          .create({
-            customerId: customer.id,
-            method: MandateMethod.directdebit,
-            consumerName: payload.consumerName,
-            consumerAccount: payload.consumerAccount,
-            consumerBic: payload.consumerBic,
-            signatureDate: moment().format('YYYY-MM-DD'),
-            mandateReference: `TEAMVEGAN-${moment().format(
-              'YYYYMMDDHHmmssSS',
-            )}`,
-          })
-          .then(async (mandate: Mandate) => {
-            this.debug(
-              `Mandate ${mandate.id} for customer ${customer.id} created`,
-            );
+  //       await this.mollieClient.customers_mandates
+  //         .create({
+  //           customerId: customer.id,
+  //           method: MandateMethod.directdebit,
+  //           consumerName: payload.consumerName,
+  //           consumerAccount: payload.consumerAccount,
+  //           consumerBic: payload.consumerBic,
+  //           signatureDate: moment().format('YYYY-MM-DD'),
+  //           mandateReference: `TEAMVEGAN-${moment().format(
+  //             'YYYYMMDDHHmmssSS',
+  //           )}`,
+  //         })
+  //         .then(async (mandate: Mandate) => {
+  //           this.debug(
+  //             `Mandate ${mandate.id} for customer ${customer.id} created`,
+  //           );
 
-            await this.mollieClient.customers_subscriptions
-              .create({
-                customerId: customer.id,
-                mandateId: mandate.id,
-                amount: {
-                  currency: 'EUR',
-                  value: '30.00',
-                },
-                interval: '12 months',
-                description: 'Team Vegan.at Jahresmitgliedschaft',
-                webhookUrl: process.env.MOLLIE_WEBHOOK_SUBSCRIPTION,
-              })
-              .then((subscription: Subscription) => {
-                this.debug(
-                  `Subscription ${subscription.id} for ${customer.id} created`,
-                );
+  //           await this.mollieClient.customers_subscriptions
+  //             .create({
+  //               customerId: customer.id,
+  //               mandateId: mandate.id,
+  //               amount: {
+  //                 currency: 'EUR',
+  //                 value: '30.00',
+  //               },
+  //               interval: '12 months',
+  //               description: 'Team Vegan.at Jahresmitgliedschaft',
+  //               webhookUrl: process.env.MOLLIE_WEBHOOK_SUBSCRIPTION,
+  //             })
+  //             .then((subscription: Subscription) => {
+  //               this.debug(
+  //                 `Subscription ${subscription.id} for ${customer.id} created`,
+  //               );
 
-                // TODO: send mail
-              })
-              .catch(reason => {
-                this.debug(reason);
-                throw new HttpErrors.InternalServerError(reason);
-              });
-          })
-          .catch(reason => {
-            this.debug(reason);
-            throw new HttpErrors.InternalServerError(reason);
+  //               // TODO: send mail
+  //             })
+  //             .catch(reason => {
+  //               this.debug(reason);
+  //               throw new HttpErrors.InternalServerError(reason);
+  //             });
+  //         })
+  //         .catch(reason => {
+  //           this.debug(reason);
+  //           throw new HttpErrors.InternalServerError(reason);
+  //         });
+  //     })
+  //     .catch(reason => {
+  //       this.debug(reason);
+  //       throw new HttpErrors.InternalServerError(reason);
+  //     });
+  // }
+
+  @get('/mollie/paymentstatus', {
+    responses: {
+      '200': {},
+    },
+  })
+  public async listCustomerPaymentStatus(): Promise<any[]> {
+    this.debug(`/mollie/paymentstatus`);
+
+    const paymentstatus: any[] = [];
+
+    const customers = await this.listCustomers();
+
+    for (const customer of customers) {
+
+      await this.mollieClient.customers_payments
+        .all(
+          { customerId: customer.id }
+        )
+        .then((payments: List<Payment>) => {
+          this.debug(`Fetched ${payments.count} payment(s) for ${customer.id}`)
+          const paymentsArray: Payment[] = [];
+
+          payments.forEach(payment => {
+            paymentsArray.push(payment);
           });
-      })
-      .catch(reason => {
-        this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
-      });
+          const payload = {
+            customer: customer,
+            payments: paymentsArray
+          };
+
+          paymentstatus.push(payload);
+        })
+        .catch(reason => {
+          this.debug(reason);
+          throw new HttpErrors.InternalServerError(reason);
+        });
+    };
+
+    return paymentstatus;
   }
 
-  // @get('/mollie/customers', {
-  //   responses: {
-  //     '200': {},
-  //   },
-  // })
-  private async listCustomers(): Promise<any> {
+
+  @get('/mollie/customers', {
+    responses: {
+      '200': {},
+    },
+  })
+  public async listCustomers(): Promise<Customer[]> {
     this.debug(`/mollie/customers`);
 
-    let customerList: List<Customer> | undefined;
+    const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .page()
-      .then(async (customers: List<Customer>) => {
-        this.debug(`Fetched ${customers.count} customer entries`);
-
-        customerList = customers;
-
-        // while (nextPageCustomers.count > 0) {
-        // this.debug(`Fetched next ${nextPageCustomers.count} customer entries`);
-
-        // customers.push(nextPageCustomers);
-        // nextPageCustomers = await nextPageCustomers.nextPage();
-        // }
-
-        customerList = customers;
-        // return customers;
+      .all({ limit: 5 })
+      .then((customers: List<Customer>) => {
+        this.debug(`#1 Fetched ${customers.count} customer entries`);
+        customers.forEach(customer => {
+          customerList.push(customer);
+        });
+        // return customers.nextPage();
       })
+      // .then((customers: List<Customer>) => {
+      //   this.debug(`#2 Fetched ${customers.count} customer entries`);
+      //   customers.forEach(customer => {
+      //     customerList.push(customer);
+      //   });
+      // })
       .catch(reason => {
         this.debug(reason);
         throw new HttpErrors.InternalServerError(reason);
