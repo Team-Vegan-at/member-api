@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createMollieClient,
@@ -77,13 +76,6 @@ export class MollieController {
           (err: any, _reply: any) => {
             if (err) {
               this.debug(`Redis: ${err}`);
-            } else {
-              RedisUtil.redisClient.get(
-                `mollie-customer-${customer.id}`,
-                (_err: any, reply: any) => {
-                  this.debug(`Redis wrote: ${reply}`);
-                },
-              );
             }
           },
         );
@@ -122,12 +114,6 @@ export class MollieController {
               (err: any, _reply: any) => {
                 if (err) {
                   this.debug(`Redis: ${err}`);
-                } else {
-                  RedisUtil.redisGetAsync(`mollie-payment-${payment.id}`).then(
-                    (reply: any) => {
-                      this.debug(`Redis wrote: ${reply}`);
-                    },
-                  );
                 }
               },
             );
