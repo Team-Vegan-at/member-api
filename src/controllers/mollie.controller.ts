@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/camelcase */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createMollieClient,
@@ -9,46 +9,15 @@ import {
 } from '@mollie/api-client';
 import {get, HttpErrors, param} from '@loopback/rest';
 import moment from 'moment';
+import {RedisUtil} from '../utils/redis.util';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
-  private redisClient = require('redis').createClient(
-    process.env.REDIS_PORT,
-    process.env.REDIS_HOST,
-    {
-      retry_strategy: function(options: {
-        error: {code: string};
-        total_retry_time: number;
-        attempt: number;
-      }) {
-        if (options.error && options.error.code === 'ECONNREFUSED') {
-          // End reconnecting on a specific error and flush all commands with
-          // a individual error
-          return new Error('The server refused the connection');
-        }
-        if (options.total_retry_time > 1000 * 60 * 60) {
-          // End reconnecting after a specific timeout and flush all commands
-          // with a individual error
-          return new Error('Retry time exhausted');
-        }
-        if (options.attempt > 10) {
-          // End reconnecting with built in error
-          return undefined;
-        }
-        // reconnect after
-        return Math.min(options.attempt * 100, 3000);
-      },
-    },
-  );
-  private redisGetAsync: any;
 
-  constructor() {
-    const {promisify} = require('util');
-    this.redisGetAsync = promisify(this.redisClient.get).bind(this.redisClient);
-  }
+  constructor() {}
 
   @get('/mollie/checkout', {
     parameters: [
@@ -102,14 +71,14 @@ export class MollieController {
           method: 'checkout',
           data: customer,
         };
-        this.redisClient.set(
+        RedisUtil.redisClient.set(
           `mollie-customer-${customer.id}`,
           JSON.stringify(redisCustomerPayload),
           (err: any, _reply: any) => {
             if (err) {
               this.debug(`Redis: ${err}`);
             } else {
-              this.redisClient.get(
+              RedisUtil.redisClient.get(
                 `mollie-customer-${customer.id}`,
                 (_err: any, reply: any) => {
                   this.debug(`Redis wrote: ${reply}`);
@@ -147,16 +116,15 @@ export class MollieController {
               method: 'checkout',
               data: payment,
             };
-            this.redisClient.set(
+            RedisUtil.redisClient.set(
               `mollie-payment-${payment.id}`,
               JSON.stringify(redisPaymentPayload),
               (err: any, _reply: any) => {
                 if (err) {
                   this.debug(`Redis: ${err}`);
                 } else {
-                  this.redisClient.get(
-                    `mollie-payment-${payment.id}`,
-                    (_err: any, reply: any) => {
+                  RedisUtil.redisGetAsync(`mollie-payment-${payment.id}`).then(
+                    (reply: any) => {
                       this.debug(`Redis wrote: ${reply}`);
                     },
                   );
@@ -341,7 +309,9 @@ export class MollieController {
   public async redisGetCustomer(
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
-    const custObj = await this.redisGetAsync(`mollie-customer-${customerId}`)
+    const custObj = await RedisUtil.redisGetAsync(
+      `mollie-customer-${customerId}`,
+    )
       .then((reply: any) => {
         this.debug(`Return ${reply}`);
         return JSON.parse(reply);
