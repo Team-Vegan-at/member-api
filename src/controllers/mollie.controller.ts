@@ -7,7 +7,7 @@ import {
   Locale,
   Payment,
 } from '@mollie/api-client';
-import { get, HttpErrors, param } from '@loopback/rest';
+import {get, HttpErrors, param} from '@loopback/rest';
 import moment from 'moment';
 
 export class MollieController {
@@ -19,8 +19,8 @@ export class MollieController {
     process.env.REDIS_PORT,
     process.env.REDIS_HOST,
     {
-      retry_strategy: function (options: {
-        error: { code: string };
+      retry_strategy: function(options: {
+        error: {code: string};
         total_retry_time: number;
         attempt: number;
       }) {
@@ -46,23 +46,28 @@ export class MollieController {
   private redisGetAsync: any;
 
   constructor() {
-    const { promisify } = require('util');
+    const {promisify} = require('util');
     this.redisGetAsync = promisify(this.redisClient.get).bind(this.redisClient);
   }
 
   @get('/mollie/checkout', {
     parameters: [
-      { name: 'email', schema: { type: 'string' }, in: 'query', required: true },
-      { name: 'firstname', schema: { type: 'string' }, in: 'query', required: true },
-      { name: 'lastname', schema: { type: 'string' }, in: 'query', required: true },
-      { name: 'dob', schema: { type: 'string' }, in: 'query' },
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true},
+      {
+        name: 'firstname',
+        schema: {type: 'string'},
+        in: 'query',
+        required: true,
+      },
+      {name: 'lastname', schema: {type: 'string'}, in: 'query', required: true},
+      {name: 'dob', schema: {type: 'string'}, in: 'query'},
     ],
     responses: {
       '200': {
         description: 'Mollie Checkout URL',
         content: {
           'application/json': {
-            schema: { type: 'string' },
+            schema: {type: 'string'},
           },
         },
       },
@@ -84,7 +89,7 @@ export class MollieController {
         email: unescape(email),
         locale: Locale.de_AT,
         metadata: JSON.stringify({
-          dob: dob
+          dob: dob,
         }),
       })
       .then(async (customer: Customer) => {
@@ -127,7 +132,7 @@ export class MollieController {
             },
             description: `${
               process.env.MOLLIE_PAYMENT_DESCRIPTION
-              } ${moment().year()}`,
+            } ${moment().year()}`,
             locale: Locale.de_AT,
             redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
@@ -262,13 +267,10 @@ export class MollieController {
     const customers = await this.listCustomers();
 
     for (const customer of customers) {
-
       await this.mollieClient.customers_payments
-        .all(
-          { customerId: customer.id }
-        )
+        .all({customerId: customer.id})
         .then((payments: List<Payment>) => {
-          this.debug(`Fetched ${payments.count} payment(s) for ${customer.id}`)
+          this.debug(`Fetched ${payments.count} payment(s) for ${customer.id}`);
           const paymentsArray: Payment[] = [];
 
           payments.forEach(payment => {
@@ -276,7 +278,7 @@ export class MollieController {
           });
           const payload = {
             customer: customer,
-            payments: paymentsArray
+            payments: paymentsArray,
           };
 
           paymentstatus.push(payload);
@@ -285,11 +287,10 @@ export class MollieController {
           this.debug(reason);
           throw new HttpErrors.InternalServerError(reason);
         });
-    };
+    }
 
     return paymentstatus;
   }
-
 
   @get('/mollie/customers', {
     responses: {
@@ -302,7 +303,7 @@ export class MollieController {
     const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .all({ limit: 5 })
+      .all({limit: 5})
       .then((customers: List<Customer>) => {
         this.debug(`#1 Fetched ${customers.count} customer entries`);
         customers.forEach(customer => {
@@ -326,7 +327,12 @@ export class MollieController {
 
   @get('/redis/customer', {
     parameters: [
-      { name: 'customerId', schema: { type: 'string' }, in: 'query', required: true },
+      {
+        name: 'customerId',
+        schema: {type: 'string'},
+        in: 'query',
+        required: true,
+      },
     ],
     responses: {
       '200': {},
@@ -335,7 +341,6 @@ export class MollieController {
   public async redisGetCustomer(
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
-
     const custObj = await this.redisGetAsync(`mollie-customer-${customerId}`)
       .then((reply: any) => {
         this.debug(`Return ${reply}`);
