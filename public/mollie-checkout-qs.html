@@ -58,15 +58,17 @@
   var emailParam = urlParams['email'];
   var firstnameParam = urlParams['firstname'];
   var lastnameParam = urlParams['lastname'];
+  var dobParam = urlParams['dob'];
 
-  console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}`);
+  console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}, ${dobParam}`);
 
   $.ajax({
     "url": 'https://api-qs.teamvegan.at/mollie/checkout',
     "data": {
       "email": emailParam,
       "firstname": firstnameParam,
-      "lastname": lastnameParam
+      "lastname": lastnameParam,
+      "dob": dobParam
     },
     success: async function (checkoutURL) {
       console.trace(`Redirect to Mollie Checkout - URL: ${checkoutURL}`);
