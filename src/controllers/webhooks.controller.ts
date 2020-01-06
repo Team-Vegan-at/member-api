@@ -1,11 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {post, requestBody} from '@loopback/rest';
+import {post, requestBody, HttpErrors} from '@loopback/rest';
 import util from 'util';
 import moment from 'moment';
 import {RedisUtil} from '../utils/redis.util';
+import createMollieClient, {Payment} from '@mollie/api-client';
 
 export class WebhooksController {
   private debug = require('debug')('api:WebhooksController');
+  private mollieClient = createMollieClient({
+    apiKey: process.env.MOLLIE_API_KEY as string,
+  });
 
   constructor() {}
 
@@ -33,7 +37,56 @@ export class WebhooksController {
     },
   ): Promise<string> {
     this.debug(`${util.inspect(payload, false, null, true)}`);
-    this.debug(`Payment ${payload.id} received`);
+    this.debug(`Payment update ${payload.id} received`);
+
+    this.mollieClient.payments
+      .get(payload.id)
+      .then(async (payment: Payment) => {
+        this.debug(`Fetched payment details for ${payload.id}`);
+
+        // Update payment payload in customer record
+        await RedisUtil.redisGetAsync(
+          `mollie:customer:${payment.customerId}`,
+        ).then((custRecord: string) => {
+          const redisPaymentPayload = {
+            timestamp: moment().utc(),
+            controller: 'mollie',
+            method: 'checkout',
+            data: payment,
+          };
+
+          const redisCustomerUpdate = JSON.parse(custRecord);
+
+          let found = false;
+          redisCustomerUpdate.payments.forEach(
+            (custPayment: any, index: number) => {
+              if (payment.id === custPayment.data.id) {
+                redisCustomerUpdate.payments[index] = redisPaymentPayload;
+                found = true;
+              }
+            },
+            redisCustomerUpdate.payments,
+          );
+
+          if (!found) {
+            redisCustomerUpdate.payments.push(redisPaymentPayload);
+          }
+
+          RedisUtil.redisClient.set(
+            `mollie:customer:${payment.customerId}`,
+            JSON.stringify(redisCustomerUpdate),
+            (err: any, _reply: any) => {
+              if (err) {
+                this.debug(`Redis: ${err}`);
+              }
+            },
+          );
+        });
+      })
+      .catch(reason => {
+        this.debug(reason);
+        throw new HttpErrors.InternalServerError(reason);
+      });
 
     const redisPayload = {
       timestamp: moment().utc(),

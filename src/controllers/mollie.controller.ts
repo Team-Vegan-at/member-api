@@ -69,9 +69,10 @@ export class MollieController {
           controller: 'mollie',
           method: 'checkout',
           data: customer,
+          payments: [],
         };
         RedisUtil.redisClient.set(
-          `mollie-customer-${customer.id}`,
+          `mollie:customer:${customer.id}`,
           JSON.stringify(redisCustomerPayload),
           (err: any, _reply: any) => {
             if (err) {
@@ -98,25 +99,34 @@ export class MollieController {
             redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
           })
-          .then((payment: Payment) => {
+          .then(async (payment: Payment) => {
             this.debug(`Payment ${payment.id} for ${customer.id} created`);
 
-            // Store in Redis
-            const redisPaymentPayload = {
-              timestamp: moment().utc(),
-              controller: 'mollie',
-              method: 'checkout',
-              data: payment,
-            };
-            RedisUtil.redisClient.set(
-              `mollie-payment-${payment.id}`,
-              JSON.stringify(redisPaymentPayload),
-              (err: any, _reply: any) => {
-                if (err) {
-                  this.debug(`Redis: ${err}`);
-                }
-              },
-            );
+            // Add payment payload to customer record
+            await RedisUtil.redisGetAsync(
+              `mollie:customer:${customer.id}`,
+            ).then((custRecord: string) => {
+              const redisPaymentPayload = {
+                timestamp: moment().utc(),
+                controller: 'mollie',
+                method: 'checkout',
+                data: payment,
+              };
+
+              const redisCustomerUpdate = JSON.parse(custRecord);
+
+              redisCustomerUpdate.payments.push(redisPaymentPayload);
+
+              RedisUtil.redisClient.set(
+                `mollie:customer:${customer.id}`,
+                JSON.stringify(redisCustomerUpdate),
+                (err: any, _reply: any) => {
+                  if (err) {
+                    this.debug(`Redis: ${err}`);
+                  }
+                },
+              );
+            });
 
             checkoutUrl = payment.getCheckoutUrl();
             // TODO: send mail
