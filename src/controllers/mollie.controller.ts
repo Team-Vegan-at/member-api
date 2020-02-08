@@ -6,9 +6,9 @@ import {
   Locale,
   Payment,
 } from '@mollie/api-client';
-import {get, HttpErrors, param} from '@loopback/rest';
+import { get, HttpErrors, param } from '@loopback/rest';
 import moment from 'moment';
-import {RedisUtil} from '../utils/redis.util';
+import { RedisUtil } from '../utils/redis.util';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
@@ -16,26 +16,26 @@ export class MollieController {
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
 
-  constructor() {}
+  constructor() { }
 
   @get('/mollie/checkout', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true},
+      { name: 'email', schema: { type: 'string' }, in: 'query', required: true },
       {
         name: 'firstname',
-        schema: {type: 'string'},
+        schema: { type: 'string' },
         in: 'query',
         required: true,
       },
-      {name: 'lastname', schema: {type: 'string'}, in: 'query', required: true},
-      {name: 'dob', schema: {type: 'string'}, in: 'query'},
+      { name: 'lastname', schema: { type: 'string' }, in: 'query', required: true },
+      { name: 'dob', schema: { type: 'string' }, in: 'query' },
     ],
     responses: {
       '200': {
         description: 'Mollie Checkout URL',
         content: {
           'application/json': {
-            schema: {type: 'string'},
+            schema: { type: 'string' },
           },
         },
       },
@@ -94,7 +94,7 @@ export class MollieController {
             },
             description: `${
               process.env.MOLLIE_PAYMENT_DESCRIPTION
-            } ${moment().year()}`,
+              } ${moment().year()}`,
             locale: Locale.de_AT,
             redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
             webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
@@ -232,7 +232,7 @@ export class MollieController {
 
     for (const customer of customers) {
       await this.mollieClient.customers_payments
-        .all({customerId: customer.id})
+        .all({ customerId: customer.id })
         .then((payments: List<Payment>) => {
           this.debug(`Fetched ${payments.count} payment(s) for ${customer.id}`);
           const paymentsArray: Payment[] = [];
@@ -267,7 +267,7 @@ export class MollieController {
     const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .all({limit: 5})
+      .all({ limit: 5 })
       .then((customers: List<Customer>) => {
         this.debug(`#1 Fetched ${customers.count} customer entries`);
         customers.forEach(customer => {
@@ -293,7 +293,7 @@ export class MollieController {
     parameters: [
       {
         name: 'customerId',
-        schema: {type: 'string'},
+        schema: { type: 'string' },
         in: 'query',
         required: true,
       },
