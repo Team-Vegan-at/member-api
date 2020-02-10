@@ -9,10 +9,10 @@ export class DashboardController {
 
   constructor() { }
 
-  @get('/dashboard/discord/members', {
+  @get('/dashboard/discourse/members', {
     responses: {
       '200': {
-        description: 'List discord members and populate Redis store',
+        description: 'List discourse members and populate Redis store',
         content: {
           'application/json': {
             schema: { type: 'array' },
@@ -21,8 +21,8 @@ export class DashboardController {
       },
     },
   })
-  async listDiscordMembers(): Promise<any[] | null> {
-    this.debug(`/dashboard/discord/members`);
+  async listDiscourseMembers(): Promise<any[] | null> {
+    this.debug(`/dashboard/discourse/members`);
 
     const axios = require('axios');
 
@@ -50,11 +50,11 @@ export class DashboardController {
               const redisCustomerPayload = {
                 timestamp: moment().utc(),
                 controller: 'dashboard',
-                method: 'listDiscordMembers',
+                method: 'listDiscourseMembers',
                 data: discourseMember
               };
               RedisUtil.redisClient.set(
-                `teamveganat:discord:${discourseMember.id}`,
+                `${RedisUtil.discourseCustomerPrefix}:${discourseMember.id}`,
                 JSON.stringify(redisCustomerPayload),
                 (err: any, _reply: any) => {
                   if (err) {
@@ -102,7 +102,7 @@ export class DashboardController {
         data: cust
       };
       RedisUtil.redisClient.set(
-        `teamveganat:mollie:${cust.id}`,
+        `${RedisUtil.mollieCustomerPrefix}:${cust.id}`,
         JSON.stringify(redisCustomerPayload),
         (err: any, _reply: any) => {
           if (err) {
@@ -115,37 +115,5 @@ export class DashboardController {
     // return result;
 
     return null;
-  }
-
-  @get('/redis/customer', {
-    parameters: [
-      {
-        name: 'customerId',
-        schema: { type: 'string' },
-        in: 'query',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  public async redisGetCustomer(
-    @param.query.string('customerId') customerId: string,
-  ): Promise<any> {
-    const custObj = await RedisUtil.redisGetAsync(
-      `mollie-customer-${customerId}`,
-    )
-      .then((reply: any) => {
-        this.debug(`Return ${reply}`);
-        return JSON.parse(reply);
-      })
-      .catch((err: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      });
-
-    return custObj;
   }
 }
