@@ -1,9 +1,10 @@
-import {MemberApiApplication} from './application';
-import {ApplicationConfig} from '@loopback/core';
+import { MemberApiApplication } from './application';
+import { ApplicationConfig } from '@loopback/core';
 
-export {MemberApiApplication};
+export { MemberApiApplication };
 
 export async function main(options: ApplicationConfig = {}) {
+  require('dotenv').config();
   const debug = require('debug')('api:app');
   const app = new MemberApiApplication(options);
   await app.boot();

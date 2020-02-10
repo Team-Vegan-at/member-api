@@ -72,7 +72,7 @@ export class MollieController {
           payments: [],
         };
         RedisUtil.redisClient.set(
-          `mollie:customer:${customer.id}`,
+          `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
           JSON.stringify(redisCustomerPayload),
           (err: any, _reply: any) => {
             if (err) {
@@ -104,7 +104,7 @@ export class MollieController {
 
             // Add payment payload to customer record
             await RedisUtil.redisGetAsync(
-              `mollie:customer:${customer.id}`,
+              `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
             ).then((custRecord: string) => {
               const redisPaymentPayload = {
                 timestamp: moment().utc(),
@@ -118,7 +118,7 @@ export class MollieController {
               redisCustomerUpdate.payments.push(redisPaymentPayload);
 
               RedisUtil.redisClient.set(
-                `mollie:customer:${customer.id}`,
+                `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
                 JSON.stringify(redisCustomerUpdate),
                 (err: any, _reply: any) => {
                   if (err) {
@@ -267,20 +267,20 @@ export class MollieController {
     const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .all({ limit: 5 })
+      .all({ limit: 250 })
       .then((customers: List<Customer>) => {
         this.debug(`#1 Fetched ${customers.count} customer entries`);
         customers.forEach(customer => {
           customerList.push(customer);
         });
-        // return customers.nextPage();
+        return customers.nextPage();
       })
-      // .then((customers: List<Customer>) => {
-      //   this.debug(`#2 Fetched ${customers.count} customer entries`);
-      //   customers.forEach(customer => {
-      //     customerList.push(customer);
-      //   });
-      // })
+      .then((customers: List<Customer>) => {
+        this.debug(`#2 Fetched ${customers.count} customer entries`);
+        customers.forEach(customer => {
+          customerList.push(customer);
+        });
+      })
       .catch(reason => {
         this.debug(reason);
         throw new HttpErrors.InternalServerError(reason);
@@ -306,7 +306,7 @@ export class MollieController {
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
     const custObj = await RedisUtil.redisGetAsync(
-      `mollie-customer-${customerId}`,
+      `${RedisUtil.mollieCustomerPrefix}-${customerId}`,
     )
       .then((reply: any) => {
         this.debug(`Return ${reply}`);
