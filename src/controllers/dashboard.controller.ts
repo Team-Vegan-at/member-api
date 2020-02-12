@@ -116,4 +116,96 @@ export class DashboardController {
 
     return null;
   }
+
+  @get('/dashboard/redis/mollie/customer', {
+    parameters: [
+      {
+        name: 'customerId',
+        schema: { type: 'string' },
+        in: 'query',
+        required: true,
+      },
+    ],
+    responses: {
+      '200': {},
+    },
+  })
+  public async redisGetMollieCustomer(
+    @param.query.string('customerId') customerId: string,
+  ): Promise<any> {
+    const custObj = await RedisUtil.redisGetAsync(
+      `${RedisUtil.mollieCustomerPrefix}-${customerId}`,
+    )
+      .then((reply: any) => {
+        this.debug(`Return ${reply}`);
+        return JSON.parse(reply);
+      })
+      .catch((err: any) => {
+        if (err) {
+          this.debug(`Redis: ${err}`);
+        }
+      });
+
+    return custObj;
+  }
+
+  @get('/dashboard/redis/discord/customer', {
+    parameters: [
+      {
+        name: 'customerId',
+        schema: { type: 'string' },
+        in: 'query',
+        required: true,
+      },
+    ],
+    responses: {
+      '200': {},
+    },
+  })
+  public async redisGetDiscordCustomer(
+    @param.query.string('customerId') customerId: string,
+  ): Promise<any> {
+    const custObj = await RedisUtil.redisGetAsync(
+      `${RedisUtil.mollieCustomerPrefix}-${customerId}`,
+    )
+      .then((reply: any) => {
+        this.debug(`Return ${reply}`);
+        return JSON.parse(reply);
+      })
+      .catch((err: any) => {
+        if (err) {
+          this.debug(`Redis: ${err}`);
+        }
+      });
+
+    return custObj;
+  }
+
+  @get('/dashboard/redis/mollie/customers', {
+    responses: {
+      '200': {},
+    },
+  })
+  public async redisGetMollieCustomers(): Promise<any> {
+    const redisScan = require('node-redis-scan');
+    const scanner = new redisScan(RedisUtil.redisClient);
+
+    return new Promise((resolve, reject) => {
+      scanner.scan(
+        `${RedisUtil.mollieCustomerPrefix}:*`, (err: any, matchingKeys: any) => {
+          if (err) {
+            this.debug(`Redis: ${err}`);
+            reject();
+          }
+
+          // matchingKeys will be an array of strings if matches were found
+          // otherwise it will be an empty array.
+          this.debug(`Return ${matchingKeys}`);
+          // return JSON.parse(matchingKeys);
+          resolve(matchingKeys);
+        });
+
+
+    });
+  }
 }
