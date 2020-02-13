@@ -218,6 +218,37 @@ export class MollieController {
   //     });
   // }
 
+  @get('/mollie/payments', {
+    parameters: [
+      { name: 'custId', schema: { type: 'string' }, in: 'query', required: true },
+    ],
+    responses: {
+      '200': {},
+    },
+  })
+  public async listCustomerPayments(
+    @param.query.string('custId') custId: string,
+  ): Promise<any[]> {
+    this.debug(`/mollie/payments`);
+
+    return this.mollieClient.customers_payments
+      .all({ customerId: custId })
+      .then((payments: List<Payment>) => {
+        this.debug(`Fetched ${payments.count} payment(s) for ${custId}`);
+        const paymentsArray: Payment[] = [];
+
+        payments.forEach(payment => {
+          paymentsArray.push(payment);
+        });
+
+        return paymentsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        throw new HttpErrors.InternalServerError(reason);
+      });
+  }
+
   @get('/mollie/paymentstatus', {
     responses: {
       '200': {},
