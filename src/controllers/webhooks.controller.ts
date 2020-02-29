@@ -46,7 +46,7 @@ export class WebhooksController {
 
         // Update payment payload in customer record
         await RedisUtil.redisGetAsync(
-          `mollie:customer:${payment.customerId}`,
+          `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
         ).then((custRecord: string) => {
           const redisPaymentPayload = {
             timestamp: moment().utc(),
@@ -73,7 +73,7 @@ export class WebhooksController {
           }
 
           RedisUtil.redisClient.set(
-            `mollie:customer:${payment.customerId}`,
+            `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
             JSON.stringify(redisCustomerUpdate),
             (err: any, _reply: any) => {
               if (err) {
@@ -95,7 +95,7 @@ export class WebhooksController {
       data: payload,
     };
     RedisUtil.redisClient.set(
-      `hook-pay-${payload.id}`,
+      `${RedisUtil.whPaymentsPrefix}-${payload.id}`,
       JSON.stringify(redisPayload),
       (err: any, _reply: any) => {
         if (err) {
@@ -140,7 +140,7 @@ export class WebhooksController {
       data: payload,
     };
     RedisUtil.redisClient.set(
-      `hook-sub-${payload.subscriptionId}`,
+      `${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}`,
       JSON.stringify(redisPayload),
       (err: any, _reply: any) => {
         if (err) {
