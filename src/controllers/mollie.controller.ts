@@ -9,6 +9,7 @@ import {
 import { get, HttpErrors, param } from '@loopback/rest';
 import moment from 'moment';
 import { RedisUtil } from '../utils/redis.util';
+import { authenticate } from '@loopback/authentication';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
@@ -144,80 +145,6 @@ export class MollieController {
     return checkoutUrl;
   }
 
-  // @post('/mollie/members', {
-  //   responses: {
-  //     '200': {},
-  //   },
-  // })
-  // private async createMemberSubscription(
-  //   @requestBody() payload: SignupPayload,
-  // ): Promise<any> {
-  //   this.debug(`/mollie/members`);
-
-  //   // TODO check if customer already exists
-
-  //   await this.mollieClient.customers
-  //     .create({
-  //       name: `${payload.firstname} ${payload.lastname}`,
-  //       email: payload.email,
-  //       locale: Locale.de_AT,
-  //       metadata: `{since:${moment().format()}}`,
-  //     })
-  //     .then(async (customer: Customer) => {
-  //       this.debug(`Customer ${customer.id} created`);
-
-  //       await this.mollieClient.customers_mandates
-  //         .create({
-  //           customerId: customer.id,
-  //           method: MandateMethod.directdebit,
-  //           consumerName: payload.consumerName,
-  //           consumerAccount: payload.consumerAccount,
-  //           consumerBic: payload.consumerBic,
-  //           signatureDate: moment().format('YYYY-MM-DD'),
-  //           mandateReference: `TEAMVEGAN-${moment().format(
-  //             'YYYYMMDDHHmmssSS',
-  //           )}`,
-  //         })
-  //         .then(async (mandate: Mandate) => {
-  //           this.debug(
-  //             `Mandate ${mandate.id} for customer ${customer.id} created`,
-  //           );
-
-  //           await this.mollieClient.customers_subscriptions
-  //             .create({
-  //               customerId: customer.id,
-  //               mandateId: mandate.id,
-  //               amount: {
-  //                 currency: 'EUR',
-  //                 value: '30.00',
-  //               },
-  //               interval: '12 months',
-  //               description: 'Team Vegan.at Jahresmitgliedschaft',
-  //               webhookUrl: process.env.MOLLIE_WEBHOOK_SUBSCRIPTION,
-  //             })
-  //             .then((subscription: Subscription) => {
-  //               this.debug(
-  //                 `Subscription ${subscription.id} for ${customer.id} created`,
-  //               );
-
-  //               // TODO: send mail
-  //             })
-  //             .catch(reason => {
-  //               this.debug(reason);
-  //               throw new HttpErrors.InternalServerError(reason);
-  //             });
-  //         })
-  //         .catch(reason => {
-  //           this.debug(reason);
-  //           throw new HttpErrors.InternalServerError(reason);
-  //         });
-  //     })
-  //     .catch(reason => {
-  //       this.debug(reason);
-  //       throw new HttpErrors.InternalServerError(reason);
-  //     });
-  // }
-
   @get('/mollie/payments', {
     parameters: [
       { name: 'custId', schema: { type: 'string' }, in: 'query', required: true },
@@ -226,6 +153,7 @@ export class MollieController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async listCustomerPayments(
     @param.query.string('custId') custId: string,
   ): Promise<any[]> {
@@ -254,6 +182,7 @@ export class MollieController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async listCustomerPaymentStatus(): Promise<any[]> {
     this.debug(`/mollie/paymentstatus`);
 
@@ -292,6 +221,7 @@ export class MollieController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async listCustomers(): Promise<Customer[]> {
     this.debug(`/mollie/customers`);
 
