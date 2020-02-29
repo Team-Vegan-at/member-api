@@ -1,61 +1,24 @@
-import {get, param, HttpErrors} from '@loopback/rest';
+import { get, param, HttpErrors } from '@loopback/rest';
 import jwt from 'jsonwebtoken';
-import {RedisUtil} from '../utils/redis.util';
+import { RedisUtil } from '../utils/redis.util';
+import { TokenServiceBindings } from '../keys';
+import { inject } from '@loopback/core';
 
 export class AuthController {
   private debug = require('debug')('api:AuthController');
 
-  private signSecret = process.env.AUTH_JWT_SECRET!;
+  // private signSecret = process.env.AUTH_JWT_SECRET!;
 
-  constructor() {}
+  @inject(TokenServiceBindings.TOKEN_SECRET)
+  private signSecret: string;
 
-  @get('/auth/verify', {
-    parameters: [
-      {
-        name: 'x-api-otp',
-        schema: {type: 'string'},
-        in: 'header',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  public async authVerifyOTP(
-    @param.header.string('x-api-key') apiOtp: string,
-  ): Promise<boolean> {
-    this.debug(`/auth/verify with x-api-otp ${apiOtp}`);
-
-    const valid = await RedisUtil.redisGetAsync(apiOtp).then(
-      (token: string) => {
-        if (!token) {
-          this.debug(`x-api-otp ${apiOtp} not found in Redis`);
-          return false;
-        }
-
-        try {
-          jwt.verify(apiOtp, this.signSecret);
-        } catch (err) {
-          this.debug(`jwt.verify failed: ${err}`);
-          return false;
-        }
-
-        // Invalidate token
-        RedisUtil.redisClient.del(apiOtp);
-
-        return true;
-      },
-    );
-
-    return valid;
-  }
+  constructor() { }
 
   @get('/auth/otp', {
     parameters: [
       {
         name: 'x-api-key',
-        schema: {type: 'string'},
+        schema: { type: 'string' },
         in: 'header',
         required: true,
       },
@@ -77,7 +40,7 @@ export class AuthController {
     }
 
     // Generate JWT Token (short lived)
-    const token = jwt.sign({}, this.signSecret, {expiresIn: `${ttlInSec}sec`});
+    const token = jwt.sign({}, this.signSecret, { expiresIn: `${ttlInSec}sec` });
 
     // Store JWT Token in Redis
     RedisUtil.redisClient.set(token, token, 'EX', ttlInSec);

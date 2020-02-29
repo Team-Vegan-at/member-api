@@ -16,7 +16,7 @@ export class DashboardController {
       '200': {},
     },
   })
-  @authenticate('jwt')
+  @authenticate('team-vegan-jwt')
   public async listTeamMembers(): Promise<any> {
     const memberList: any = [];
     const redisScan = require('node-redis-scan');
@@ -54,7 +54,10 @@ export class DashboardController {
             console.log('Done');
             resolve(memberList);
           }
-          start();
+          start().then(
+            () => { },
+            () => { },
+          );
 
           await matchingKeys.forEach((memberKey: string) => {
 
