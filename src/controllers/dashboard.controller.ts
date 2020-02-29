@@ -4,6 +4,7 @@ import { get, param } from '@loopback/rest';
 import { RedisUtil } from '../utils/redis.util';
 import moment = require('moment');
 import { MollieController } from './mollie.controller';
+import { authenticate } from '@loopback/authentication';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
@@ -15,6 +16,7 @@ export class DashboardController {
       '200': {},
     },
   })
+  @authenticate('jwt')
   public async listTeamMembers(): Promise<any> {
     const memberList: any = [];
     const redisScan = require('node-redis-scan');

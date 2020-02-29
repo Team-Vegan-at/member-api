@@ -1,5 +1,6 @@
 import { BootMixin } from '@loopback/boot';
 import { ApplicationConfig } from '@loopback/core';
+import { AuthenticationComponent } from '@loopback/authentication';
 import {
   RestExplorerBindings,
   RestExplorerComponent,
@@ -16,6 +17,9 @@ export class MemberApiApplication extends BootMixin(
 
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
+
+    // Bind authentication component related elements
+    this.component(AuthenticationComponent);
 
     // Customize @loopback/rest-explorer configuration here
     this.bind(RestExplorerBindings.CONFIG).to({
