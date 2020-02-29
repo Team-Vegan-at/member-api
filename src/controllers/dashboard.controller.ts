@@ -79,6 +79,7 @@ export class DashboardController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async redisGetTeamMember(
     @param.query.string('email') email: string,
   ): Promise<any> {
@@ -111,6 +112,7 @@ export class DashboardController {
       },
     },
   })
+  @authenticate('team-vegan-jwt')
   async listDiscourseMembers(): Promise<any[] | null> {
     this.debug(`/dashboard/discourse/members`);
 
@@ -176,6 +178,7 @@ export class DashboardController {
       },
     },
   })
+  @authenticate('team-vegan-jwt')
   async listMollieMembers(): Promise<any[] | null> {
     this.debug(`/dashboard/mollie/members`);
 
@@ -220,6 +223,7 @@ export class DashboardController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async redisGetMollieCustomer(
     @param.query.string('mollieCustomerKey') customerId: string,
   ): Promise<any> {
@@ -252,6 +256,7 @@ export class DashboardController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async redisGetDiscourseCustomer(
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
@@ -276,6 +281,7 @@ export class DashboardController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async redisGetMollieCustomers(): Promise<any> {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
@@ -302,6 +308,7 @@ export class DashboardController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async redisGetDiscourseCustomers(): Promise<any> {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);

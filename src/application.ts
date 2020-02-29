@@ -14,6 +14,7 @@ import { TokenServiceBindings, TokenServiceConstants } from './keys';
 import { JWTService } from './services/jwt-service';
 import { SECURITY_SCHEME_SPEC } from './utils/security-spec';
 import { MyAuthenticationSequence } from './sequence';
+import { ApiKeyAuthenticationStrategy } from './authentication-strategies/ApiKeyAuthenticationStrategy';
 
 /**
  * Information from package.json
@@ -53,6 +54,7 @@ export class MemberApiApplication extends BootMixin(
 
     // Bind authentication component
     registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
+    registerAuthenticationStrategy(this, ApiKeyAuthenticationStrategy);
 
     // Set up the custom sequence
     this.sequence(MyAuthenticationSequence);

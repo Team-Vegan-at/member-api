@@ -1,8 +1,9 @@
-import { get, param, HttpErrors } from '@loopback/rest';
+import { get } from '@loopback/rest';
 import jwt from 'jsonwebtoken';
 import { RedisUtil } from '../utils/redis.util';
 import { TokenServiceBindings } from '../keys';
 import { inject } from '@loopback/core';
+import { authenticate } from '@loopback/authentication';
 
 export class AuthController {
   private debug = require('debug')('api:AuthController');
@@ -27,17 +28,11 @@ export class AuthController {
       '200': {},
     },
   })
-  public async authGetOTP(
-    @param.header.string('x-api-key') apiKey: string,
-  ): Promise<string> {
-    this.debug(`/auth/otp with x-api-key ${apiKey}`);
+  @authenticate('team-vegan-api-key')
+  public async authGetOTP(): Promise<string> {
+    this.debug(`/auth/otp`);
 
     const ttlInSec = 60;
-
-    // Check against process.env.X_API_KEY
-    if (apiKey !== process.env.X_API_KEY) {
-      throw HttpErrors.Unauthorized;
-    }
 
     // Generate JWT Token (short lived)
     const token = jwt.sign({}, this.signSecret, { expiresIn: `${ttlInSec}sec` });
