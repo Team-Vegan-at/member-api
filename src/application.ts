@@ -1,20 +1,23 @@
-import { BootMixin } from '@loopback/boot';
-import { ApplicationConfig, BindingKey } from '@loopback/core';
-import { RepositoryMixin } from '@loopback/repository';
-import { registerAuthenticationStrategy, AuthenticationComponent } from '@loopback/authentication';
+import {BootMixin} from '@loopback/boot';
+import {ApplicationConfig, BindingKey} from '@loopback/core';
+import {RepositoryMixin} from '@loopback/repository';
+import {
+  registerAuthenticationStrategy,
+  AuthenticationComponent,
+} from '@loopback/authentication';
 import {
   RestExplorerBindings,
   RestExplorerComponent,
 } from '@loopback/rest-explorer';
-import { RestApplication } from '@loopback/rest';
-import { ServiceMixin } from '@loopback/service-proxy';
+import {RestApplication} from '@loopback/rest';
+import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
-import { JWTAuthenticationStrategy } from './authentication-strategies/JWTAuthenticationStrategy';
-import { TokenServiceBindings, TokenServiceConstants } from './keys';
-import { JWTService } from './services/jwt-service';
-import { SECURITY_SCHEME_SPEC } from './utils/security-spec';
-import { MyAuthenticationSequence } from './sequence';
-import { ApiKeyAuthenticationStrategy } from './authentication-strategies/ApiKeyAuthenticationStrategy';
+import {JWTAuthenticationStrategy} from './authentication-strategies/JWTAuthenticationStrategy';
+import {TokenServiceBindings, TokenServiceConstants} from './keys';
+import {JWTService} from './services/jwt-service';
+import {SECURITY_SCHEME_SPEC} from './utils/security-spec';
+import {MyAuthenticationSequence} from './sequence';
+import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAuthenticationStrategy';
 
 /**
  * Information from package.json
@@ -40,12 +43,11 @@ export class MemberApiApplication extends BootMixin(
         */
     this.api({
       openapi: '3.0.0',
-      info: { title: pkg.name, version: pkg.version },
+      info: {title: pkg.name, version: pkg.version},
       paths: {},
-      components: { securitySchemes: SECURITY_SCHEME_SPEC },
-      servers: [{ url: '/' }],
+      components: {securitySchemes: SECURITY_SCHEME_SPEC},
+      servers: [{url: '/'}],
     });
-
 
     this.setUpBindings();
 

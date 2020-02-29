@@ -1,12 +1,11 @@
-import { HttpErrors, Request } from '@loopback/rest';
-import { AuthenticationStrategy } from '@loopback/authentication';
-import { UserProfile, securityId } from '@loopback/security';
+import {HttpErrors, Request} from '@loopback/rest';
+import {AuthenticationStrategy} from '@loopback/authentication';
+import {UserProfile, securityId} from '@loopback/security';
 
 export class ApiKeyAuthenticationStrategy implements AuthenticationStrategy {
   name = 'team-vegan-api-key';
 
-  constructor(
-  ) { }
+  constructor() {}
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {
     const apiKey: string = this.extractCredentials(request);
@@ -17,7 +16,7 @@ export class ApiKeyAuthenticationStrategy implements AuthenticationStrategy {
     }
 
     const userProfile: UserProfile = Object.assign(
-      { [securityId]: '', name: '' },
+      {[securityId]: '', name: ''},
       {
         [securityId]: apiKey,
         name: 'x-api-key',

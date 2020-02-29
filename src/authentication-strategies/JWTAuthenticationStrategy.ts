@@ -1,9 +1,9 @@
-import { inject } from '@loopback/context';
-import { HttpErrors, Request } from '@loopback/rest';
-import { AuthenticationStrategy, TokenService } from '@loopback/authentication';
-import { UserProfile } from '@loopback/security';
+import {inject} from '@loopback/context';
+import {HttpErrors, Request} from '@loopback/rest';
+import {AuthenticationStrategy, TokenService} from '@loopback/authentication';
+import {UserProfile} from '@loopback/security';
 
-import { TokenServiceBindings } from '../keys';
+import {TokenServiceBindings} from '../keys';
 
 export class JWTAuthenticationStrategy implements AuthenticationStrategy {
   name = 'team-vegan-jwt';
@@ -11,7 +11,7 @@ export class JWTAuthenticationStrategy implements AuthenticationStrategy {
   constructor(
     @inject(TokenServiceBindings.TOKEN_SERVICE)
     public tokenService: TokenService,
-  ) { }
+  ) {}
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {
     const token: string = this.extractCredentials(request);

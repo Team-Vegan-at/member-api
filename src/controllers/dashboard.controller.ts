@@ -1,15 +1,16 @@
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { get, param } from '@loopback/rest';
-import { RedisUtil } from '../utils/redis.util';
+/* eslint-disable @typescript-eslint/camelcase */
+import {get, param} from '@loopback/rest';
+import {RedisUtil} from '../utils/redis.util';
 import moment = require('moment');
-import { MollieController } from './mollie.controller';
-import { authenticate } from '@loopback/authentication';
+import {MollieController} from './mollie.controller';
+import {authenticate} from '@loopback/authentication';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
 
-  constructor() { }
+  constructor() {}
 
   @get('/dashboard/members', {
     responses: {
@@ -24,16 +25,18 @@ export class DashboardController {
 
     return new Promise((resolve, reject) => {
       scanner.scan(
-        `${RedisUtil.teamMemberPrefix}:*`, async (err: any, matchingKeys: any) => {
+        `${RedisUtil.teamMemberPrefix}:*`,
+        async (err: any, matchingKeys: any) => {
           if (err) {
             this.debug(`Redis error: ${err}`);
             reject();
           }
 
           const start = async () => {
-            await this.asyncForEach(matchingKeys, async (memberKey) => {
-              await this.redisGetTeamMember(memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')).then((memberObj: any) => {
-
+            await this.asyncForEach(matchingKeys, async memberKey => {
+              await this.redisGetTeamMember(
+                memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, ''),
+              ).then((memberObj: any) => {
                 let paid = 0;
                 if (memberObj.molliePayments) {
                   for (let i = 0; i < memberObj.molliePayments.length; i++) {
@@ -47,22 +50,21 @@ export class DashboardController {
                   email: memberObj.email,
                   name: memberObj.name,
                   paid,
-                }
+                };
                 memberList.push(memberPayload);
               });
             });
             console.log('Done');
             resolve(memberList);
-          }
+          };
           start().then(
-            () => { },
-            () => { },
+            () => {},
+            () => {},
           );
 
-          await matchingKeys.forEach((memberKey: string) => {
-
-          });
-        });
+          await matchingKeys.forEach((memberKey: string) => {});
+        },
+      );
     });
   }
 
@@ -70,7 +72,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'email',
-        schema: { type: 'string' },
+        schema: {type: 'string'},
         in: 'query',
         required: true,
       },
@@ -83,7 +85,6 @@ export class DashboardController {
   public async redisGetTeamMember(
     @param.query.string('email') email: string,
   ): Promise<any> {
-
     const custObj = await RedisUtil.redisGetAsync(
       `${RedisUtil.teamMemberPrefix}:${email}`,
     )
@@ -106,7 +107,7 @@ export class DashboardController {
         description: 'List discourse members and populate Redis store',
         content: {
           'application/json': {
-            schema: { type: 'array' },
+            schema: {type: 'array'},
           },
         },
       },
@@ -126,41 +127,41 @@ export class DashboardController {
     const result = [];
 
     for (let x = 1; fetchMore; x++) {
-      result.push(await axios.get(`/admin/users/list/active.json`, {
-        params: {
-          'show_emails': true,
-          'page': x
-        }
-      })
-        .then((response: any) => {
+      result.push(
+        await axios
+          .get(`/admin/users/list/active.json`, {
+            params: {
+              show_emails: true,
+              page: x,
+            },
+          })
+          .then((response: any) => {
+            if (response.data && response.data.length > 0) {
+              response.data.forEach((discourseMember: any) => {
+                // Store in Redis
+                const redisCustomerPayload = {
+                  timestamp: moment().utc(),
+                  controller: 'dashboard',
+                  method: 'listDiscourseMembers',
+                  data: discourseMember,
+                };
+                RedisUtil.redisClient.set(
+                  `${RedisUtil.discourseCustomerPrefix}:${discourseMember.id}`,
+                  JSON.stringify(redisCustomerPayload),
+                  (err: any, _reply: any) => {
+                    if (err) {
+                      this.debug(`Redis: ${err}`);
+                    }
+                  },
+                );
+              });
+            } else {
+              fetchMore = false;
+            }
 
-          if (response.data && response.data.length > 0) {
-
-            response.data.forEach((discourseMember: any) => {
-
-              // Store in Redis
-              const redisCustomerPayload = {
-                timestamp: moment().utc(),
-                controller: 'dashboard',
-                method: 'listDiscourseMembers',
-                data: discourseMember
-              };
-              RedisUtil.redisClient.set(
-                `${RedisUtil.discourseCustomerPrefix}:${discourseMember.id}`,
-                JSON.stringify(redisCustomerPayload),
-                (err: any, _reply: any) => {
-                  if (err) {
-                    this.debug(`Redis: ${err}`);
-                  }
-                },
-              );
-            });
-          } else {
-            fetchMore = false;
-          }
-
-          return response.data;
-        }));
+            return response.data;
+          }),
+      );
     }
 
     return result;
@@ -172,7 +173,7 @@ export class DashboardController {
         description: 'List mollie members and populate Redis store',
         content: {
           'application/json': {
-            schema: { type: 'array' },
+            schema: {type: 'array'},
           },
         },
       },
@@ -192,7 +193,7 @@ export class DashboardController {
         timestamp: moment().utc(),
         controller: 'dashboard',
         method: 'listMollieMembers',
-        data: cust
+        data: cust,
       };
       RedisUtil.redisClient.set(
         `${RedisUtil.mollieCustomerPrefix}:${cust.id}`,
@@ -214,7 +215,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'customerId',
-        schema: { type: 'string' },
+        schema: {type: 'string'},
         in: 'query',
         required: true,
       },
@@ -247,7 +248,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'customerId',
-        schema: { type: 'string' },
+        schema: {type: 'string'},
         in: 'query',
         required: true,
       },
@@ -288,7 +289,8 @@ export class DashboardController {
 
     return new Promise((resolve, reject) => {
       scanner.scan(
-        `${RedisUtil.mollieCustomerPrefix}:*`, (err: any, matchingKeys: any) => {
+        `${RedisUtil.mollieCustomerPrefix}:*`,
+        (err: any, matchingKeys: any) => {
           if (err) {
             this.debug(`Redis error: ${err}`);
             reject();
@@ -299,7 +301,8 @@ export class DashboardController {
           this.debug(`Return ${matchingKeys}`);
           // return JSON.parse(matchingKeys);
           resolve(matchingKeys);
-        });
+        },
+      );
     });
   }
 
@@ -315,7 +318,8 @@ export class DashboardController {
 
     return new Promise((resolve, reject) => {
       scanner.scan(
-        `${RedisUtil.discourseCustomerPrefix}:*`, (err: any, matchingKeys: any) => {
+        `${RedisUtil.discourseCustomerPrefix}:*`,
+        (err: any, matchingKeys: any) => {
           if (err) {
             this.debug(`Redis error: ${err}`);
             reject();
@@ -326,11 +330,15 @@ export class DashboardController {
           this.debug(`Return ${matchingKeys}`);
           // return JSON.parse(matchingKeys);
           resolve(matchingKeys);
-        });
+        },
+      );
     });
   }
 
-  private async asyncForEach(array: string | any[], callback: (arg0: any, arg1: number, arg2: any) => any) {
+  private async asyncForEach(
+    array: string | any[],
+    callback: (arg0: any, arg1: number, arg2: any) => any,
+  ) {
     for (let index = 0; index < array.length; index++) {
       await callback(array[index], index, array);
     }

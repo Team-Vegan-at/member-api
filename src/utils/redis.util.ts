@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/camelcase */
 import redis from 'redis';
-import { promisify } from 'util';
+import {promisify} from 'util';
 
 export class RedisUtil {
   private static retryStrategy = require('node-redis-retry-strategy');

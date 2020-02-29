@@ -1,9 +1,9 @@
-import { get } from '@loopback/rest';
+import {get} from '@loopback/rest';
 import jwt from 'jsonwebtoken';
-import { RedisUtil } from '../utils/redis.util';
-import { TokenServiceBindings } from '../keys';
-import { inject } from '@loopback/core';
-import { authenticate } from '@loopback/authentication';
+import {RedisUtil} from '../utils/redis.util';
+import {TokenServiceBindings} from '../keys';
+import {inject} from '@loopback/core';
+import {authenticate} from '@loopback/authentication';
 
 export class AuthController {
   private debug = require('debug')('api:AuthController');
@@ -13,13 +13,13 @@ export class AuthController {
   @inject(TokenServiceBindings.TOKEN_SECRET)
   private signSecret: string;
 
-  constructor() { }
+  constructor() {}
 
   @get('/auth/otp', {
     parameters: [
       {
         name: 'x-api-key',
-        schema: { type: 'string' },
+        schema: {type: 'string'},
         in: 'header',
         required: true,
       },
@@ -35,7 +35,7 @@ export class AuthController {
     const ttlInSec = 60;
 
     // Generate JWT Token (short lived)
-    const token = jwt.sign({}, this.signSecret, { expiresIn: `${ttlInSec}sec` });
+    const token = jwt.sign({}, this.signSecret, {expiresIn: `${ttlInSec}sec`});
 
     // Store JWT Token in Redis
     RedisUtil.redisClient.set(token, token, 'EX', ttlInSec);

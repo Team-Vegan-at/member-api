@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { post, requestBody, HttpErrors } from '@loopback/rest';
+import {post, requestBody, HttpErrors} from '@loopback/rest';
 import util from 'util';
 import moment from 'moment';
-import { RedisUtil } from '../utils/redis.util';
-import createMollieClient, { Payment } from '@mollie/api-client';
+import {RedisUtil} from '../utils/redis.util';
+import createMollieClient, {Payment} from '@mollie/api-client';
 
 export class WebhooksController {
   private debug = require('debug')('api:WebhooksController');
@@ -11,7 +11,7 @@ export class WebhooksController {
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
 
-  constructor() { }
+  constructor() {}
 
   @post('/mollie/payments/webhook', {
     responses: {
@@ -26,7 +26,7 @@ export class WebhooksController {
           schema: {
             type: 'object',
             properties: {
-              id: { type: 'string' },
+              id: {type: 'string'},
             },
           },
         },
@@ -120,7 +120,7 @@ export class WebhooksController {
           schema: {
             type: 'object',
             properties: {
-              subscriptionId: { type: 'string' },
+              subscriptionId: {type: 'string'},
             },
           },
         },

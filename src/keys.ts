@@ -3,8 +3,8 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
-import { BindingKey } from '@loopback/context';
-import { TokenService } from '@loopback/authentication';
+import {BindingKey} from '@loopback/context';
+import {TokenService} from '@loopback/authentication';
 
 export namespace TokenServiceConstants {
   export const TOKEN_SECRET_VALUE = 'myjwts3cr3t';
