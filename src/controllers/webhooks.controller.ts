@@ -1,39 +1,15 @@
-/* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {post, requestBody} from '@loopback/rest';
+import {post, requestBody, HttpErrors} from '@loopback/rest';
 import util from 'util';
 import moment from 'moment';
+import {RedisUtil} from '../utils/redis.util';
+import createMollieClient, {Payment} from '@mollie/api-client';
 
 export class WebhooksController {
   private debug = require('debug')('api:WebhooksController');
-  private redisClient = require('redis').createClient(
-    process.env.REDIS_PORT,
-    process.env.REDIS_HOST,
-    {
-      retry_strategy: function(options: {
-        error: {code: string};
-        total_retry_time: number;
-        attempt: number;
-      }) {
-        if (options.error && options.error.code === 'ECONNREFUSED') {
-          // End reconnecting on a specific error and flush all commands with
-          // a individual error
-          return new Error('The server refused the connection');
-        }
-        if (options.total_retry_time > 1000 * 60 * 60) {
-          // End reconnecting after a specific timeout and flush all commands
-          // with a individual error
-          return new Error('Retry time exhausted');
-        }
-        if (options.attempt > 10) {
-          // End reconnecting with built in error
-          return undefined;
-        }
-        // reconnect after
-        return Math.min(options.attempt * 100, 3000);
-      },
-    },
-  );
+  private mollieClient = createMollieClient({
+    apiKey: process.env.MOLLIE_API_KEY as string,
+  });
 
   constructor() {}
 
@@ -61,7 +37,56 @@ export class WebhooksController {
     },
   ): Promise<string> {
     this.debug(`${util.inspect(payload, false, null, true)}`);
-    this.debug(`Payment ${payload.id} received`);
+    this.debug(`Payment update ${payload.id} received`);
+
+    this.mollieClient.payments
+      .get(payload.id)
+      .then(async (payment: Payment) => {
+        this.debug(`Fetched payment details for ${payload.id}`);
+
+        // Update payment payload in customer record
+        await RedisUtil.redisGetAsync(
+          `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
+        ).then((custRecord: string) => {
+          const redisPaymentPayload = {
+            timestamp: moment().utc(),
+            controller: 'mollie',
+            method: 'checkout',
+            data: payment,
+          };
+
+          const redisCustomerUpdate = JSON.parse(custRecord);
+
+          let found = false;
+          redisCustomerUpdate.payments.forEach(
+            (custPayment: any, index: number) => {
+              if (payment.id === custPayment.data.id) {
+                redisCustomerUpdate.payments[index] = redisPaymentPayload;
+                found = true;
+              }
+            },
+            redisCustomerUpdate.payments,
+          );
+
+          if (!found) {
+            redisCustomerUpdate.payments.push(redisPaymentPayload);
+          }
+
+          RedisUtil.redisClient.set(
+            `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
+            JSON.stringify(redisCustomerUpdate),
+            (err: any, _reply: any) => {
+              if (err) {
+                this.debug(`Redis: ${err}`);
+              }
+            },
+          );
+        });
+      })
+      .catch(reason => {
+        this.debug(reason);
+        throw new HttpErrors.InternalServerError(reason);
+      });
 
     const redisPayload = {
       timestamp: moment().utc(),
@@ -69,19 +94,12 @@ export class WebhooksController {
       method: 'payments',
       data: payload,
     };
-    this.redisClient.set(
-      `hook-pay-${payload.id}`,
+    RedisUtil.redisClient.set(
+      `${RedisUtil.whPaymentsPrefix}-${payload.id}`,
       JSON.stringify(redisPayload),
       (err: any, _reply: any) => {
         if (err) {
           this.debug(`Redis: ${err}`);
-        } else {
-          this.redisClient.get(
-            `hook-pay-${payload.id}`,
-            (_err: any, reply: any) => {
-              this.debug(`Redis wrote: ${reply}`);
-            },
-          );
         }
       },
     );
@@ -121,19 +139,12 @@ export class WebhooksController {
       method: 'subscription',
       data: payload,
     };
-    this.redisClient.set(
-      `hook-sub-${payload.subscriptionId}`,
+    RedisUtil.redisClient.set(
+      `${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}`,
       JSON.stringify(redisPayload),
       (err: any, _reply: any) => {
         if (err) {
           this.debug(`Redis: ${err}`);
-        } else {
-          this.redisClient.get(
-            `hook-sub-${payload.subscriptionId}`,
-            (_err: any, reply: any) => {
-              this.debug(`Redis wrote: ${reply}`);
-            },
-          );
         }
       },
     );
