@@ -1,17 +1,17 @@
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/camelcase */
-import { get, param } from '@loopback/rest';
-import { RedisUtil } from '../utils/redis.util';
+import {get, param} from '@loopback/rest';
+import {RedisUtil} from '../utils/redis.util';
 import moment = require('moment');
-import { MollieController } from './mollie.controller';
-import { authenticate } from '@loopback/authentication';
-import { Payment, PaymentStatus, PaymentMethod } from '@mollie/api-client';
+import {MollieController} from './mollie.controller';
+import {authenticate} from '@loopback/authentication';
+import {Payment, PaymentStatus, PaymentMethod} from '@mollie/api-client';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
 
-  constructor() { }
+  constructor() {}
 
   @get('/dashboard/members', {
     responses: {
@@ -34,7 +34,6 @@ export class DashboardController {
           }
 
           const start = async () => {
-
             await this.asyncForEach(matchingKeys, async memberKey => {
               await this.redisGetTeamMember(
                 memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, ''),
@@ -43,7 +42,10 @@ export class DashboardController {
                 let paid = false;
                 if (memberObj.molliePayments) {
                   for (let i = 0; i < memberObj.molliePayments.length; i++) {
-                    paid = (memberObj.molliePayments[i].status === 'paid') ? true : paid;
+                    paid =
+                      memberObj.molliePayments[i].status === 'paid'
+                        ? true
+                        : paid;
                   }
                 }
 
@@ -52,8 +54,8 @@ export class DashboardController {
                 if (memberObj.discourseObj) {
                   discourse = {
                     username: memberObj.discourseObj.username,
-                    active: memberObj.discourseObj.active
-                  }
+                    active: memberObj.discourseObj.active,
+                  };
                 }
 
                 // Payment Details
@@ -69,8 +71,10 @@ export class DashboardController {
                     if (pymt.status === PaymentStatus.paid) {
                       userPaid = true;
                       let payerName = '';
-                      if (pymt.method === PaymentMethod.banktransfer
-                        || pymt.method === PaymentMethod.eps) {
+                      if (
+                        pymt.method === PaymentMethod.banktransfer ||
+                        pymt.method === PaymentMethod.eps
+                      ) {
                         payerName = pymt.details!['consumerName'];
                       } else if (pymt.method === PaymentMethod.creditcard) {
                         payerName = pymt.details!['cardHolder'];
@@ -81,22 +85,22 @@ export class DashboardController {
                         paidAt: pymt.paidAt,
                         amount: pymt.amount.value,
                         method: pymt.method,
-                        payerName
-                      }
-                    } else if (pymt.status === PaymentStatus.open
-                      || pymt.status === PaymentStatus.pending
-                      || pymt.status === PaymentStatus.expired) {
-
+                        payerName,
+                      };
+                    } else if (
+                      pymt.status === PaymentStatus.open ||
+                      pymt.status === PaymentStatus.pending ||
+                      pymt.status === PaymentStatus.expired
+                    ) {
                       payment = {
                         status: pymt.status,
                         createdAt: pymt.createdAt,
                         method: pymt.method,
-                      }
-
+                      };
                     } else {
                       payment = {
                         status: pymt.status,
-                      }
+                      };
                     }
                   });
                 }
@@ -110,17 +114,15 @@ export class DashboardController {
                 };
                 memberList.push(memberPayload);
               });
-
-
             });
             resolve(memberList);
           };
           start().then(
-            () => { },
-            () => { },
+            () => {},
+            () => {},
           );
 
-          await matchingKeys.forEach((memberKey: string) => { });
+          await matchingKeys.forEach((memberKey: string) => {});
         },
       );
     });
@@ -130,7 +132,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'email',
-        schema: { type: 'string' },
+        schema: {type: 'string'},
         in: 'query',
         required: true,
       },
@@ -165,7 +167,7 @@ export class DashboardController {
         description: 'List discourse members and populate Redis store',
         content: {
           'application/json': {
-            schema: { type: 'array' },
+            schema: {type: 'array'},
           },
         },
       },
@@ -231,7 +233,7 @@ export class DashboardController {
         description: 'List mollie members and populate Redis store',
         content: {
           'application/json': {
-            schema: { type: 'array' },
+            schema: {type: 'array'},
           },
         },
       },
@@ -273,7 +275,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'customerId',
-        schema: { type: 'string' },
+        schema: {type: 'string'},
         in: 'query',
         required: true,
       },
@@ -306,7 +308,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'customerId',
-        schema: { type: 'string' },
+        schema: {type: 'string'},
         in: 'query',
         required: true,
       },
