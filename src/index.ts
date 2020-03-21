@@ -1,5 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-floating-promises */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {MemberApiApplication} from './application';
 import {ApplicationConfig} from '@loopback/core';
 import {DashboardController} from './controllers/dashboard.controller';

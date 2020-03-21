@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/camelcase */
 import {get, param} from '@loopback/rest';
 import {RedisUtil} from '../utils/redis.util';
@@ -265,8 +266,6 @@ export class DashboardController {
         },
       );
     });
-
-    // return result;
 
     return null;
   }
