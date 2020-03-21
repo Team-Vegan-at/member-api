@@ -1,6 +1,6 @@
 {
   "name": "member-api",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Team Vegan.at Member API",
   "keywords": [
     "loopback-application",
@@ -83,6 +83,6 @@
     "eslint-plugin-eslint-plugin": "^2.1.0",
     "eslint-plugin-mocha": "^6.2.2",
     "source-map-support": "^0.5.16",
-    "typescript": "~3.7.3"
+    "typescript": "^3.8.3"
   }
 }

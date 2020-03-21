@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import {post, requestBody, HttpErrors} from '@loopback/rest';
 import util from 'util';
 import moment from 'moment';

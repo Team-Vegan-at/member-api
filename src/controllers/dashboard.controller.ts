@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/camelcase */
 import {get, param} from '@loopback/rest';
 import {RedisUtil} from '../utils/redis.util';
 import moment = require('moment');
 import {MollieController} from './mollie.controller';
 import {authenticate} from '@loopback/authentication';
+import {Payment, PaymentStatus, PaymentMethod} from '@mollie/api-client';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
@@ -37,24 +39,83 @@ export class DashboardController {
               await this.redisGetTeamMember(
                 memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, ''),
               ).then((memberObj: any) => {
-                let paid = 0;
+                // Payment Status
+                let paid = false;
                 if (memberObj.molliePayments) {
                   for (let i = 0; i < memberObj.molliePayments.length; i++) {
-                    if (memberObj.molliePayments[i].status === 'paid') {
-                      paid = memberObj.molliePayments[i].settlementAmount.value;
-                    }
+                    paid =
+                      memberObj.molliePayments[i].status === 'paid'
+                        ? true
+                        : paid;
                   }
+                }
+
+                // Discourse Details
+                let discourse = {};
+                if (memberObj.discourseObj) {
+                  discourse = {
+                    username: memberObj.discourseObj.username,
+                    active: memberObj.discourseObj.active,
+                  };
+                }
+
+                // Payment Details
+                let payment = {};
+                if (memberObj.molliePayments) {
+                  let userPaid = false;
+                  memberObj.molliePayments.forEach((pymt: Payment) => {
+                    // skip if we already processed a paid record
+                    if (userPaid) {
+                      return;
+                    }
+
+                    if (pymt.status === PaymentStatus.paid) {
+                      userPaid = true;
+                      let payerName = '';
+                      if (
+                        pymt.method === PaymentMethod.banktransfer ||
+                        pymt.method === PaymentMethod.eps
+                      ) {
+                        payerName = pymt.details!['consumerName'];
+                      } else if (pymt.method === PaymentMethod.creditcard) {
+                        payerName = pymt.details!['cardHolder'];
+                      }
+
+                      payment = {
+                        status: pymt.status,
+                        paidAt: pymt.paidAt,
+                        amount: pymt.amount.value,
+                        method: pymt.method,
+                        payerName,
+                      };
+                    } else if (
+                      pymt.status === PaymentStatus.open ||
+                      pymt.status === PaymentStatus.pending ||
+                      pymt.status === PaymentStatus.expired
+                    ) {
+                      payment = {
+                        status: pymt.status,
+                        createdAt: pymt.createdAt,
+                        method: pymt.method,
+                      };
+                    } else {
+                      payment = {
+                        status: pymt.status,
+                      };
+                    }
+                  });
                 }
 
                 const memberPayload = {
                   email: memberObj.email,
                   name: memberObj.name,
                   paid,
+                  discourse,
+                  payment,
                 };
                 memberList.push(memberPayload);
               });
             });
-            console.log('Done');
             resolve(memberList);
           };
           start().then(
@@ -205,8 +266,6 @@ export class DashboardController {
         },
       );
     });
-
-    // return result;
 
     return null;
   }
