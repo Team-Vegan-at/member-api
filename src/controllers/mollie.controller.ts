@@ -9,6 +9,7 @@ import {
 import {get, HttpErrors, param} from '@loopback/rest';
 import moment from 'moment';
 import {RedisUtil} from '../utils/redis.util';
+import {authenticate} from '@loopback/authentication';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
@@ -72,7 +73,7 @@ export class MollieController {
           payments: [],
         };
         RedisUtil.redisClient.set(
-          `mollie:customer:${customer.id}`,
+          `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
           JSON.stringify(redisCustomerPayload),
           (err: any, _reply: any) => {
             if (err) {
@@ -104,7 +105,7 @@ export class MollieController {
 
             // Add payment payload to customer record
             await RedisUtil.redisGetAsync(
-              `mollie:customer:${customer.id}`,
+              `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
             ).then((custRecord: string) => {
               const redisPaymentPayload = {
                 timestamp: moment().utc(),
@@ -118,7 +119,7 @@ export class MollieController {
               redisCustomerUpdate.payments.push(redisPaymentPayload);
 
               RedisUtil.redisClient.set(
-                `mollie:customer:${customer.id}`,
+                `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
                 JSON.stringify(redisCustomerUpdate),
                 (err: any, _reply: any) => {
                   if (err) {
@@ -144,85 +145,44 @@ export class MollieController {
     return checkoutUrl;
   }
 
-  // @post('/mollie/members', {
-  //   responses: {
-  //     '200': {},
-  //   },
-  // })
-  // private async createMemberSubscription(
-  //   @requestBody() payload: SignupPayload,
-  // ): Promise<any> {
-  //   this.debug(`/mollie/members`);
+  @get('/mollie/payments', {
+    parameters: [
+      {name: 'custId', schema: {type: 'string'}, in: 'query', required: true},
+    ],
+    responses: {
+      '200': {},
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  public async listCustomerPayments(
+    @param.query.string('custId') custId: string,
+  ): Promise<any[]> {
+    this.debug(`/mollie/payments`);
 
-  //   // TODO check if customer already exists
+    return this.mollieClient.customers_payments
+      .all({customerId: custId})
+      .then((payments: List<Payment>) => {
+        this.debug(`Fetched ${payments.count} payment(s) for ${custId}`);
+        const paymentsArray: Payment[] = [];
 
-  //   await this.mollieClient.customers
-  //     .create({
-  //       name: `${payload.firstname} ${payload.lastname}`,
-  //       email: payload.email,
-  //       locale: Locale.de_AT,
-  //       metadata: `{since:${moment().format()}}`,
-  //     })
-  //     .then(async (customer: Customer) => {
-  //       this.debug(`Customer ${customer.id} created`);
+        payments.forEach(payment => {
+          paymentsArray.push(payment);
+        });
 
-  //       await this.mollieClient.customers_mandates
-  //         .create({
-  //           customerId: customer.id,
-  //           method: MandateMethod.directdebit,
-  //           consumerName: payload.consumerName,
-  //           consumerAccount: payload.consumerAccount,
-  //           consumerBic: payload.consumerBic,
-  //           signatureDate: moment().format('YYYY-MM-DD'),
-  //           mandateReference: `TEAMVEGAN-${moment().format(
-  //             'YYYYMMDDHHmmssSS',
-  //           )}`,
-  //         })
-  //         .then(async (mandate: Mandate) => {
-  //           this.debug(
-  //             `Mandate ${mandate.id} for customer ${customer.id} created`,
-  //           );
-
-  //           await this.mollieClient.customers_subscriptions
-  //             .create({
-  //               customerId: customer.id,
-  //               mandateId: mandate.id,
-  //               amount: {
-  //                 currency: 'EUR',
-  //                 value: '30.00',
-  //               },
-  //               interval: '12 months',
-  //               description: 'Team Vegan.at Jahresmitgliedschaft',
-  //               webhookUrl: process.env.MOLLIE_WEBHOOK_SUBSCRIPTION,
-  //             })
-  //             .then((subscription: Subscription) => {
-  //               this.debug(
-  //                 `Subscription ${subscription.id} for ${customer.id} created`,
-  //               );
-
-  //               // TODO: send mail
-  //             })
-  //             .catch(reason => {
-  //               this.debug(reason);
-  //               throw new HttpErrors.InternalServerError(reason);
-  //             });
-  //         })
-  //         .catch(reason => {
-  //           this.debug(reason);
-  //           throw new HttpErrors.InternalServerError(reason);
-  //         });
-  //     })
-  //     .catch(reason => {
-  //       this.debug(reason);
-  //       throw new HttpErrors.InternalServerError(reason);
-  //     });
-  // }
+        return paymentsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        throw new HttpErrors.InternalServerError(reason);
+      });
+  }
 
   @get('/mollie/paymentstatus', {
     responses: {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async listCustomerPaymentStatus(): Promise<any[]> {
     this.debug(`/mollie/paymentstatus`);
 
@@ -261,63 +221,32 @@ export class MollieController {
       '200': {},
     },
   })
+  @authenticate('team-vegan-jwt')
   public async listCustomers(): Promise<Customer[]> {
     this.debug(`/mollie/customers`);
 
     const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .all({limit: 5})
+      .all({limit: 250})
       .then((customers: List<Customer>) => {
         this.debug(`#1 Fetched ${customers.count} customer entries`);
         customers.forEach(customer => {
           customerList.push(customer);
         });
-        // return customers.nextPage();
+        return customers.nextPage();
       })
-      // .then((customers: List<Customer>) => {
-      //   this.debug(`#2 Fetched ${customers.count} customer entries`);
-      //   customers.forEach(customer => {
-      //     customerList.push(customer);
-      //   });
-      // })
+      .then((customers: List<Customer>) => {
+        this.debug(`#2 Fetched ${customers.count} customer entries`);
+        customers.forEach(customer => {
+          customerList.push(customer);
+        });
+      })
       .catch(reason => {
         this.debug(reason);
         throw new HttpErrors.InternalServerError(reason);
       });
 
     return customerList;
-  }
-
-  @get('/redis/customer', {
-    parameters: [
-      {
-        name: 'customerId',
-        schema: {type: 'string'},
-        in: 'query',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  public async redisGetCustomer(
-    @param.query.string('customerId') customerId: string,
-  ): Promise<any> {
-    const custObj = await RedisUtil.redisGetAsync(
-      `mollie-customer-${customerId}`,
-    )
-      .then((reply: any) => {
-        this.debug(`Return ${reply}`);
-        return JSON.parse(reply);
-      })
-      .catch((err: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      });
-
-    return custObj;
   }
 }
