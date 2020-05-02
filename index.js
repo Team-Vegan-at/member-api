@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-floating-promises */
 const application = require('./dist');
 const debug = require('debug')('api:index');
 

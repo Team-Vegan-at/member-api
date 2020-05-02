@@ -1,28 +1,28 @@
 {
   "files": {
-    "main.css": "/static/css/main.38211b52.chunk.css",
-    "main.js": "/static/js/main.851e3c7e.chunk.js",
-    "main.js.map": "/static/js/main.851e3c7e.chunk.js.map",
-    "runtime-main.js": "/static/js/runtime-main.2a93c308.js",
-    "runtime-main.js.map": "/static/js/runtime-main.2a93c308.js.map",
-    "static/css/2.72d8dbd3.chunk.css": "/static/css/2.72d8dbd3.chunk.css",
-    "static/js/2.007779d9.chunk.js": "/static/js/2.007779d9.chunk.js",
-    "static/js/2.007779d9.chunk.js.map": "/static/js/2.007779d9.chunk.js.map",
-    "index.html": "/index.html",
-    "precache-manifest.38022721023e7e2e7744dfd48e96827a.js": "/precache-manifest.38022721023e7e2e7744dfd48e96827a.js",
-    "service-worker.js": "/service-worker.js",
-    "static/css/2.72d8dbd3.chunk.css.map": "/static/css/2.72d8dbd3.chunk.css.map",
-    "static/css/main.38211b52.chunk.css.map": "/static/css/main.38211b52.chunk.css.map",
-    "static/js/2.007779d9.chunk.js.LICENSE.txt": "/static/js/2.007779d9.chunk.js.LICENSE.txt",
-    "static/media/primereact.min.css": "/static/media/line.567f5738.gif",
-    "static/media/theme.css": "/static/media/open-sans-v15-latin-regular.cffb686d.woff2",
-    "static/media/primeicons.css": "/static/media/primeicons.e5e0e944.svg"
+    "main.css": "/public/dashboard/static/css/main.38211b52.chunk.css",
+    "main.js": "/public/dashboard/static/js/main.563e1a52.chunk.js",
+    "main.js.map": "/public/dashboard/static/js/main.563e1a52.chunk.js.map",
+    "runtime-main.js": "/public/dashboard/static/js/runtime-main.be0d402d.js",
+    "runtime-main.js.map": "/public/dashboard/static/js/runtime-main.be0d402d.js.map",
+    "static/css/2.6b3fdc00.chunk.css": "/public/dashboard/static/css/2.6b3fdc00.chunk.css",
+    "static/js/2.007779d9.chunk.js": "/public/dashboard/static/js/2.007779d9.chunk.js",
+    "static/js/2.007779d9.chunk.js.map": "/public/dashboard/static/js/2.007779d9.chunk.js.map",
+    "index.html": "/public/dashboard/index.html",
+    "precache-manifest.e10c49aff577484e1d657b12d2380699.js": "/public/dashboard/precache-manifest.e10c49aff577484e1d657b12d2380699.js",
+    "service-worker.js": "/public/dashboard/service-worker.js",
+    "static/css/2.6b3fdc00.chunk.css.map": "/public/dashboard/static/css/2.6b3fdc00.chunk.css.map",
+    "static/css/main.38211b52.chunk.css.map": "/public/dashboard/static/css/main.38211b52.chunk.css.map",
+    "static/js/2.007779d9.chunk.js.LICENSE.txt": "/public/dashboard/static/js/2.007779d9.chunk.js.LICENSE.txt",
+    "static/media/primereact.min.css": "/public/dashboard/static/media/line.567f5738.gif",
+    "static/media/theme.css": "/public/dashboard/static/media/open-sans-v15-latin-regular.cffb686d.woff2",
+    "static/media/primeicons.css": "/public/dashboard/static/media/primeicons.e5e0e944.svg"
   },
   "entrypoints": [
-    "static/js/runtime-main.2a93c308.js",
-    "static/css/2.72d8dbd3.chunk.css",
+    "static/js/runtime-main.be0d402d.js",
+    "static/css/2.6b3fdc00.chunk.css",
     "static/js/2.007779d9.chunk.js",
     "static/css/main.38211b52.chunk.css",
-    "static/js/main.851e3c7e.chunk.js"
+    "static/js/main.563e1a52.chunk.js"
   ]
 }
