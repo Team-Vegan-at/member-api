@@ -1,18 +1,17 @@
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/camelcase */
-import {get, param} from '@loopback/rest';
-import {RedisUtil} from '../utils/redis.util';
+import { get, param } from '@loopback/rest';
+import { RedisUtil } from '../utils/redis.util';
 import moment = require('moment');
-import {MollieController} from './mollie.controller';
-import {authenticate} from '@loopback/authentication';
-import {Payment, PaymentStatus, PaymentMethod} from '@mollie/api-client';
+import { MollieController } from './mollie.controller';
+import { authenticate } from '@loopback/authentication';
+import { Payment, PaymentStatus, PaymentMethod } from '@mollie/api-client';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
 
-  constructor() {}
+  constructor() { }
 
   @get('/dashboard/members', {
     responses: {
@@ -119,11 +118,11 @@ export class DashboardController {
             resolve(memberList);
           };
           start().then(
-            () => {},
-            () => {},
+            () => { },
+            () => { },
           );
 
-          await matchingKeys.forEach((memberKey: string) => {});
+          await matchingKeys.forEach((memberKey: string) => { });
         },
       );
     });
@@ -133,7 +132,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'email',
-        schema: {type: 'string'},
+        schema: { type: 'string' },
         in: 'query',
         required: true,
       },
@@ -168,7 +167,7 @@ export class DashboardController {
         description: 'List discourse members and populate Redis store',
         content: {
           'application/json': {
-            schema: {type: 'array'},
+            schema: { type: 'array' },
           },
         },
       },
@@ -234,7 +233,7 @@ export class DashboardController {
         description: 'List mollie members and populate Redis store',
         content: {
           'application/json': {
-            schema: {type: 'array'},
+            schema: { type: 'array' },
           },
         },
       },
@@ -274,7 +273,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'customerId',
-        schema: {type: 'string'},
+        schema: { type: 'string' },
         in: 'query',
         required: true,
       },
@@ -307,7 +306,7 @@ export class DashboardController {
     parameters: [
       {
         name: 'customerId',
-        schema: {type: 'string'},
+        schema: { type: 'string' },
         in: 'query',
         required: true,
       },
