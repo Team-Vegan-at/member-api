@@ -1,5 +1,0 @@
-AuthUserFile /home/node/app/public/dashboard/.htpasswd
-AuthGroupFile /dev/null
-AuthName "Team Vegan.at Member Dashboard"
-AuthType Basic
-require user admin
