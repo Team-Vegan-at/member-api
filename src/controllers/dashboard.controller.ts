@@ -53,8 +53,9 @@ export class DashboardController {
                 let discourse = {};
                 if (memberObj.discourseObj) {
                   discourse = {
+                    id: memberObj.discourseObj.id,
+                    suspended_at: memberObj.discourseObj.suspended_at,
                     username: memberObj.discourseObj.username,
-                    active: memberObj.discourseObj.active,
                   };
                 }
 
