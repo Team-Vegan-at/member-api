@@ -1,5 +1,5 @@
 # Check out https://hub.docker.com/_/node to select a new base image
-FROM node:12-slim as build-stage
+FROM node:10-slim as build-stage
 
 # Set to a non-root built-in user `node`
 USER node
@@ -28,7 +28,7 @@ COPY --chown=node . .
 RUN npm run build && \
   npm prune --production
 
-FROM node:12-alpine as run-stage
+FROM node:10-alpine as run-stage
 
 # Set to a non-root built-in user `node`
 USER node
