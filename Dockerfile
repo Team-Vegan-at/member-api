@@ -14,19 +14,19 @@ WORKDIR /home/node/app
 # where available (npm@5+)
 COPY --chown=node package*.json ./
 
-RUN npm install -g -s --no-progress yarn && \
-    yarn
+# RUN npm install -g -s --no-progress yarn && \
+#     yarn
 
-# RUN npm install
+RUN npm install
 
 # Bundle app source code
 COPY --chown=node . .
 
-RUN yarn run build && \
-    yarn cache clean
+# RUN yarn run build && \
+#     yarn cache clean
 
-# RUN npm run build && \
-#   npm prune --production
+RUN npm run build && \
+  npm prune --production
 
 FROM node:12-alpine as run-stage
 
