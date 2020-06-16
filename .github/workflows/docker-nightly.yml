@@ -9,6 +9,8 @@ on:
       - develop
 
 jobs:
+  runs-on: ubuntu-latest
+
   build:
     steps:
       - name: Build and push Docker images
