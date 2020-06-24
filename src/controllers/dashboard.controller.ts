@@ -8,6 +8,10 @@ import moment = require('moment');
 import {MollieController} from './mollie.controller';
 import {authenticate} from '@loopback/authentication';
 import {Payment, PaymentStatus, PaymentMethod} from '@mollie/api-client';
+import {
+  BankTransferDetails,
+  CreditCardDetails,
+} from '@mollie/api-client/dist/types/src/data/payments/data';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
@@ -77,9 +81,11 @@ export class DashboardController {
                         pymt.method === PaymentMethod.banktransfer ||
                         pymt.method === PaymentMethod.eps
                       ) {
-                        payerName = pymt.details!['consumerName'];
+                        payerName = (pymt.details as BankTransferDetails)
+                          .consumerName;
                       } else if (pymt.method === PaymentMethod.creditcard) {
-                        payerName = pymt.details!['cardHolder'];
+                        payerName = (pymt.details as CreditCardDetails)
+                          .cardHolder;
                       }
 
                       payment = {
