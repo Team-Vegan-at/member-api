@@ -1,13 +1,17 @@
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/camelcase */
+/* eslint-disable @typescript-eslint/no-floating-promises */
 import {get, param} from '@loopback/rest';
 import {RedisUtil} from '../utils/redis.util';
 import moment = require('moment');
 import {MollieController} from './mollie.controller';
 import {authenticate} from '@loopback/authentication';
 import {Payment, PaymentStatus, PaymentMethod} from '@mollie/api-client';
+import {
+  BankTransferDetails,
+  CreditCardDetails,
+} from '@mollie/api-client/dist/types/src/data/payments/data';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
@@ -54,8 +58,9 @@ export class DashboardController {
                 let discourse = {};
                 if (memberObj.discourseObj) {
                   discourse = {
+                    id: memberObj.discourseObj.id,
+                    suspended_at: memberObj.discourseObj.suspended_at,
                     username: memberObj.discourseObj.username,
-                    active: memberObj.discourseObj.active,
                   };
                 }
 
@@ -76,9 +81,11 @@ export class DashboardController {
                         pymt.method === PaymentMethod.banktransfer ||
                         pymt.method === PaymentMethod.eps
                       ) {
-                        payerName = pymt.details!['consumerName'];
+                        payerName = (pymt.details as BankTransferDetails)
+                          .consumerName;
                       } else if (pymt.method === PaymentMethod.creditcard) {
-                        payerName = pymt.details!['cardHolder'];
+                        payerName = (pymt.details as CreditCardDetails)
+                          .cardHolder;
                       }
 
                       payment = {

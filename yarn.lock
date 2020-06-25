@@ -518,10 +518,10 @@
     sinon "^8.1.1"
     supertest "^4.0.2"
 
-"@mollie/api-client@^3.0.0-beta.1":
-  version "3.1.0"
-  resolved "https://registry.yarnpkg.com/@mollie/api-client/-/api-client-3.1.0.tgz#c2981643837f4f93361ea4d1f837c6d6f3e4e6da"
-  integrity sha512-UPt1kqYs23N+eKNgiV2Cgz9+YLkq/ab6hrlkPBS6FjKkqJ/FbuuTFBwLheYEDAoA/HQAMIgcGWajtaz1zHBM0Q==
+"@mollie/api-client@^3.2.0":
+  version "3.2.0"
+  resolved "https://registry.yarnpkg.com/@mollie/api-client/-/api-client-3.2.0.tgz#b69dde6ec6418e2e436b9e9edea72f8351aa0d2d"
+  integrity sha512-FqGHBoxNghAqvkNoQvu8SHpOzgTi3oIAZxv47qUMyHv3iFxXnbwjUvYXXQ6nnX5fOM1Iv2ZQh9kKcnqZ6t8u0w==
   dependencies:
     axios "^0.19.0"
     lodash "^4.17.15"

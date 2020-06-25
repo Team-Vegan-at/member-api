@@ -57,9 +57,9 @@ export class MollieController {
         name: `${unescape(firstname)} ${unescape(lastname)}`,
         email: unescape(email),
         locale: Locale.de_AT,
-        metadata: JSON.stringify({
-          dob: dob,
-        }),
+        metadata: {
+          dob,
+        },
       })
       .then(async (customer: Customer) => {
         this.debug(`Customer ${customer.id} created`);
@@ -234,7 +234,7 @@ export class MollieController {
         customers.forEach(customer => {
           customerList.push(customer);
         });
-        return customers.nextPage();
+        return customers.nextPage!();
       })
       .then((customers: List<Customer>) => {
         this.debug(`#2 Fetched ${customers.count} customer entries`);
