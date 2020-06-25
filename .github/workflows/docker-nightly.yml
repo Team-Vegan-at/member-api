@@ -1,7 +1,7 @@
 name: Docker Build Nightly
 
 on:
-  pull_request:
+  push:
     branches:
       - develop
 
@@ -11,15 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        if: ${{github.ref }}
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0
-
-      - uses: actions/checkout@v2
-        if: ${{github.head_ref }}
-        with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Build and push Docker images
