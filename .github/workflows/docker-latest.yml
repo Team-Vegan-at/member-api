@@ -1,7 +1,7 @@
-name: Docker Build Nightly
+name: Docker Build Latest
 
 on:
-  pull_request:
+  push:
     branches:
       - master
 
@@ -11,15 +11,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-        if: ${{github.ref }}
         with:
           ref: ${{ github.ref }}
-          fetch-depth: 0
-
-      - uses: actions/checkout@v2
-        if: ${{github.head_ref }}
-        with:
-          ref: ${{ github.head_ref }}
           fetch-depth: 0
 
       - name: Build and push Docker images
@@ -28,6 +21,4 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: teamveganat/member-api
-          tag_with_ref: true
-          tag_with_sha: true
           tags: latest
