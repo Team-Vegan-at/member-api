@@ -6,10 +6,12 @@ import {
   Locale,
   Payment,
 } from '@mollie/api-client';
-import {get, HttpErrors, param} from '@loopback/rest';
+import {get, HttpErrors, param, RestBindings, Response} from '@loopback/rest';
 import moment from 'moment';
 import {RedisUtil} from '../utils/redis.util';
 import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
+import {DashboardController} from './dashboard.controller';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
@@ -18,6 +20,48 @@ export class MollieController {
   });
 
   constructor() {}
+
+  @get('/pay', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true},
+    ],
+    responses: {
+      '302': {
+        description: 'Mollie Checkout URL',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  async pay(
+    @param.query.string('email') email: string,
+    @inject(RestBindings.Http.RESPONSE) response: Response,
+  ): Promise<any> {
+    this.debug(`/pay`);
+
+    let checkoutUrl: string;
+
+    const dc = new DashboardController();
+    checkoutUrl = await dc
+      .redisGetTeamMember(email)
+      .then(async (custObj: any) => {
+        if (custObj?.mollieObj) {
+          return (checkoutUrl = await this.createMollieCheckoutUrl(
+            custObj.mollieObj,
+          ));
+        } else {
+          return (checkoutUrl = 'https://teamvegan.at');
+        }
+      })
+      .catch(() => {
+        return 'https://teamvegan.at';
+      });
+
+    response.redirect(checkoutUrl);
+  }
 
   @get('/mollie/checkout', {
     parameters: [
@@ -82,60 +126,7 @@ export class MollieController {
           },
         );
 
-        await this.mollieClient.payments
-          .create({
-            customerId: customer.id,
-            billingEmail: customer.email,
-            dueDate: moment()
-              .add(14, 'days')
-              .format('YYYY-MM-DD'),
-            amount: {
-              currency: 'EUR',
-              value: process.env.MOLLIE_PAYMENT_AMOUNT!,
-            },
-            description: `${
-              process.env.MOLLIE_PAYMENT_DESCRIPTION
-            } ${moment().year()}`,
-            locale: Locale.de_AT,
-            redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
-            webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
-          })
-          .then(async (payment: Payment) => {
-            this.debug(`Payment ${payment.id} for ${customer.id} created`);
-
-            // Add payment payload to customer record
-            await RedisUtil.redisGetAsync(
-              `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-            ).then((custRecord: string) => {
-              const redisPaymentPayload = {
-                timestamp: moment().utc(),
-                controller: 'mollie',
-                method: 'checkout',
-                data: payment,
-              };
-
-              const redisCustomerUpdate = JSON.parse(custRecord);
-
-              redisCustomerUpdate.payments.push(redisPaymentPayload);
-
-              RedisUtil.redisClient.set(
-                `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-                JSON.stringify(redisCustomerUpdate),
-                (err: any, _reply: any) => {
-                  if (err) {
-                    this.debug(`Redis: ${err}`);
-                  }
-                },
-              );
-            });
-
-            checkoutUrl = payment.getCheckoutUrl();
-            // TODO: send mail
-          })
-          .catch(reason => {
-            this.debug(reason);
-            throw new HttpErrors.InternalServerError(reason);
-          });
+        checkoutUrl = await this.createMollieCheckoutUrl(customer);
       })
       .catch(reason => {
         this.debug(reason);
@@ -143,6 +134,64 @@ export class MollieController {
       });
 
     return checkoutUrl;
+  }
+
+  private async createMollieCheckoutUrl(customer: any) {
+    let checkoutUrl: string;
+
+    return this.mollieClient.payments
+      .create({
+        customerId: customer.id,
+        billingEmail: customer.email,
+        dueDate: moment()
+          .add(14, 'days')
+          .format('YYYY-MM-DD'),
+        amount: {
+          currency: 'EUR',
+          value: process.env.MOLLIE_PAYMENT_AMOUNT!,
+        },
+        description: `${
+          process.env.MOLLIE_PAYMENT_DESCRIPTION
+        } ${moment().year()}`,
+        locale: Locale.de_AT,
+        redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
+        webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
+      })
+      .then(async (payment: Payment) => {
+        this.debug(`Payment ${payment.id} for ${customer.id} created`);
+        // Add payment payload to customer record
+        await RedisUtil.redisGetAsync(
+          `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
+        ).then((custRecord: string) => {
+          const redisPaymentPayload = {
+            timestamp: moment().utc(),
+            controller: 'mollie',
+            method: 'checkout',
+            data: payment,
+          };
+          let redisCustomerUpdate = JSON.parse(custRecord);
+          if (!redisCustomerUpdate.payments) {
+            redisCustomerUpdate = {...redisCustomerUpdate, ...{payments: []}};
+          }
+          redisCustomerUpdate.payments.push(redisPaymentPayload);
+          RedisUtil.redisClient.set(
+            `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
+            JSON.stringify(redisCustomerUpdate),
+            (err: any, _reply: any) => {
+              if (err) {
+                this.debug(`Redis: ${err}`);
+              }
+            },
+          );
+        });
+        checkoutUrl = payment.getCheckoutUrl()!;
+        // TODO: send mail
+        return checkoutUrl;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        throw new HttpErrors.InternalServerError(reason);
+      });
   }
 
   @get('/mollie/payments', {
