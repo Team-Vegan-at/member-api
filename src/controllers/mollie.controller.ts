@@ -162,7 +162,11 @@ export class MollieController {
         // Add payment payload to customer record
         await RedisUtil.redisGetAsync(
           `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-        ).then((custRecord: string) => {
+        ).then((custRecord: string | null) => {
+          if (!custRecord) {
+            this.debug(`Customer not found: ${customer.id}`);
+            throw new HttpErrors.InternalServerError(`Customer not found`);
+          }
           const redisPaymentPayload = {
             timestamp: moment().utc(),
             controller: 'mollie',
