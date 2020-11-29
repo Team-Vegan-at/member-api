@@ -152,7 +152,7 @@ export class MollieController {
         },
         description: `${
           process.env.MOLLIE_PAYMENT_DESCRIPTION
-        } ${moment().year()}`,
+        }`,
         locale: Locale.de_AT,
         redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
         webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
