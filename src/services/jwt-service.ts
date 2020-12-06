@@ -40,7 +40,7 @@ export class JWTService implements TokenService {
       const decodedToken = await verifyAsync(token, this.jwtSecret);
 
       const valid = await RedisUtil.redisGetAsync(token).then(
-        (token: string) => {
+        (token: string | null) => {
           if (!token) {
             this.debug(`x-api-otp ${token} not found in Redis`);
             return false;

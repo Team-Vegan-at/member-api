@@ -152,7 +152,7 @@ export class MollieController {
         },
         description: `${
           process.env.MOLLIE_PAYMENT_DESCRIPTION
-        } ${moment().year()}`,
+        }`,
         locale: Locale.de_AT,
         redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
         webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
@@ -162,7 +162,11 @@ export class MollieController {
         // Add payment payload to customer record
         await RedisUtil.redisGetAsync(
           `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-        ).then((custRecord: string) => {
+        ).then((custRecord: string | null) => {
+          if (!custRecord) {
+            this.debug(`Customer not found: ${customer.id}`);
+            throw new HttpErrors.InternalServerError(`Customer not found`);
+          }
           const redisPaymentPayload = {
             timestamp: moment().utc(),
             controller: 'mollie',
