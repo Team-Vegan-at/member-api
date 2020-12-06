@@ -21,17 +21,17 @@
               <label for="name">
                 Name
               </label>
-              <input id="name" name="name" placeholder="Jenny Rosen" required />
+              <input id="name" name="name" placeholder="Dein Name" required />
             </div>
             <div class="col">
               <label for="email">
-                Email Address
+                Email Addresse
               </label>
               <input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="jenny.rosen@example.com"
+                placeholder="hallo@teamvegan.at"
                 required
               />
             </div>
@@ -53,22 +53,23 @@
 
           <!-- Display mandate acceptance text. -->
           <div class="col" id="mandate-acceptance">
-            By providing your IBAN and confirming this payment, you are
-            authorizing Rocketship Inc. and Stripe, our payment service
-            provider, to send instructions to your bank to debit your account
-            and your bank to debit your account in accordance with those
-            instructions. You are entitled to a refund from your bank under the
-            terms and conditions of your agreement with your bank. A refund must
-            be claimed within 8 weeks starting from the date on which your
-            account was debited.
+            Hiermit ermächtige(n) ich/wir die Vegane Gesellschaft Österreich,
+            die anfallenden Beträge bis auf Weiteres von meinem/unserem Konto
+            mittels Lastschrift einzuziehen. Zugleich weise(n) ich/wir
+            mein/unser Kreditinstitut an,
+            die von der Vegane Gesellschaft Österreich auf mein/unser Konto
+            gezogenen Lastschriften einzulösen.
+            Innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum kann
+            die Erstattung des belasteten Betrages verlangt werden. Es
+            gelten dabei die mit unserem Kreditinstitut vereinbarten Bedingungen.
           </div>
 
           <button id="confirm-mandate">
             <div disabled class="spinner hidden" id="spinner"></div>
             <span id="button-text"
-              >Confirm mandate and initiate debit for
+              >Lastschrift für den Jahresmitgliedsbeitrag von
               <span id="order-amount"></span
-            ></span>
+            > bestätigen</span>
           </button>
         </form>
         <div class="sr-result hidden">
