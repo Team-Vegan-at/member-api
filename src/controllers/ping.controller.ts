@@ -1,5 +1,5 @@
 import {Request, RestBindings, get, ResponseObject} from '@loopback/rest';
-import {inject} from '@loopback/context';
+import {inject} from '@loopback/core';
 
 /**
  * OpenAPI response for ping()
@@ -31,22 +31,22 @@ const PING_RESPONSE: ResponseObject = {
  * A simple controller to bounce back http requests
  */
 export class PingController {
-  constructor(@inject(RestBindings.Http.REQUEST) private req: Request) {}
-
   // Map to `GET /ping`
   @get('/ping', {
     responses: {
       '200': PING_RESPONSE,
     },
   })
-  ping(): object {
+  ping(
+    @inject(RestBindings.Http.REQUEST) request: Request
+  ): object {
     const version = require('../../package.json').version;
     // Reply with a greeting, the current time, the url, and request headers
     return {
       greeting: `Up! API Version ${version}`,
       date: new Date(),
-      url: this.req.url,
-      headers: Object.assign({}, this.req.headers),
+      headers: { ...request.headers },
+      url: request.url
     };
   }
 }

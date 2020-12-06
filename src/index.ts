@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {MemberApiApplication} from './application';
 import {ApplicationConfig} from '@loopback/core';
-import {DashboardController} from './controllers/dashboard.controller';
 import moment from 'moment';
-import {RedisUtil} from './utils/redis.util';
+import {MemberApiApplication} from './application';
 import {MollieController} from './controllers';
+import {DashboardController} from './controllers/dashboard.controller';
+import {RedisUtil} from './utils/redis.util';
 
 export {MemberApiApplication};
 
@@ -37,6 +37,30 @@ export async function main(options: ApplicationConfig = {}) {
   await cronProcessMembers(debugCron);
 
   return app;
+}
+
+if (require.main === module) {
+  // Run the application
+  const config = {
+    rest: {
+      port: +(process.env.PORT ?? 3000),
+      host: process.env.HOST,
+      // The `gracePeriodForClose` provides a graceful close for http/https
+      // servers with keep-alive clients. The default value is `Infinity`
+      // (don't force-close). If you want to immediately destroy all sockets
+      // upon stop, set its value to `0`.
+      // See https://www.npmjs.com/package/stoppable
+      gracePeriodForClose: 5000, // 5 seconds
+      openApiSpec: {
+        // useful when used with OpenAPI-to-GraphQL to locate your application
+        setServersFromRequest: true,
+      },
+    },
+  };
+  main(config).catch(err => {
+    console.error('Cannot start the application.', err);
+    process.exit(1);
+  });
 }
 
 async function cronProcessMembers(debugCron: any) {
