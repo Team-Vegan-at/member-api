@@ -3,7 +3,7 @@ name: Docker Build Latest
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   vm-job:
