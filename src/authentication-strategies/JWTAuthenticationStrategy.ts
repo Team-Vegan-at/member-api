@@ -1,9 +1,9 @@
+import {AuthenticationStrategy, TokenService} from '@loopback/authentication';
 import {inject} from '@loopback/context';
 import {HttpErrors, Request} from '@loopback/rest';
-import {AuthenticationStrategy, TokenService} from '@loopback/authentication';
-import {UserProfile} from '@loopback/security';
-
+import {securityId, UserProfile} from '@loopback/security';
 import {TokenServiceBindings} from '../keys';
+
 
 export class JWTAuthenticationStrategy implements AuthenticationStrategy {
   name = 'team-vegan-jwt';
@@ -14,6 +14,18 @@ export class JWTAuthenticationStrategy implements AuthenticationStrategy {
   ) {}
 
   async authenticate(request: Request): Promise<UserProfile | undefined> {
+    if (process.env.NODE_ENV === 'development') {
+      const userProfile: UserProfile = Object.assign(
+        {[securityId]: '', name: ''},
+        {
+          [securityId]: "dev",
+          name: "dev",
+          id: "dev",
+          roles: "dev",
+        },
+      );
+      return userProfile;
+    }
     const token: string = this.extractCredentials(request);
     const userProfile: UserProfile = await this.tokenService.verifyToken(token);
     return userProfile;

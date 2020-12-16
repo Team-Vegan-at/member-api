@@ -1,6 +1,6 @@
-import {HttpErrors, Request} from '@loopback/rest';
 import {AuthenticationStrategy} from '@loopback/authentication';
-import {UserProfile, securityId} from '@loopback/security';
+import {HttpErrors, Request} from '@loopback/rest';
+import {securityId, UserProfile} from '@loopback/security';
 
 export class ApiKeyAuthenticationStrategy implements AuthenticationStrategy {
   name = 'team-vegan-api-key';
