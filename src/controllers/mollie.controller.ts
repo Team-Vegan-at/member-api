@@ -11,9 +11,10 @@ import {
   MandateMethod,
   Payment
 } from '@mollie/api-client';
-import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
+import {MandateData, MandateDetailsDirectDebit} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
 import moment from 'moment';
 import {MandatePayload} from '../models/mandate-payload.model';
+import {MandateResult} from '../models/mandate-return.model';
 import {RedisUtil} from '../utils/redis.util';
 import {DashboardController} from './dashboard.controller';
 
@@ -152,7 +153,64 @@ export class MollieController {
         })
         .catch((reason) => {
           this.debug(reason);
-          throw new HttpErrors.InternalServerError(reason);
+          reject(reason);
+        });
+      });
+  }
+
+  @get('/mollie/mandate', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'Mandate confirmation',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async getMandate(
+    @param.query.string('email') email: string
+  ): Promise<MandateResult | null> {
+    this.debug(`/mollie/mandate`);
+
+    return new Promise(async(resolve, reject) => {
+      const dc = new DashboardController();
+      await dc.redisGetTeamMember(email)
+        .then(async (custObj: any) => {
+          this.debug(`Fetch mandates for customer ${custObj.email}`);
+          const mandates = await this.mollieClient.customers_mandates.page(
+            { customerId: custObj.mollieObj.id }
+          );
+          this.debug(`Fetched ${mandates.length} mandates for customer ${custObj.email}`);
+
+          if (mandates.length > 0) {
+            this.debug(`Found mandate ${mandates[0].id} for customer ${custObj.email}`);
+
+            const mandateResult = new MandateResult();
+            const mandateDetails = mandates[0].details as MandateDetailsDirectDebit;
+
+            mandateResult.mandateReference = mandates[0].mandateReference;
+            mandateResult.signatureDate = mandates[0].signatureDate;
+            mandateResult.status = mandates[0].status;
+            mandateResult.method = mandates[0].method;
+            mandateResult.consumerAccount = mandateDetails.consumerAccount.replace(/\d(?=\d{4})/g, "*");
+            mandateResult.consumerBic = mandateDetails.consumerBic;
+            mandateResult.consumerName = mandateDetails.consumerName;
+
+            resolve(mandateResult);
+          } else {
+            resolve(null);
+          }
+        })
+        .catch((reason) => {
+          this.debug(reason);
+          reject(reason);
         });
       });
   }
