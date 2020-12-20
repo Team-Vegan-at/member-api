@@ -8,15 +8,15 @@ import {
   Customer,
   List,
   Locale,
-  MandateMethod,
   Payment
 } from '@mollie/api-client';
-import {MandateData, MandateDetailsDirectDebit} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
+import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
 import moment from 'moment';
 import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
 import {RedisUtil} from '../utils/redis.util';
 import {DashboardController} from './dashboard.controller';
+import {MollieMandate} from './mollie/mandate';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
@@ -66,153 +66,6 @@ export class MollieController {
       });
 
     response.redirect(checkoutUrl);
-  }
-
-  @post('/mollie/mandate', {
-    parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
-    ],
-    responses: {
-      '200': {
-        description: 'Mandate confirmation',
-        content: {
-          'application/json': {
-            schema: {type: 'string'},
-          },
-        },
-      },
-    },
-  })
-  @authenticate('team-vegan-jwt')
-  async createMandate(
-    @param.query.string('email') email: string,
-    @requestBody() payload: MandatePayload
-  ): Promise<MandateData | null> {
-    this.debug(`/mollie/mandate`);
-
-    return new Promise(async(resolve, reject) => {
-      const dc = new DashboardController();
-      await dc.redisGetTeamMember(email)
-        .then(async (custObj: any) => {
-          this.debug(`Fetch mandates for customer ${custObj.email}`);
-          const mandates = await this.mollieClient.customers_mandates.page(
-            { customerId: custObj.mollieObj.id }
-          );
-          this.debug(`Fetched ${mandates.length} mandates for customer ${custObj.email}`);
-
-          if (mandates.length > 0) {
-            const start = async () => {
-              await this.asyncForEach(mandates, async mandate => {
-                const status = await this.mollieClient.customers_mandates.delete(
-                  mandate.id,
-                  { customerId: custObj.mollieObj.id }
-                );
-                this.debug(`Revoked mandate ${mandate.id} for customer ${custObj.mollieObj.id}, status ${status}`);
-              });
-            };
-            start().then(
-              async () => {
-                await this.mollieClient.customers_mandates.create({
-                  customerId: custObj.mollieObj.id,
-                  method: MandateMethod.directdebit,
-                  consumerName: payload.name,
-                  consumerAccount: payload.account,
-                  consumerBic: payload.bic,
-                  signatureDate: payload.signDate,
-                  mandateReference: payload.mandateRef,
-                }).then((mandate) => {
-                  this.debug(`Created new mandate ${mandate.id} for customer ${custObj.email}`);
-                  resolve(mandate);
-                }).catch((reason) => {
-                  this.debug(`Error: ${reason}`);
-                  reject(reason);
-                });
-              },
-              (reason) => {
-                this.debug(reason);
-                throw new HttpErrors.InternalServerError(reason);
-              },
-            );
-          } else {
-            await this.mollieClient.customers_mandates.create({
-              customerId: custObj.mollieObj.id,
-              method: MandateMethod.directdebit,
-              consumerName: payload.name,
-              consumerAccount: payload.account,
-              consumerBic: payload.bic,
-              signatureDate: payload.signDate,
-              mandateReference: payload.mandateRef,
-            }).then((mandate) => {
-              this.debug(`Created new mandate ${mandate.id} for customer ${custObj.email}`);
-              resolve(mandate);
-            }).catch((reason) => {
-              this.debug(`Error: ${reason}`);
-              reject(reason);
-            });
-          }
-        })
-        .catch((reason) => {
-          this.debug(reason);
-          reject(reason);
-        });
-      });
-  }
-
-  @get('/mollie/mandate', {
-    parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
-    ],
-    responses: {
-      '200': {
-        description: 'Mandate confirmation',
-        content: {
-          'application/json': {
-            schema: {type: 'string'},
-          },
-        },
-      },
-    },
-  })
-  @authenticate('team-vegan-jwt')
-  async getMandate(
-    @param.query.string('email') email: string
-  ): Promise<MandateResult | null> {
-    this.debug(`/mollie/mandate`);
-
-    return new Promise(async(resolve, reject) => {
-      const dc = new DashboardController();
-      await dc.redisGetTeamMember(email)
-        .then(async (custObj: any) => {
-          this.debug(`Fetch mandates for customer ${custObj.email}`);
-          const mandates = await this.mollieClient.customers_mandates.page(
-            { customerId: custObj.mollieObj.id }
-          );
-          this.debug(`Fetched ${mandates.length} mandates for customer ${custObj.email}`);
-
-          if (mandates.length > 0) {
-            this.debug(`Found mandate ${mandates[0].id} for customer ${custObj.email}`);
-
-            const mandateResult = new MandateResult();
-            const mandateDetails = mandates[0].details as MandateDetailsDirectDebit;
-
-            mandateResult.mandateReference = mandates[0].mandateReference;
-            mandateResult.signatureDate = mandates[0].signatureDate;
-            mandateResult.status = mandates[0].status;
-            mandateResult.method = mandates[0].method;
-            mandateResult.consumerAccount = mandateDetails.consumerAccount.replace(/\d(?=\d{4})/g, "*");
-            mandateResult.consumerBic = mandateDetails.consumerBic;
-            mandateResult.consumerName = mandateDetails.consumerName;
-
-            resolve(mandateResult);
-          } else {
-            resolve(null);
-          }
-        })
-        .catch((reason) => {
-          this.debug(reason);
-          reject(reason);
-        });
-      });
   }
 
   @get('/mollie/checkout', {
@@ -287,6 +140,75 @@ export class MollieController {
 
     return checkoutUrl;
   }
+
+  @post('/mollie/mandate', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'Mandate confirmation',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async createMandate(
+    @param.query.string('email') email: string,
+    @requestBody() payload: MandatePayload
+  ): Promise<MandateData | null> {
+    this.debug(`/mollie/mandate`);
+
+    return new Promise(async(resolve, reject) => {
+      const mm = new MollieMandate();
+      mm.createMandate(email, payload)
+        .then((mandate: any) => {
+            return resolve(mandate);
+        })
+        .catch((reason: any) => {
+          return reject(reason);
+        });
+    });
+  }
+
+  @get('/mollie/mandate', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'Mandate confirmation',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async getMandate(
+    @param.query.string('email') email: string
+  ): Promise<MandateResult | null> {
+    this.debug(`/mollie/mandate`);
+
+    return new Promise(async(resolve, reject) => {
+      const mm = new MollieMandate();
+      mm.getMandate(email)
+        .then((mandate: any) => {
+            return resolve(mandate);
+        })
+        .catch((reason: any) => {
+          return reject(reason);
+        });
+    });
+  }
+
+  /******** PRIVATE FUNCTIONS *************/
 
   private async createMollieCheckoutUrl(customer: any) {
     let checkoutUrl: string;
