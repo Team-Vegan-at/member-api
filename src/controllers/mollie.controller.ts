@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
-import {get, HttpErrors, param, post, requestBody, Response, RestBindings} from '@loopback/rest';
+import {get, HttpErrors, param, Response, RestBindings} from '@loopback/rest';
 import {
   createMollieClient,
   Customer,
@@ -10,13 +10,9 @@ import {
   Locale,
   Payment
 } from '@mollie/api-client';
-import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
 import moment from 'moment';
-import {MandatePayload} from '../models/mandate-payload.model';
-import {MandateResult} from '../models/mandate-return.model';
 import {RedisUtil} from '../utils/redis.util';
 import {DashboardController} from './dashboard.controller';
-import {MollieMandate} from './mollie/mandate';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
@@ -139,65 +135,6 @@ export class MollieController {
       });
 
     return checkoutUrl;
-  }
-
-  @post('/mollie/mandate', {
-    parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
-    ],
-    responses: {
-      '200': {
-        description: 'Mandate confirmation',
-        content: {
-          'application/json': {
-            schema: {type: 'string'},
-          },
-        },
-      },
-    },
-  })
-  @authenticate('team-vegan-jwt')
-  async createMandate(
-    @param.query.string('email') email: string,
-    @requestBody() payload: MandatePayload
-  ): Promise<MandateData | null> {
-    this.debug(`/mollie/mandate`);
-
-    return new Promise((resolve, reject) => {
-      const mm = new MollieMandate();
-      mm.createMandate(email, payload)
-        .then((mandate: any) => resolve(mandate))
-        .catch((reason: any) => reject(reason));
-    });
-  }
-
-  @get('/mollie/mandate', {
-    parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
-    ],
-    responses: {
-      '200': {
-        description: 'Mandate confirmation',
-        content: {
-          'application/json': {
-            schema: {type: 'string'},
-          },
-        },
-      },
-    },
-  })
-  @authenticate('team-vegan-jwt')
-  async getMandate(
-    @param.query.string('email') email: string
-  ): Promise<MandateResult | null> {
-    this.debug(`/mollie/mandate`);
-
-    return new Promise((resolve, reject) => {
-      const mm = new MollieMandate();
-      mm.getMandate(email)
-        .then((mandate: any) => resolve(mandate))
-        .catch((reason: any) => reject(reason));
-    });
   }
 
   /******** PRIVATE FUNCTIONS *************/
@@ -367,14 +304,5 @@ export class MollieController {
       });
 
     return customerList;
-  }
-
-  private async asyncForEach(
-    array: string | any[],
-    callback: (arg0: any, arg1: number, arg2: any) => any,
-  ) {
-    for (let index = 0; index < array.length; index++) {
-      await callback(array[index], index, array);
-    }
   }
 }

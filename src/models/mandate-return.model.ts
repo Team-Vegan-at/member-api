@@ -10,6 +10,11 @@ export class MandateResult extends Model {
   @property({
     type: 'string',
   })
+  mandateId: string;
+
+  @property({
+    type: 'string',
+  })
   signatureDate: string;
 
   @property({

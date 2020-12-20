@@ -9,7 +9,7 @@ import {MandatePayload} from '../../models/mandate-payload.model';
 import {MandateResult} from '../../models/mandate-return.model';
 import {DashboardController} from '../dashboard.controller';
 
-export class MollieMandate {
+export class Mandate {
   private debug = require('debug')('api:MollieMandate');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
@@ -119,6 +119,7 @@ export class MollieMandate {
             const mandateDetails = mandates[0].details as MandateDetailsDirectDebit;
 
             mandateResult.mandateReference = mandates[0].mandateReference;
+            mandateResult.mandateId = mandates[0].id;
             mandateResult.signatureDate = mandates[0].signatureDate;
             mandateResult.status = mandates[0].status;
             mandateResult.method = mandates[0].method;
