@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-async-promise-executor */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import createMollieClient, {
@@ -35,13 +36,15 @@ export class MollieMandate {
 
             if (mandates.length > 0) {
               const start = async () => {
-                await this.asyncForEach(mandates, async mandate => {
-                  const status = await this.mollieClient.customers_mandates.delete(
-                    mandate.id,
-                    { customerId: custObj.mollieObj.id }
-                  );
-                  this.debug(`Revoked mandate ${mandate.id} for customer ${custObj.mollieObj.id}, status ${status}`);
-                });
+                await this.asyncForEach({
+                    array: mandates, callback: async (mandate) => {
+                      const status = await this.mollieClient.customers_mandates.delete(
+                        mandate.id,
+                        {customerId: custObj.mollieObj.id}
+                      );
+                      this.debug(`Revoked mandate ${mandate.id} for customer ${custObj.mollieObj.id}, status ${status}`);
+                    }
+                  });
               };
               start().then(
                 async () => {
@@ -136,8 +139,8 @@ export class MollieMandate {
   }
 
   private async asyncForEach(
-    array: string | any[],
-    callback: (arg0: any, arg1: number, arg2: any) => any,
+    {
+      array, callback}: {array: string | any[]; callback: (arg0: any, arg1: number, arg2: any) => any;},
   ) {
     for (let index = 0; index < array.length; index++) {
       await callback(array[index], index, array);

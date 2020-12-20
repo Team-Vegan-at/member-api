@@ -163,15 +163,11 @@ export class MollieController {
   ): Promise<MandateData | null> {
     this.debug(`/mollie/mandate`);
 
-    return new Promise(async(resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const mm = new MollieMandate();
       mm.createMandate(email, payload)
-        .then((mandate: any) => {
-            return resolve(mandate);
-        })
-        .catch((reason: any) => {
-          return reject(reason);
-        });
+        .then((mandate: any) => resolve(mandate))
+        .catch((reason: any) => reject(reason));
     });
   }
 
@@ -196,15 +192,11 @@ export class MollieController {
   ): Promise<MandateResult | null> {
     this.debug(`/mollie/mandate`);
 
-    return new Promise(async(resolve, reject) => {
+    return new Promise((resolve, reject) => {
       const mm = new MollieMandate();
       mm.getMandate(email)
-        .then((mandate: any) => {
-            return resolve(mandate);
-        })
-        .catch((reason: any) => {
-          return reject(reason);
-        });
+        .then((mandate: any) => resolve(mandate))
+        .catch((reason: any) => reject(reason));
     });
   }
 
