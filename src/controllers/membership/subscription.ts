@@ -8,7 +8,7 @@ import {DashboardController} from '../dashboard.controller';
 import {Mandate} from './mandate';
 
 export class Subscription {
-  private debug = require('debug')('api:MollieMandate');
+  private debug = require('debug')('api:membership:mandate');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
   });

@@ -7,6 +7,7 @@ import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscript
 import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
 import {Mandate} from './membership/mandate';
+import {Payment} from './membership/payment';
 import {Subscription} from './membership/subscription';
 
 export class MembershipController {
@@ -98,6 +99,35 @@ export class MembershipController {
       const ms = new Subscription();
       ms.createSubscription(email)
         .then((subscription: any) => resolve(subscription))
+        .catch((reason: any) => reject(reason));
+    });
+  }
+
+  @get('/membership/payments', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'Retrieve all users payments',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async getPayments(
+    @param.query.string('email') email: string
+  ): Promise<MandateResult | null> {
+    this.debug(`/membership/payments`);
+
+    return new Promise((resolve, reject) => {
+      const mp = new Payment();
+      mp.getPayments(email)
+        .then((payments: any) => resolve(payments))
         .catch((reason: any) => reject(reason));
     });
   }

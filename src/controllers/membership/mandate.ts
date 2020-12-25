@@ -10,7 +10,7 @@ import {MandateResult} from '../../models/mandate-return.model';
 import {DashboardController} from '../dashboard.controller';
 
 export class Mandate {
-  private debug = require('debug')('api:MollieMandate');
+  private debug = require('debug')('api:membership:mandate');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
