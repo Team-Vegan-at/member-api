@@ -14,13 +14,16 @@ WORKDIR /home/node/app
 # where available (npm@5+)
 COPY --chown=node package*.json ./
 
-RUN yarn install
-
 # Bundle app source code
 COPY --chown=node . .
 
+RUN yarn set version berry
+
+RUN yarn install
+
+
 RUN yarn run build && \
-    yarn cache clean
+  yarn cache clean
 
 FROM node:14-alpine as run-stage
 
