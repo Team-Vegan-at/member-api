@@ -4,6 +4,7 @@
 import createMollieClient, {SubscriptionStatus} from '@mollie/api-client';
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import {MandateResult} from '../../models/mandate-return.model';
+import {SubscriptionResult} from '../../models/subscription-return.model';
 import {DashboardController} from '../dashboard.controller';
 import {Mandate} from './mandate';
 
@@ -47,7 +48,7 @@ export class Subscription {
                 await this.asyncForEach({
                   // delete active subscriptions
                   array: subscriptions, callback: async (subscription: SubscriptionData) => {
-                    if (subscription.status == SubscriptionStatus.active) {
+                    if (subscription.status === SubscriptionStatus.active) {
                       const status = await this.mollieClient.customers_subscriptions.delete(
                         subscription.id,
                         {customerId: custObj.mollieObj.id}
@@ -109,49 +110,66 @@ export class Subscription {
         });
   }
 
-  // public async getSuscription(
-  //   email:string
-  // ) : Promise<SubscriptionData | null> {
+  public async getSubscriptions(
+    email:string
+  ) : Promise<SubscriptionResult | null> {
 
-  //   return new Promise(async(resolve, reject) => {
-  //     const dc = new DashboardController();
-  //     await dc.redisGetTeamMember(email)
-  //       .then(async (custObj: any) => {
-  //         if (custObj == null) {
-  //           return reject(`${email} not found`);
-  //         }
+    return new Promise(async(resolve, reject) => {
+      const dc = new DashboardController();
+      await dc.redisGetTeamMember(email)
+        .then(async (custObj: any) => {
+          if (custObj == null) {
+            return reject(`${email} not found`);
+          }
 
-  //         this.debug(`Fetch mandates for customer ${custObj.email}`);
-  //         const mandates = await this.mollieClient.customers_mandates.page(
-  //           { customerId: custObj.mollieObj.id }
-  //         );
-  //         this.debug(`Fetched ${mandates.length} mandates for customer ${custObj.email}`);
+          this.debug(`Fetch subscriptions for customer ${custObj.email}`);
+          const subscriptions = await this.mollieClient.customers_subscriptions.page(
+            { customerId: custObj.mollieObj.id }
+          );
+          this.debug(`Fetched ${subscriptions.length} subscriptions for customer ${custObj.email}`);
 
-  //         if (mandates.length > 0) {
-  //           this.debug(`Found mandate ${mandates[0].id} for customer ${custObj.email}`);
+          const mm = new Mandate();
+          const mandate: MandateResult | null = await mm.getMandate(email)
+            .then((mand: MandateResult | null) => mand)
+            .catch(() => null);
 
-  //           const mandateResult = new MandateResult();
-  //           const mandateDetails = mandates[0].details as MandateDetailsDirectDebit;
+            if (subscriptions.length > 0) {
+              const start = async () => {
+                await this.asyncForEach({
+                  // delete active subscriptions
+                  array: subscriptions, callback: async (subscription: SubscriptionData) => {
+                    if (subscription.status === SubscriptionStatus.active) {
+                      const subRes = new SubscriptionResult({
+                        id: subscription.id,
+                        createdAt: subscription.createdAt,
+                        nextPaymentDate: subscription.nextPaymentDate,
+                        amount: subscription.amount.value,
+                        mandateId: subscription.mandateId,
+                        mandateReference: mandate?.mandateReference,
+                        signatureDate: mandate?.signatureDate,
+                        consumerAccount: mandate?.consumerAccount.replace(/\d(?=\d{4})/g, "*"),
+                        consumerBic: mandate?.consumerBic,
+                        consumerName: mandate?.consumerName
+                      });
 
-  //           mandateResult.mandateReference = mandates[0].mandateReference;
-  //           mandateResult.signatureDate = mandates[0].signatureDate;
-  //           mandateResult.status = mandates[0].status;
-  //           mandateResult.method = mandates[0].method;
-  //           mandateResult.consumerAccount = mandateDetails.consumerAccount.replace(/\d(?=\d{4})/g, "*");
-  //           mandateResult.consumerBic = mandateDetails.consumerBic;
-  //           mandateResult.consumerName = mandateDetails.consumerName;
+                      return resolve(subRes);
+                    }
+                  }
+                });
+              };
+              start().then(
+                // return results
+              ).finally(() => {
+                return resolve(null);
+              });
+            } else {
+              //no active subscriptions found
+              return resolve(null);
+            }
+          });
+        });
+  }
 
-  //           return resolve(mandateResult);
-  //         } else {
-  //           return resolve(null);
-  //         }
-  //       })
-  //       .catch((reason) => {
-  //         this.debug(reason);
-  //         return reject(reason);
-  //       });
-  //     });
-  // }
 
   private async asyncForEach(
     {

@@ -6,6 +6,7 @@ import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mand
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
+import {SubscriptionResult} from '../models/subscription-return.model';
 import {Mandate} from './membership/mandate';
 import {Payment} from './membership/payment';
 import {Subscription} from './membership/subscription';
@@ -99,6 +100,35 @@ export class MembershipController {
       const ms = new Subscription();
       ms.createSubscription(email)
         .then((subscription: any) => resolve(subscription))
+        .catch((reason: any) => reject(reason));
+    });
+  }
+
+  @get('/membership/subscriptions', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'Retrieve all users subscriptions',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async getSubscriptions(
+    @param.query.string('email') email: string
+  ): Promise<SubscriptionResult | null> {
+    this.debug(`/membership/subscriptions`);
+
+    return new Promise((resolve, reject) => {
+      const ms = new Subscription();
+      ms.getSubscriptions(email)
+        .then((subscriptions: any) => resolve(subscriptions))
         .catch((reason: any) => reject(reason));
     });
   }
