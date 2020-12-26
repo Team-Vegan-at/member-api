@@ -1,23 +1,22 @@
+import {
+  AuthenticationComponent, registerAuthenticationStrategy
+} from '@loopback/authentication';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig, BindingKey} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
-import {
-  registerAuthenticationStrategy,
-  AuthenticationComponent,
-} from '@loopback/authentication';
+import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
-  RestExplorerComponent,
+  RestExplorerComponent
 } from '@loopback/rest-explorer';
-import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
+import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAuthenticationStrategy';
 import {JWTAuthenticationStrategy} from './authentication-strategies/JWTAuthenticationStrategy';
 import {TokenServiceBindings, TokenServiceConstants} from './keys';
+import {MyAuthenticationSequence} from './sequence';
 import {JWTService} from './services/jwt-service';
 import {SECURITY_SCHEME_SPEC} from './utils/security-spec';
-import {MyAuthenticationSequence} from './sequence';
-import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAuthenticationStrategy';
 
 /**
  * Information from package.json
@@ -63,6 +62,10 @@ export class MemberApiApplication extends BootMixin(
 
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
+
+    // Set up membership portal
+    this.static('/membership', path.join(__dirname, '../public/membership'));
+
 
     // Customize @loopback/rest-explorer configuration here
     this.bind(RestExplorerBindings.CONFIG).to({
