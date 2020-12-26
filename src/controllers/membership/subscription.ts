@@ -170,6 +170,56 @@ export class Subscription {
         });
   }
 
+  public async deleteSubscriptions(
+    email:string
+  ) : Promise<null> {
+
+      return new Promise(async(resolve, reject) => {
+        const dc = new DashboardController();
+        await dc.redisGetTeamMember(email)
+          .then(async (custObj: any) => {
+            if (custObj == null) {
+              return reject(`${email} not found`);
+            }
+
+            this.debug(`Fetch subscriptions for customer ${custObj.email}`);
+            const subscriptions = await this.mollieClient.customers_subscriptions.page(
+              { customerId: custObj.mollieObj.id }
+            );
+            this.debug(`Fetched ${subscriptions.length} subscriptions for customer ${custObj.email}`);
+
+            if (subscriptions.length > 0) {
+              const start = async () => {
+                await this.asyncForEach({
+                  // delete active subscriptions
+                  array: subscriptions, callback: async (subscription: SubscriptionData) => {
+                    if (subscription.status === SubscriptionStatus.active) {
+                      const status = await this.mollieClient.customers_subscriptions.delete(
+                        subscription.id,
+                        {customerId: custObj.mollieObj.id}
+                      );
+                      this.debug(`Cancelled ${subscription.id} for customer ${custObj.mollieObj.id}, status ${status}`);
+                    }
+                  }
+                });
+              };
+              start().then(
+                async () => {
+                  return resolve(null);
+                },
+                (reason) => {
+                  this.debug(reason);
+                  return reject(reason);
+                },
+              );
+            }
+          })
+          .catch((reason) => {
+            this.debug(reason);
+            return reject(reason);
+          });
+        });
+  }
 
   private async asyncForEach(
     {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
-import {get, param, post, requestBody} from '@loopback/rest';
+import {del, get, param, post, requestBody} from '@loopback/rest';
 import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import {MandatePayload} from '../models/mandate-payload.model';
@@ -129,6 +129,29 @@ export class MembershipController {
       const ms = new Subscription();
       ms.getSubscriptions(email)
         .then((subscriptions: any) => resolve(subscriptions))
+        .catch((reason: any) => reject(reason));
+    });
+  }
+
+  @del('/membership/subscriptions', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async cancelSubscriptions(
+    @param.query.string('email') email: string
+  ): Promise<null> {
+    this.debug(`/membership/subscriptions`);
+
+    return new Promise((resolve, reject) => {
+      const ms = new Subscription();
+      ms.deleteSubscriptions(email)
+        .then(() => resolve(null))
         .catch((reason: any) => reject(reason));
     });
   }

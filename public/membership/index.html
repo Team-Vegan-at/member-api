@@ -16,6 +16,8 @@
   <!-- Bootstrap Table -->
   <link href="https://unpkg.com/placeholder-loading/dist/css/placeholder-loading.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/bootstrap-table@1.18.1/dist/bootstrap-table.min.css">
+  <!-- Fontaweseom -->
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" integrity="sha384-wvfXpqpZZVQGK6TAh5PVlGOfQNHSoD2xbE+QkPxCAFlNEevoEH3Sl0sibVcOQVnN" crossorigin="anonymous">
 
   <title>Team Vegan.at Mitgliedschaft</title>
 </head>
@@ -36,6 +38,7 @@
         <th data-field="consumerName">Kontoinhaber</th>
         <th data-field="consumerAccount">Kontonummer</th>
         <th data-field="consumerBic">BLZ</th>
+        <th data-field="operate" data-formatter="operateFormatter" data-events="subscriptionEvents"></th>
       </tr>
     </thead>
   </table>
