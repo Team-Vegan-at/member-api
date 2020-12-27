@@ -35,16 +35,14 @@
     </div>
   </nav>
 
-  <div class="modal fade" data-backdrop="static" data-keyboard="false" id="loading" tabindex="-1"
-    aria-hidden="true">
+  <div class="modal fade" data-backdrop="static" data-keyboard="false" id="loading" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="spinner-border text-success" id="spinner" role="status">
       </div>
     </div>
   </div>
 
-  <div class="modal fade" id="onceoff-payment-modal" tabindex="-1"
-    aria-hidden="true">
+  <div class="modal fade" id="onceoff-payment-modal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
@@ -54,7 +52,8 @@
           </button>
         </div>
         <div class="modal-body">
-          Wir leiten dich zu unserem Zahlungsanbieter "Mollie" weiter, bei dem du mittels Banküberweisung, EPS oder Kreditkarte den Mitgliedsbeitrag begleichen kannst.
+          Wir leiten dich zu unserem Zahlungsanbieter "Mollie" weiter, bei dem du mittels Bank&uuml;berweisung, EPS oder
+          Kreditkarte den Mitgliedsbeitrag begleichen kannst.
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Abbrechen</button>
@@ -74,10 +73,11 @@
       </div>
 
       <div class="col">
-        <div class="row">
+        <div class="row d-none">
+          <!-- TODO -->
           <div class="col">
             <div class="alert alert-warning alert-dismissible fade show" role="alert">
-              Deine Mitgliedschaft endet mit 01. März 2021
+              Deine Mitgliedschaft endet mit 01. M&auml;rz 2021
               <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
@@ -85,64 +85,74 @@
           </div>
         </div>
 
-        <div class="row">
+        <div class="row mt-3">
           <div class="col">
-            <p>
-              <a class="btn btn-primary" data-toggle="collapse" href="#collapseSepaDD" role="button"
-                aria-expanded="false" aria-controls="collapseSepaDD">
-                Dauerauftrag erteilen
-              </a>
-              <a class="btn btn-secondary" id="onceoff-payment" role="button">
-                Einmalzahlung durchführen
-              </a>
-            </p>
+            <div class="jumbotron">
+              <h1 class="display-4">Hallo, [NAME]</h1>
+              <p class="lead">Deine Mitgliedschaft ist [g&uuml;ltig bis 31.02.2021 / abgelaufen]</p>
+              <hr class="my-4">
+              <p>Mit der Erteilung eines Dauerauftrags, ziehen wir automatisch mit Beginn eines
+                jeden Jahres den Mitgliedsbeitrag ein. Selbstverst&auml;ndlich kannst du den Dauerauftrag
+                jederzeit stornieren.<br />
+                Wenn du keinen Dauerauftrag erteilen m&ouml;chtest, kannst du gerne eine Einmalzahlung f&uuml;r das aktuelle
+                Jahr durchf&uuml;hren. </p>
+              <p>
+                <a class="btn btn-primary" data-toggle="collapse" href="#collapseSepaDD" role="button"
+                  aria-expanded="false" aria-controls="collapseSepaDD">
+                  Dauerauftrag erteilen
+                </a>
+                <a class="btn btn-secondary" id="onceoff-payment" role="button">
+                  Einmalzahlung durchf&uuml;hren
+                </a>
+              </p>
+              <div class="collapse" id="collapseSepaDD">
+                <div class="card card-body">
+                  <div class="form-row">
+                    <div class="form-group col">
+                      <label for="name">Name</label>
+                      <div class="input-group mb-2">
+                        <div class="input-group-prepend">
+                          <i class="fa fa-user input-group-text align-middle" aria-hidden="true"></i>
+                        </div>
+                        <input id="name" name="name" type="text" class="form-control" placeholder="Dein Name"
+                          required />
+                      </div>
+                    </div>
+                    <div class="form-group col">
+                      <label for="email">Email Addresse</label>
+                      <div class="input-group mb-2">
+                        <div class="input-group-prepend">
+                          <div class="input-group-text">@</div>
+                        </div>
+                        <input id="email" name="email" type="email" class="form-control"
+                          placeholder="hallo@teamvegan.at" required readonly />
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group col">
+                      <label for="iban-element">IBAN</label>
+                      <div class="input-group mb-2">
+                        <div class="input-group-prepend">
+                          <i class="fa fa-credit-card input-group-text align-middle" aria-hidden="true"></i>
+                        </div>
+                        <input id="iban" name="iban" type="text" class="form-control form-control-lg"
+                          placeholder="AT12 1234 5678 8888" required />
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-            <div class="collapse" id="collapseSepaDD">
-              <div class="card card-body">
-                <div class="form-row">
-                  <div class="form-group col">
-                    <label for="name">Name</label>
-                    <div class="input-group mb-2">
-                      <div class="input-group-prepend">
-                        <i class="fa fa-user input-group-text align-middle" aria-hidden="true"></i>
-                      </div>
-                      <input id="name" name="name" type="text" class="form-control" placeholder="Dein Name" required
-                        value="Gerhard Dinhof" />
-                    </div>
-                  </div>
-                  <div class="form-group col">
-                    <label for="email">Email Addresse</label>
-                    <div class="input-group mb-2">
-                      <div class="input-group-prepend">
-                        <div class="input-group-text">@</div>
-                      </div>
-                      <input id="email" name="email" type="email" class="form-control" placeholder="hallo@teamvegan.at"
-                        required readonly />
-                    </div>
-                  </div>
-                </div>
-                <div class="form-row">
-                  <div class="form-group col">
-                    <label for="iban-element">IBAN</label>
-                    <div class="input-group mb-2">
-                      <div class="input-group-prepend">
-                        <i class="fa fa-credit-card input-group-text align-middle" aria-hidden="true"></i>
-                      </div>
-                      <input id="iban" name="iban" type="text" class="form-control form-control-lg"
-                        placeholder="AT12 1234 5678 8888" required />
-                    </div>
-                  </div>
-                </div>
 
                 <!-- Display mandate acceptance text. -->
-                <div class="row">
+                <div class="row mb-3 mt-3">
                   <div class="col" id="mandate-acceptance">
-                    Hiermit ermächtige(n) ich/wir die Vegane Gesellschaft Österreich,
-                    die anfallenden Beträge bis auf Weiteres von meinem/unserem Konto
+                    Hiermit erm&auml;chtige(n) ich/wir die Vegane Gesellschaft &Ouml;sterreich,
+                    die anfallenden Betr&auml;ge bis auf Weiteres von meinem/unserem Konto
                     mittels Lastschrift einzuziehen. Zugleich weise(n) ich/wir
                     mein/unser Kreditinstitut an,
-                    die von der Vegane Gesellschaft Österreich auf mein/unser Konto
-                    gezogenen Lastschriften einzulösen.
+                    die von der Vegane Gesellschaft &Ouml;sterreich auf mein/unser Konto
+                    gezogenen Lastschriften einzul&ouml;sen.
                     Innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum kann
                     die Erstattung des belasteten Betrages verlangt werden. Es
                     gelten dabei die mit unserem Kreditinstitut vereinbarten Bedingungen.
@@ -151,15 +161,14 @@
 
                 <div class="row">
                   <button class="btn btn-success btn-lg btn-block" id="confirm-subscription">
-                    <!-- <span id="subscription-loading" class="spinner-border spinner-border-sm d-none" role="status"
-                      aria-hidden="true"></span> -->
-                    <span id="button-text">Lastschrift für den Jahresmitgliedsbeitrag von
-                      &euro; 30,-- bestätigen</span>
+                    <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag von
+                      &euro; 30,-- best&auml;tigen</span>
                   </button>
                 </div>
               </div>
             </div>
-            <div class="row">
+
+            <div class="row mb-3">
               <div class="col">
                 <!-- Active Subsriptions -->
                 <h4>Dauerauftrag</h4>
@@ -169,7 +178,7 @@
                   <thead>
                     <tr>
                       <th data-field="createdAt">Erstellt am</th>
-                      <th data-field="nextPaymentDate">Nächste Zahlung</th>
+                      <th data-field="nextPaymentDate">N&auml;chste Zahlung</th>
                       <th data-field="amount">Betrag</th>
                       <th data-field="mandateReference">SEPA Mandat</th>
                       <th data-field="consumerName">Kontoinhaber</th>
@@ -180,7 +189,8 @@
                 </table>
               </div>
             </div>
-            <div class="row">
+
+            <div class="row mb-3">
               <div class="col">
                 <!-- Previous Payments -->
                 <h4>Zahlungshistorie</h4>

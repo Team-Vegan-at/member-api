@@ -188,7 +188,7 @@ function createSepaDD(callback) {
 function operateFormatter(value, row, index) {
   return [
     '<a class="remove btn btn-danger" href="javascript:void(0)" title="Remove">',
-    'Dauerauftrag kündigen',
+    'Dauerauftrag k&uuml;ndigen',
     '</a>'
   ].join('')
 }
