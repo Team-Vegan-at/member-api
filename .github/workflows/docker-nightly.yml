@@ -34,9 +34,11 @@ jobs:
       - name: Replace Base URL
         uses: cschleiden/replace-tokens@v1
         with:
+          tokenPrefix: '{'
+          tokenSuffix: '}'
           files: '["**/constants.js"]'
         env:
-          BASEURL: https://api-qs.teamvegan.at/
+          BASEURL: 'https://api-qs.teamvegan.at/'
 
       - name: Build and push
         uses: docker/build-push-action@v2
