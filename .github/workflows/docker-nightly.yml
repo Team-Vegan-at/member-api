@@ -34,9 +34,9 @@ jobs:
       - name: Replace Base URL
         uses: bejoistic/str-replace@master
         with:
-          find: "http://localhost:3000"
+          find: "/http:\/\/localhost:3000/g"
           replace: ${{ secrets.QS_BASE_URL }}
-          include: "public/membership/functions.js"
+          include: "**/public/membership/functions.js"
 
       - name: Build and push
         uses: docker/build-push-action@v2
