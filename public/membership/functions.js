@@ -15,11 +15,6 @@ $('input[name="email"]').val(idHash);
 /*** FUNCTIONS ***/
 function fetchPayments(data) {
   let url = `${baseUrl}/membership/payments`;
-  let searchParams = new URLSearchParams(window.location.search)
-  if (!searchParams.has('user')) {
-    data.error('User not found');
-  }
-  let idHash = searchParams.get('user')
 
   $.ajax({
     url,
@@ -36,11 +31,6 @@ function fetchPayments(data) {
 
 function fetchSubscriptions(data) {
   let url = `${baseUrl}/membership/subscriptions`;
-  let searchParams = new URLSearchParams(window.location.search)
-  if (!searchParams.has('user')) {
-    data.error('User not found');
-  }
-  let idHash = searchParams.get('user')
 
   $.ajax({
     url,
@@ -63,11 +53,6 @@ function fetchSubscriptions(data) {
 
 function cancelSubscription(callback) {
   let url = `${baseUrl}/membership/subscriptions`;
-  let searchParams = new URLSearchParams(window.location.search)
-  if (!searchParams.has('user')) {
-    data.error('User not found');
-  }
-  let idHash = searchParams.get('user')
 
   $.ajax({
     url: `${url}?${$.param({
@@ -80,6 +65,28 @@ function cancelSubscription(callback) {
     }
   }).fail(function (reason) {
     console.error(reason.statusText);
+  });
+}
+
+function onceOffPayment(callback) {
+  let url = `${baseUrl}/membership/onceoffpayment`;
+  $.ajax({
+    url,
+    data: {
+      email: idHash
+    },
+    success: async function (checkoutURL) {
+      $('#loading-payment-link').toggleClass(['d-none', 'd-inline']);
+      $('#payment-link').toggleClass(['d-none', 'd-inline']);
+      $('#confirm-mollie-redirect').prop('disabled', false);
+
+      $('#confirm-mollie-redirect').on('click', function() {
+        window.location.replace(checkoutURL);
+      });
+    },
+    fail: function (reason) {
+      console.error(reason.responseText);
+    },
   });
 }
 
@@ -141,7 +148,11 @@ window.subscriptionEvents = {
   'click .remove': function (e, value, row, index) {
     // cancelSubscription().done(function() {
     //   $('#subscriptions-table').bootstrapTable('refresh');
+
+    $('#loading').modal('show');
+
     cancelSubscription(function() {
+      $('#loading').modal('hide');
       $('#subscriptions-table').bootstrapTable('refresh');
     });
     // }).fail(function() {
@@ -172,6 +183,16 @@ $('#confirm-subscription').on('click', function() {
 
   createSepaDD(function() {
     $('#loading').modal('hide');
+    $('#collapseSepaDD').collapse("hide");
+    $('#subscriptions-table').bootstrapTable('refresh');
+  });
+});
+
+$('#onceoff-payment').on('click', function() {
+  $('#onceoff-payment-modal').modal('show');
+
+  onceOffPayment(function() {
+    // no action
   });
 });
 

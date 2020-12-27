@@ -25,15 +25,35 @@
 
 <body>
 
-  <!-- Modal Loading -->
-  <!-- <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exampleModal">
-    Launch demo modal
-  </button> -->
-
   <div class="modal fade" data-backdrop="static" data-keyboard="false" id="loading" tabindex="-1"
-    aria-labelledby="exampleModalLabel" aria-hidden="true">
+    aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="spinner-border text-success" id="spinner" role="status">
+      </div>
+    </div>
+  </div>
+
+  <div class="modal fade" id="onceoff-payment-modal" tabindex="-1"
+    aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="staticBackdropLabel">Einmalzahlung</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          Wir leiten dich zu unserem Zahlungsanbieter "Mollie" weiter, bei dem du mittels Banküberweisung, EPS oder Kreditkarte den Mitgliedsbeitrag begleichen kannst.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Abbrechen</button>
+          <button type="button" class="btn btn-primary" id="confirm-mollie-redirect" disabled>
+            <span class='d-inline' id="loading-payment-link">
+              Bitte um einen Moment Geduld</span>
+            <span class='d-none' id="payment-link">Weiter zur Zahlung</span>
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -60,14 +80,13 @@
             <p>
               <a class="btn btn-primary" data-toggle="collapse" href="#collapseSepaDD" role="button"
                 aria-expanded="false" aria-controls="collapseSepaDD">
-                Dauerauftrag einrichten
+                Dauerauftrag erteilen
               </a>
-              <a class="btn btn-secondary" data-toggle="collapse" href="#collapsePayOnce" role="button"
-                aria-expanded="false" aria-controls="collapsePayOnce">
+              <a class="btn btn-secondary" id="onceoff-payment" role="button">
                 Einmalzahlung durchführen
               </a>
-
             </p>
+
             <div class="collapse" id="collapseSepaDD">
               <div class="card card-body">
                 <div class="form-row">
