@@ -32,11 +32,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Replace Base URL
-        uses: bejoistic/str-replace@master
+        uses: cschleiden/replace-tokens@v1
         with:
-          find: 'http:\/\/localhost:3000'
-          replace: ${{ secrets.QS_BASE_URL }}
-          include: 'public/'
+          files: '["**/constants.js"]'
+        env:
+          BASEURL: https://api-qs.teamvegan.at/
 
       - name: Build and push
         uses: docker/build-push-action@v2
