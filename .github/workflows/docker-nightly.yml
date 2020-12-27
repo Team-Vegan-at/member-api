@@ -40,6 +40,15 @@ jobs:
         env:
           BASEURL: 'https://api-qs.teamvegan.at/'
 
+      - uses: pCYSl5EDgo/cat@master
+        id: hello
+        with:
+          path: public/membership/js/constants.js
+
+      - run: echo $TEXT
+        env:
+          TEXT: ${{ steps.hello.outputs.text }}
+
       - name: Build and push
         uses: docker/build-push-action@v2
         with:
