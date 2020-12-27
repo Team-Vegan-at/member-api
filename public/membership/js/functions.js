@@ -1,4 +1,5 @@
 /*** INIT ***/
+const authUrl = baseUrl + '/auth/otp';
 let searchParams = new URLSearchParams(window.location.search);
 let idHash;
 if (!searchParams.has('user')) {
@@ -12,84 +13,117 @@ if (!searchParams.has('user')) {
 $('input[name="email"]').val(idHash);
 
 /*** FUNCTIONS ***/
+function fetchOTP(callback) {
+  $.ajax({
+    url: authUrl,
+    crossDomain: true,
+    headers: {
+      'x-api-key': apiKey
+    }
+  }).done(function (otp) {
+    callback(otp);
+  }).fail(function (reason) {
+    callback(reason.statusText);
+  });
+}
+
 function fetchPayments(data) {
   let url = `${baseUrl}/membership/payments`;
 
-  $.ajax({
-    url,
-    crossDomain: true,
-    data: {
-      email: idHash
-    }
-  }).done(function (payments) {
-    data.success(payments);
-  }).fail(function (reason) {
-    console.error(reason.statusText);
-    data.error(reason.statusText)
-  });
+  fetchOTP(function(otp) {
+    $.ajax({
+      url,
+      crossDomain: true,
+      data: {
+        email: idHash
+      },
+      headers: {
+        Authorization: `Bearer ${otp}`
+      }
+    }).done(function (payments) {
+      data.success(payments);
+    }).fail(function (reason) {
+      console.error(reason.statusText);
+      data.error(reason.statusText)
+    });
+  })
 }
 
 function fetchSubscriptions(data) {
   let url = `${baseUrl}/membership/subscriptions`;
 
-  $.ajax({
-    url,
-    crossDomain: true,
-    data: {
-      email: idHash
-    }
-  }).done(function (subscriptions) {
-    if (!subscriptions) {
-      data.error();
-    } else {
-      let subRes = [];
-      subRes.push(subscriptions)
-      data.success(subRes);
-    }
-  }).fail(function (reason) {
-    console.error(reason.statusText);
-    data.error(reason.statusText)
+  fetchOTP(function(otp) {
+    $.ajax({
+      url,
+      crossDomain: true,
+      data: {
+        email: idHash
+      },
+      headers: {
+        Authorization: `Bearer ${otp}`
+      }
+    }).done(function (subscriptions) {
+      if (!subscriptions) {
+        data.error();
+      } else {
+        let subRes = [];
+        subRes.push(subscriptions)
+        data.success(subRes);
+      }
+    }).fail(function (reason) {
+      console.error(reason.statusText);
+      data.error(reason.statusText)
+    });
   });
 }
 
 function cancelSubscription(callback) {
   let url = `${baseUrl}/membership/subscriptions`;
 
-  $.ajax({
-    url: `${url}?${$.param({
-        "email": idHash
-      })}`,
-    crossDomain: true,
-    method: "DELETE"
-  }).done(function () {
-    if (callback) {
-      callback();
-    }
-  }).fail(function (reason) {
-    console.error(reason.statusText);
+  fetchOTP(function(otp) {
+    $.ajax({
+      url: `${url}?${$.param({
+          "email": idHash
+        })}`,
+      crossDomain: true,
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${otp}`
+      }
+    }).done(function () {
+      if (callback) {
+        callback();
+      }
+    }).fail(function (reason) {
+      console.error(reason.statusText);
+    });
   });
 }
 
 function onceOffPayment(callback) {
   let url = `${baseUrl}/membership/onceoffpayment`;
-  $.ajax({
-    url,
-    crossDomain: true,
-    data: {
-      email: idHash
-    },
-    success: async function (checkoutURL) {
-      $('#loading-payment-link').toggleClass(['d-none', 'd-inline']);
-      $('#payment-link').toggleClass(['d-none', 'd-inline']);
-      $('#confirm-mollie-redirect').prop('disabled', false);
 
-      $('#confirm-mollie-redirect').on('click', function() {
-        window.location.replace(checkoutURL);
-      });
-    },
-    fail: function (reason) {
+  fetchOTP(function(otp) {
+    $.ajax({
+      url,
+      crossDomain: true,
+      data: {
+        email: idHash
+      },
+      headers: {
+        Authorization: `Bearer ${otp}`
+      }
+    }).done(async function (checkoutURL) {
+        $('#loading-payment-link').toggleClass(['d-none', 'd-inline']);
+        $('#payment-link').toggleClass(['d-none', 'd-inline']);
+        $('#confirm-mollie-redirect').prop('disabled', false);
+
+        $('#confirm-mollie-redirect').on('click', function() {
+          window.location.replace(checkoutURL);
+        });
+    }).fail(function (reason) {
       console.error(reason.responseText);
-    },
+    });
   });
 }
 
@@ -99,45 +133,55 @@ function createSepaDD(callback) {
   let formattedDate = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
 
   // Step 1: Create Mandate
-  $.ajax({
-    url: `${url}?${$.param({
-        "email": idHash
-      })}`,
-    crossDomain: true,
-    method: "POST",
-    contentType: "application/json",
-    data: JSON.stringify({
-      "name": $('input[name="name"]').val(),
-      "account": $('input[name="iban"]').val(),
-      "signDate": formattedDate,
-      "mandateRef": "TEAMVEGAN-" + Math.floor(100000 + Math.random() * 900000)
-    })
-  }).done(function () {
-    console.info("Mandate created successfully");
-    // Step 2: Create Subscription
-    url = `${baseUrl}/membership/subscription`;
+  fetchOTP(function(otp) {
     $.ajax({
       url: `${url}?${$.param({
           "email": idHash
         })}`,
       crossDomain: true,
       method: "POST",
-    }).done(function () {
-      console.info("Subscription created successfully");
-      if (callback) {
-        callback();
+      contentType: "application/json",
+      data: JSON.stringify({
+        "name": $('input[name="name"]').val(),
+        "account": $('input[name="iban"]').val(),
+        "signDate": formattedDate,
+        "mandateRef": "TEAMVEGAN-" + Math.floor(100000 + Math.random() * 900000)
+      }),
+      headers: {
+        Authorization: `Bearer ${otp}`
       }
+    }).done(function () {
+      console.info("Mandate created successfully");
+      // Step 2: Create Subscription
+      url = `${baseUrl}/membership/subscription`;
+      fetchOTP(function(otp) {
+        $.ajax({
+          url: `${url}?${$.param({
+              "email": idHash
+            })}`,
+          crossDomain: true,
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${otp}`
+          }
+        }).done(function () {
+          console.info("Subscription created successfully");
+          if (callback) {
+            callback();
+          }
+        }).fail(function (reason) {
+          console.error(reason.statusText);
+          if (callback) {
+            callback();
+          }
+        });
+      });
     }).fail(function (reason) {
       console.error(reason.statusText);
       if (callback) {
         callback();
       }
     });
-  }).fail(function (reason) {
-    console.error(reason.statusText);
-    if (callback) {
-      callback();
-    }
   });
 }
 

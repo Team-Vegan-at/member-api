@@ -38,7 +38,8 @@ jobs:
           tokenSuffix: '}'
           files: '["**/constants.js"]'
         env:
-          BASEURL: 'https://api-qs.teamvegan.at/'
+          BASEURL: ${{ secrets.QS_BASE_URL }}
+          APIKEY: ${{ secrets.QS_API_KEY }}
 
       - name: Build and push
         uses: docker/build-push-action@v2
