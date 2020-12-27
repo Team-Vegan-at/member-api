@@ -18,6 +18,7 @@ function fetchPayments(data) {
 
   $.ajax({
     url,
+    crossDomain: true,
     data: {
       email: idHash
     }
@@ -34,6 +35,7 @@ function fetchSubscriptions(data) {
 
   $.ajax({
     url,
+    crossDomain: true,
     data: {
       email: idHash
     }
@@ -58,6 +60,7 @@ function cancelSubscription(callback) {
     url: `${url}?${$.param({
         "email": idHash
       })}`,
+    crossDomain: true,
     method: "DELETE"
   }).done(function () {
     if (callback) {
@@ -72,6 +75,7 @@ function onceOffPayment(callback) {
   let url = `${baseUrl}/membership/onceoffpayment`;
   $.ajax({
     url,
+    crossDomain: true,
     data: {
       email: idHash
     },
@@ -100,6 +104,7 @@ function createSepaDD(callback) {
     url: `${url}?${$.param({
         "email": idHash
       })}`,
+    crossDomain: true,
     method: "POST",
     contentType: "application/json",
     data: JSON.stringify({
@@ -116,6 +121,7 @@ function createSepaDD(callback) {
       url: `${url}?${$.param({
           "email": idHash
         })}`,
+      crossDomain: true,
       method: "POST",
     }).done(function () {
       console.info("Subscription created successfully");
@@ -146,18 +152,12 @@ function operateFormatter(value, row, index) {
 
 window.subscriptionEvents = {
   'click .remove': function (e, value, row, index) {
-    // cancelSubscription().done(function() {
-    //   $('#subscriptions-table').bootstrapTable('refresh');
-
     $('#loading').modal('show');
 
     cancelSubscription(function() {
       $('#loading').modal('hide');
       $('#subscriptions-table').bootstrapTable('refresh');
     });
-    // }).fail(function() {
-    //   $('#subscriptions-table').bootstrapTable('refresh');
-    // });
   }
 }
 
