@@ -32,10 +32,11 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Replace Base URL
-        uses: bluwy/substitute-string-action@v1
+        uses: bejoistic/str-replace@master
         with:
-          _input-file: 'public/membership/functions.js'
-          'http://localhost:3000': ${{ secrets.QS_BASE_URL }}
+          find: "http://localhost:3000"
+          replace: ${{ secrets.QS_BASE_URL }}
+          include: "public/membership/functions.js"
 
       - name: Build and push
         uses: docker/build-push-action@v2
