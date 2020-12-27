@@ -32,10 +32,10 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Replace Base URL
-        uses: datamonsters/replace-action
+        uses: bluwy/substitute-string-action@v1
         with:
-          files: 'public/membership/functions.js'
-          replacements: '"http://localhost:3000"=${{ secrets.QS_BASE_URL }}'
+          _input-file: 'public/membership/functions.js'
+          'http://localhost:3000': ${{ secrets.QS_BASE_URL }}
 
       - name: Build and push
         uses: docker/build-push-action@v2
