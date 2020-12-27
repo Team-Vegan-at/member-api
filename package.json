@@ -34,7 +34,7 @@
     "openapi-spec": "node ./dist/openapi-spec",
     "rebuild": "yarn run clean && yarn run build",
     "prestart": "yarn run rebuild",
-    "start": "DEBUG=api:* node -r source-map-support/register .",
+    "start": "DEBUG='api:*' node -r source-map-support/register .",
     "prepublishOnly": "npm run test"
   },
   "repository": {
