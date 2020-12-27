@@ -10,6 +10,7 @@ import {SubscriptionResult} from '../models/subscription-return.model';
 import {Mandate} from './membership/mandate';
 import {Payment} from './membership/payment';
 import {Subscription} from './membership/subscription';
+import {MollieController} from './mollie.controller';
 
 export class MembershipController {
   private debug = require('debug')('api:MembershipController');
@@ -181,6 +182,35 @@ export class MembershipController {
       const mp = new Payment();
       mp.getPayments(email)
         .then((payments: any) => resolve(payments))
+        .catch((reason: any) => reject(reason));
+    });
+  }
+
+  @get('/membership/onceoffpayment', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'Generate Mollie Checkout link',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async getOnceoffpaymentLink(
+    @param.query.string('email') email: string
+  ): Promise<MandateResult | null> {
+    this.debug(`/membership/onceoffpayment`);
+
+    return new Promise((resolve, reject) => {
+      const mc = new MollieController();
+      mc.getCheckoutUrl(email)
+        .then((checkoutUrl: any) => resolve(checkoutUrl))
         .catch((reason: any) => reject(reason));
     });
   }

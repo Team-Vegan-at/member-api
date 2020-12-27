@@ -43,25 +43,28 @@ export class MollieController {
   ): Promise<any> {
     this.debug(`/pay`);
 
-    let checkoutUrl: string;
+    const checkoutUrl = await this.getCheckoutUrl(email);
 
+    response.redirect(checkoutUrl);
+  }
+
+  public async getCheckoutUrl(email: string) {
     const dc = new DashboardController();
-    checkoutUrl = await dc
+    const checkoutUrl = await dc
       .redisGetTeamMember(email)
       .then(async (custObj: any) => {
         if (custObj?.mollieObj) {
-          return (checkoutUrl = await this.createMollieCheckoutUrl(
-            custObj.mollieObj,
-          ));
+          return this.createMollieCheckoutUrl(
+            custObj.mollieObj
+          );
         } else {
-          return (checkoutUrl = 'https://teamvegan.at');
+          return 'https://teamvegan.at';
         }
       })
       .catch(() => {
         return 'https://teamvegan.at';
       });
-
-    response.redirect(checkoutUrl);
+    return checkoutUrl;
   }
 
   @get('/mollie/checkout', {
