@@ -4,11 +4,11 @@
 // This file is licensed under the MIT License.
 // License text available at https://opensource.org/licenses/MIT
 
+import {TokenService} from '@loopback/authentication';
 import {inject} from '@loopback/context';
 import {HttpErrors} from '@loopback/rest';
+import {securityId, UserProfile} from '@loopback/security';
 import {promisify} from 'util';
-import {TokenService} from '@loopback/authentication';
-import {UserProfile, securityId} from '@loopback/security';
 import {TokenServiceBindings} from '../keys';
 import {RedisUtil} from '../utils/redis.util';
 
@@ -20,9 +20,9 @@ export class JWTService implements TokenService {
   private debug = require('debug')('service:JWTService');
 
   constructor(
-    @inject(TokenServiceBindings.TOKEN_SECRET)
+    @inject(TokenServiceBindings.JWT_SECRET)
     private jwtSecret: string,
-    @inject(TokenServiceBindings.TOKEN_EXPIRES_IN)
+    @inject(TokenServiceBindings.JWT_EXPIRES_IN)
     private jwtExpiresIn: string,
   ) {}
 
@@ -40,14 +40,14 @@ export class JWTService implements TokenService {
       const decodedToken = await verifyAsync(token, this.jwtSecret);
 
       const valid = await RedisUtil.redisGetAsync(token).then(
-        (token: string | null) => {
-          if (!token) {
-            this.debug(`x-api-otp ${token} not found in Redis`);
+        (tok: string | null) => {
+          if (!tok) {
+            this.debug(`x-api-otp ${tok} not found in Redis`);
             return false;
           }
 
           // Invalidate token
-          RedisUtil.redisClient.del(token);
+          RedisUtil.redisClient.del(tok);
 
           return true;
         },

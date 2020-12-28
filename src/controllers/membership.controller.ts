@@ -6,9 +6,11 @@ import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mand
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
+import {ProfileResult} from '../models/profile-return.model';
 import {SubscriptionResult} from '../models/subscription-return.model';
 import {Mandate} from './membership/mandate';
 import {Payment} from './membership/payment';
+import {Profile} from './membership/profile';
 import {Subscription} from './membership/subscription';
 import {MollieController} from './mollie.controller';
 
@@ -215,12 +217,33 @@ export class MembershipController {
     });
   }
 
-  private async asyncForEach(
-    array: string | any[],
-    callback: (arg0: any, arg1: number, arg2: any) => any,
-  ) {
-    for (let index = 0; index < array.length; index++) {
-      await callback(array[index], index, array);
-    }
+  @get('/membership/profile', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+      // {name: 'acctok', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'User Profile',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  // @authenticate('team-vegan-jwt')
+  async getProfile(
+    @param.query.string('email') accessToken: string
+  ): Promise<ProfileResult | null> {
+    this.debug(`/membership/profile`);
+
+    return new Promise((resolve, reject) => {
+      const mp = new Profile();
+      mp.getProfile(accessToken)
+        .then((profile: any) => resolve(profile))
+        .catch((reason: any) => reject(reason));
+    });
   }
 }

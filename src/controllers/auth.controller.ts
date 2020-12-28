@@ -1,16 +1,16 @@
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
 import {get} from '@loopback/rest';
 import jwt from 'jsonwebtoken';
-import {RedisUtil} from '../utils/redis.util';
 import {TokenServiceBindings} from '../keys';
-import {inject} from '@loopback/core';
-import {authenticate} from '@loopback/authentication';
+import {RedisUtil} from '../utils/redis.util';
 
 export class AuthController {
   private debug = require('debug')('api:AuthController');
 
   // private signSecret = process.env.AUTH_JWT_SECRET!;
 
-  @inject(TokenServiceBindings.TOKEN_SECRET)
+  @inject(TokenServiceBindings.JWT_SECRET)
   private signSecret: string;
 
   constructor() {}
@@ -39,6 +39,21 @@ export class AuthController {
 
     // Store JWT Token in Redis
     RedisUtil.redisClient.set(token, token, 'EX', ttlInSec);
+
+    return token;
+  }
+
+  public generateAccessToken(email: string): string {
+    this.debug(`/auth/generateAccessToken`);
+
+    const ttlInSec = 21600; // 6 hours
+
+    // Generate Acess Token (short lived)
+    const secret = process.env.ACCESS_TOKEN_SECRET!;
+    const token = jwt.sign({}, secret, {expiresIn: `${ttlInSec}sec`});
+
+    // Store Access Token in Redis
+    RedisUtil.redisClient.set(token, email, 'EX', ttlInSec);
 
     return token;
   }
