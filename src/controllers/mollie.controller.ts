@@ -25,6 +25,7 @@ export class MollieController {
   @get('/pay', {
     parameters: [
       {name: 'email', schema: {type: 'string'}, in: 'query', required: true},
+      {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false},
     ],
     responses: {
       '302': {
@@ -39,23 +40,25 @@ export class MollieController {
   })
   async pay(
     @param.query.string('email') email: string,
+    @param.query.string('redirectUrl') redirectUrl: string,
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ): Promise<any> {
     this.debug(`/pay`);
 
-    const checkoutUrl = await this.getCheckoutUrl(email);
+    const checkoutUrl = await this.getCheckoutUrl(email, redirectUrl);
 
     response.redirect(checkoutUrl);
   }
 
-  public async getCheckoutUrl(email: string) {
+  public async getCheckoutUrl(email: string, redirectUrl?: string) {
     const dc = new DashboardController();
     const checkoutUrl = await dc
       .redisGetTeamMember(email)
       .then(async (custObj: any) => {
         if (custObj?.mollieObj) {
           return this.createMollieCheckoutUrl(
-            custObj.mollieObj
+            custObj.mollieObj,
+            redirectUrl
           );
         } else {
           return 'https://teamvegan.at';
@@ -142,7 +145,7 @@ export class MollieController {
 
   /******** PRIVATE FUNCTIONS *************/
 
-  private async createMollieCheckoutUrl(customer: any) {
+  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string) {
     let checkoutUrl: string;
 
     return this.mollieClient.payments
@@ -160,7 +163,7 @@ export class MollieController {
           process.env.MOLLIE_PAYMENT_DESCRIPTION
         }`,
         locale: Locale.de_AT,
-        redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
+        redirectUrl: redirectUrl ? redirectUrl : process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
         webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
       })
       .then(async (payment: Payment) => {

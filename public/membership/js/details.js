@@ -152,7 +152,8 @@ function onceOffPayment(callback) {
       url,
       crossDomain: true,
       data: {
-        email: idHash
+        email: idHash,
+        redirectUrl: window.location.href
       },
       headers: {
         Authorization: `Bearer ${otp}`
