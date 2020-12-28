@@ -106,15 +106,21 @@ function fetchSubscriptions(data) {
     }).done(function (subscriptions) {
       if (!subscriptions) {
         activeSubscription = false;
+        $('#subscriptions-table').addClass('d-none').removeClass('d-block');
+        $('#create-new-subscription-section').addClass('d-block').removeClass('d-none');
         data.error();
       } else {
         let subRes = [];
         subRes.push(subscriptions);
         activeSubscription = true;
+        $('#subscriptions-table').addClass('d-block').removeClass('d-none');
+        $('#create-new-subscription-section').addClass('d-none').removeClass('d-block');
         data.success(subRes);
       }
     }).fail(function (reason) {
       activeSubscription = false;
+      $('#subscriptions-table').addClass('d-none').removeClass('d-block');
+      $('#create-new-subscription-section').addClass('d-block').removeClass('d-none');
       console.error(reason.statusText);
       data.error(reason.statusText)
     });
@@ -271,7 +277,7 @@ $('#subscriptions-table').bootstrapTable({
 
 $('#payments-table').bootstrapTable({
   formatNoMatches: function () {
-    return 'Wir haben keine Zahlungen gefundenn';
+    return 'Wir haben keine Zahlungen gefunden';
   }
 });
 

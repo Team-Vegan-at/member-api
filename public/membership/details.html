@@ -74,8 +74,6 @@
 
   <div class="container-md">
     <div class="row">
-      <div class="col-2">
-      </div>
 
       <div class="col">
         <div class="row mt-3">
@@ -90,120 +88,134 @@
                 jederzeit stornieren.<br />
                 Wenn du keinen Dauerauftrag erteilen m&ouml;chtest, kannst du gerne eine Einmalzahlung f&uuml;r das
                 aktuelle
-                Jahr durchf&uuml;hren. </p>
+                Jahr durchf&uuml;hren:
+              </p>
               <p>
-                <a class="btn btn-primary" data-toggle="collapse" href="#collapseSepaDD" role="button"
+                <!-- <a class="btn btn-primary" data-toggle="collapse" href="#collapseSepaDD" role="button"
                   aria-expanded="false" aria-controls="collapseSepaDD">
                   Dauerauftrag erteilen
-                </a>
+                </a> -->
                 <a class="btn btn-secondary" id="onceoff-payment" role="button">
                   Einmalzahlung durchf&uuml;hren
                 </a>
               </p>
-              <div class="collapse" id="collapseSepaDD">
-                <div class="card card-body">
-                  <div class="form-row">
-                    <div class="form-group col">
-                      <label for="name">Name</label>
-                      <div class="input-group mb-2">
-                        <div class="input-group-prepend">
-                          <i class="fa fa-user input-group-text align-middle" aria-hidden="true"></i>
-                        </div>
-                        <input id="name" name="name" type="text" class="form-control form-control-lg"
-                          placeholder="Dein Name" required />
-                      </div>
-                    </div>
-                    <div class="form-group col d-none">
-                      <label for="email">Email Addresse</label>
-                      <div class="input-group mb-2">
-                        <div class="input-group-prepend">
-                          <div class="input-group-text">@</div>
-                        </div>
-                        <input id="email" name="email" type="email" class="form-control"
-                          placeholder="hallo@teamvegan.at" required readonly />
-                      </div>
-                    </div>
-                  </div>
-                  <div class="form-row">
-                    <div class="form-group col">
-                      <label for="iban-element">IBAN</label>
-                      <div class="input-group mb-2">
-                        <div class="input-group-prepend">
-                          <i class="fa fa-credit-card input-group-text align-middle" aria-hidden="true"></i>
-                        </div>
-                        <input id="iban" name="iban" type="text" class="form-control form-control-lg"
-                          placeholder="AT12 1234 5678 8888" required />
-                        <span id="iban-invalid-feedback" class="invalid-feedback d-none">Diese IBAN Kontonummer ist
-                          ungültig</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <!-- <div class="collapse" id="collapseSepaDD">
 
-
-                <!-- Display mandate acceptance text. -->
-                <div class="row mb-3 mt-3">
-                  <div class="col" id="mandate-acceptance">
-                    Hiermit erm&auml;chtige(n) ich/wir die Vegane Gesellschaft &Ouml;sterreich,
-                    die anfallenden Betr&auml;ge bis auf Weiteres von meinem/unserem Konto
-                    mittels Lastschrift einzuziehen. Zugleich weise(n) ich/wir
-                    mein/unser Kreditinstitut an,
-                    die von der Vegane Gesellschaft &Ouml;sterreich auf mein/unser Konto
-                    gezogenen Lastschriften einzul&ouml;sen.
-                    Innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum kann
-                    die Erstattung des belasteten Betrages verlangt werden. Es
-                    gelten dabei die mit unserem Kreditinstitut vereinbarten Bedingungen.
-                  </div>
-                </div>
-
-                <div class="row">
-                  <button class="btn btn-success btn-lg btn-block" id="confirm-subscription" disabled>
-                    <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag von
-                      &euro; 30,-- best&auml;tigen</span>
-                  </button>
-                </div>
-              </div>
+              </div> -->
             </div>
 
             <div class="row mb-3">
               <div class="col">
                 <!-- Active Subsriptions -->
-                <h4>Dauerauftrag</h4>
+                <div class="card bg-light mb-3">
+                  <div class="card-header">Dauerauftrag</div>
+                  <div class="card-body">
+                    <table id="subscriptions-table" data-toggle="table" data-ajax="fetchSubscriptions"
+                      data-locale="de-DE" data-loading-template="loadingTemplate" data-card-view="false"
+                      data-classes="table w-100">
+                      <thead>
+                        <tr>
+                          <th data-field="createdAt" data-formatter="dateFormatter">Erstellt am</th>
+                          <th data-field="nextPaymentDate">N&auml;chste Zahlung</th>
+                          <th data-field="amount">Betrag</th>
+                          <th data-field="mandateReference">SEPA Mandat</th>
+                          <th data-field="consumerName">Kontoinhaber</th>
+                          <th data-field="consumerAccount">Kontonummer</th>
+                          <th data-field="operate" data-formatter="operateFormatter" data-events="subscriptionEvents">
+                          </th>
+                        </tr>
+                      </thead>
+                    </table>
 
-                <table id="subscriptions-table" data-toggle="table" data-ajax="fetchSubscriptions" data-locale="de-DE"
-                  data-loading-template="loadingTemplate" data-card-view="true">
-                  <thead>
-                    <tr>
-                      <th data-field="createdAt" data-formatter="dateFormatter">Erstellt am</th>
-                      <th data-field="nextPaymentDate">N&auml;chste Zahlung</th>
-                      <th data-field="amount">Betrag</th>
-                      <th data-field="mandateReference">SEPA Mandat</th>
-                      <th data-field="consumerName">Kontoinhaber</th>
-                      <th data-field="consumerAccount">Kontonummer</th>
-                      <th data-field="operate" data-formatter="operateFormatter" data-events="subscriptionEvents"></th>
-                    </tr>
-                  </thead>
-                </table>
+                    <div id="create-new-subscription-section" class="d-none">
+                      <div class="form-row">
+                        <div class="form-group col">
+                          <label for="name">Name</label>
+                          <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                              <i class="fa fa-user input-group-text align-middle" aria-hidden="true"></i>
+                            </div>
+                            <input id="name" name="name" type="text" class="form-control form-control-lg"
+                              placeholder="Dein Name" required />
+                          </div>
+                        </div>
+                        <div class="form-group col d-none">
+                          <label for="email">Email Addresse</label>
+                          <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                              <div class="input-group-text">@</div>
+                            </div>
+                            <input id="email" name="email" type="email" class="form-control"
+                              placeholder="hallo@teamvegan.at" required readonly />
+                          </div>
+                        </div>
+                      </div>
+                      <div class="form-row">
+                        <div class="form-group col">
+                          <label for="iban-element">IBAN</label>
+                          <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                              <i class="fa fa-credit-card input-group-text align-middle" aria-hidden="true"></i>
+                            </div>
+                            <input id="iban" name="iban" type="text" class="form-control form-control-lg"
+                              placeholder="AT12 1234 5678 8888" required />
+                            <span id="iban-invalid-feedback" class="invalid-feedback d-none">Diese IBAN Kontonummer
+                              ist
+                              ungültig</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="row mb-3 mt-3">
+                        <div class="col" id="mandate-acceptance">
+                          Hiermit erm&auml;chtige(n) ich/wir die Vegane Gesellschaft &Ouml;sterreich,
+                          die anfallenden Betr&auml;ge bis auf Weiteres von meinem/unserem Konto
+                          mittels Lastschrift einzuziehen. Zugleich weise(n) ich/wir
+                          mein/unser Kreditinstitut an,
+                          die von der Vegane Gesellschaft &Ouml;sterreich auf mein/unser Konto
+                          gezogenen Lastschriften einzul&ouml;sen.
+                          Innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum kann
+                          die Erstattung des belasteten Betrages verlangt werden. Es
+                          gelten dabei die mit unserem Kreditinstitut vereinbarten Bedingungen.
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <button class="btn btn-success btn-lg btn-block" id="confirm-subscription" disabled>
+                          <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag von
+                            &euro; 30,-- best&auml;tigen</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
               </div>
             </div>
 
             <div class="row mb-3">
               <div class="col">
-                <!-- Previous Payments -->
-                <h4>Zahlungshistorie</h4>
-                <table id="payments-table" data-toggle="table" data-ajax="fetchPayments" data-sort-name="paidAt"
-                  data-sort-order="desc" data-locale="de-DE" data-loading-template="loadingTemplate">
-                  <thead>
-                    <tr>
-                      <th data-field="paidAt" data-formatter="dateFormatter">Datum</th>
-                      <th data-field="status" data-formatter="statusFormatter">Status</th>
-                      <th data-field="amount" data-formatter="priceFormatter">Betrag</th>
-                      <th data-field="description">Beschreibung</th>
-                      <th data-field="method" data-formatter="methodFormatter">Bezahlart</th>
-                    </tr>
-                  </thead>
-                </table>
+                <div class="card bg-light mb-3">
+                  <div class="card-header">Zahlungen</div>
+                  <div class="card-body">
 
+                    <!-- Previous Payments -->
+                    <table id="payments-table" data-toggle="table" data-ajax="fetchPayments" data-sort-name="paidAt"
+                      data-sort-order="desc" data-locale="de-DE" data-loading-template="loadingTemplate"
+                      data-classes="table w-100">
+                      <thead>
+                        <tr>
+                          <th data-field="paidAt" data-formatter="dateFormatter">Datum</th>
+                          <th data-field="status" data-formatter="statusFormatter">Status</th>
+                          <th data-field="amount" data-formatter="priceFormatter">Betrag</th>
+                          <th data-field="description">Beschreibung</th>
+                          <th data-field="method" data-formatter="methodFormatter">Bezahlart</th>
+                        </tr>
+                      </thead>
+                    </table>
+
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -211,8 +223,6 @@
 
       </div>
 
-      <div class="col-2">
-      </div>
     </div>
 
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"
