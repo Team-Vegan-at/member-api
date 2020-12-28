@@ -3,6 +3,7 @@ const authUrl = baseUrl + '/auth/otp';
 let searchParams = new URLSearchParams(window.location.search);
 let idHash;
 let email;
+let activeSubscription = false;
 
 if (!searchParams.has('user')) {
   console.error('User not found');
@@ -17,7 +18,7 @@ fetchProfile(function(profile) {
   $('#profileName').text(profile.name);
 
   if (profile.membershipValid) {
-    $('#membershipValid').text(`gültig bis ${profile.membershipValidTo}`);
+    $('#membershipValid').text(`gültig bis ${dateFormatter(profile.membershipValidTo)}`);
   } else {
     $('#membershipNotValid').text('leider abgelaufen');
   }
@@ -104,13 +105,16 @@ function fetchSubscriptions(data) {
       }
     }).done(function (subscriptions) {
       if (!subscriptions) {
+        activeSubscription = false;
         data.error();
       } else {
         let subRes = [];
-        subRes.push(subscriptions)
+        subRes.push(subscriptions);
+        activeSubscription = true;
         data.success(subRes);
       }
     }).fail(function (reason) {
+      activeSubscription = false;
       console.error(reason.statusText);
       data.error(reason.statusText)
     });
@@ -154,6 +158,14 @@ function onceOffPayment(callback) {
         Authorization: `Bearer ${otp}`
       }
     }).done(async function (checkoutURL) {
+      if (activeSubscription) {
+        $('#onceoff-payment-warning').addClass('d-inline').removeClass('d-none');
+        $('#onceoff-payment-text').addClass('d-none').removeClass('d-inline');
+        $('#confirm-mollie-redirect').prop('disabled', true);
+      } else {
+        $('#onceoff-payment-warning').addClass('d-none').removeClass('d-inline');
+        $('#onceoff-payment-text').addClass('d-inline').removeClass('d-none');
+
         $('#loading-payment-link').toggleClass(['d-none', 'd-inline']);
         $('#payment-link').toggleClass(['d-none', 'd-inline']);
         $('#confirm-mollie-redirect').prop('disabled', false);
@@ -161,6 +173,7 @@ function onceOffPayment(callback) {
         $('#confirm-mollie-redirect').on('click', function() {
           window.location.replace(checkoutURL);
         });
+      }
     }).fail(function (reason) {
       console.error(reason.responseText);
     });
@@ -279,3 +292,41 @@ $('#onceoff-payment').on('click', function() {
   });
 });
 
+/** FORMATTERS */
+function dateFormatter(value) {
+  if (!value) {
+    return '-';
+  }
+  return value.substring(0, 10);
+}
+
+function priceFormatter(value) {
+  if (!value) {
+    return '-';
+  }
+  return `&euro; ${value.substring(0, 2)},-`;
+}
+
+function methodFormatter(value) {
+  if (value === "creditcard") {
+    return "Kreditkarte";
+  } else if (value === "eps") {
+    return "EPS";
+  } else if (value === "directdebit") {
+    return "Dauerauftrag";
+  } else if (value === "banktransfer") {
+    return "&Uuml;berweisung";
+  } else {
+    return value;
+  }
+}
+
+function statusFormatter(value) {
+  if (value === "paid") {
+    return "Bezahlt";
+  } else if (value === "pending") {
+    return "In Bearbeitung";
+  } else {
+    return value;
+  }
+}

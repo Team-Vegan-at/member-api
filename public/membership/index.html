@@ -52,8 +52,11 @@
           </button>
         </div>
         <div class="modal-body">
-          Wir leiten dich zu unserem Zahlungsanbieter "Mollie" weiter, bei dem du mittels Bank&uuml;berweisung, EPS oder
-          Kreditkarte den Mitgliedsbeitrag begleichen kannst.
+          <h6 id="onceoff-payment-warning" class="text-warning d-none">Du hast bereits einen Dauerauftrag eingerichtet. Dein Mitgliedsbeitrag wird automatisch abgebucht.</h6>
+          <span id="onceoff-payment-text">
+            Wir leiten dich zu unserem Zahlungsanbieter "Mollie" weiter, bei dem du mittels Bank&uuml;berweisung, EPS oder
+            Kreditkarte den Mitgliedsbeitrag begleichen kannst.
+          </span>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-dismiss="modal">Abbrechen</button>
@@ -73,18 +76,6 @@
       </div>
 
       <div class="col">
-        <div class="row d-none">
-          <!-- TODO -->
-          <div class="col">
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-              Deine Mitgliedschaft endet mit 01. M&auml;rz 2021
-              <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
         <div class="row mt-3">
           <div class="col">
             <div class="jumbotron">
@@ -177,7 +168,7 @@
                   data-loading-template="loadingTemplate" data-card-view="true">
                   <thead>
                     <tr>
-                      <th data-field="createdAt">Erstellt am</th>
+                      <th data-field="createdAt" data-formatter="dateFormatter">Erstellt am</th>
                       <th data-field="nextPaymentDate">N&auml;chste Zahlung</th>
                       <th data-field="amount">Betrag</th>
                       <th data-field="mandateReference">SEPA Mandat</th>
@@ -198,11 +189,11 @@
                   data-sort-order="desc" data-locale="de-DE" data-loading-template="loadingTemplate">
                   <thead>
                     <tr>
-                      <th data-field="paidAt">Datum</th>
-                      <th data-field="status">Status</th>
-                      <th data-field="amount">Betrag</th>
+                      <th data-field="paidAt" data-formatter="dateFormatter">Datum</th>
+                      <th data-field="status" data-formatter="statusFormatter">Status</th>
+                      <th data-field="amount" data-formatter="priceFormatter">Betrag</th>
                       <th data-field="description">Beschreibung</th>
-                      <th data-field="method">Bezahlart</th>
+                      <th data-field="method" data-formatter="methodFormatter">Bezahlart</th>
                     </tr>
                   </thead>
                 </table>
