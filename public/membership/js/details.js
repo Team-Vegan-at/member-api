@@ -196,7 +196,7 @@ function createSepaDD(callback) {
       contentType: "application/json",
       data: JSON.stringify({
         "name": $('input[name="name"]').val(),
-        "account": $('input[name="iban"]').val(),
+        "account": $('input[name="iban"]').val().replace(/ /g,''),
         "signDate": formattedDate,
         "mandateRef": "TEAMVEGAN-" + Math.floor(100000 + Math.random() * 900000)
       }),
@@ -292,6 +292,38 @@ $('#onceoff-payment').on('click', function() {
   });
 });
 
+$('input[name="iban"]').focusout(function() {
+  if (IBAN.isValid($('input[name="iban"]').val())) {
+    $('input[name="iban"]').addClass('is-valid').removeClass('is-invalid');
+    $('#iban-invalid-feedback').addClass('d-none').removeClass('d-inline');
+
+    if (isSepaDDFormValid()) {
+      $('#confirm-subscription').prop('disabled', false);
+    } else {
+      $('#confirm-subscription').prop('disabled', true);
+    }
+  } else {
+    $('input[name="iban"]').addClass('is-invalid');
+    $('#iban-invalid-feedback').addClass('d-inline').removeClass('d-none');
+    $('#confirm-subscription').prop('disabled', true);
+  }
+});
+
+$('input[name="name"]').focusout(function() {
+  if ($('input[name="name"]').val().length > 0) {
+    $('input[name="name"]').addClass('is-valid').removeClass('is-invalid');
+
+    if (isSepaDDFormValid()) {
+      $('#confirm-subscription').prop('disabled', false);
+    } else {
+      $('#confirm-subscription').prop('disabled', true);
+    }
+  } else {
+    $('input[name="name"]').addClass('is-invalid');
+    $('#confirm-subscription').prop('disabled', true);
+  }
+});
+
 /** FORMATTERS */
 function dateFormatter(value) {
   if (!value) {
@@ -329,4 +361,11 @@ function statusFormatter(value) {
   } else {
     return value;
   }
+}
+
+/** HELPER */
+function isSepaDDFormValid() {
+  return IBAN.isValid($('input[name="iban"]').val())
+    && $('input[name="email"]').val().length > 0
+    && $('input[name="name"]').val().length > 0;
 }

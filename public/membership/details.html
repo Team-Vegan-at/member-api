@@ -52,9 +52,11 @@
           </button>
         </div>
         <div class="modal-body">
-          <h6 id="onceoff-payment-warning" class="text-warning d-none">Du hast bereits einen Dauerauftrag eingerichtet. Dein Mitgliedsbeitrag wird automatisch abgebucht.</h6>
+          <h6 id="onceoff-payment-warning" class="text-warning d-none">Du hast bereits einen Dauerauftrag eingerichtet.
+            Dein Mitgliedsbeitrag wird automatisch abgebucht.</h6>
           <span id="onceoff-payment-text">
-            Wir leiten dich zu unserem Zahlungsanbieter "Mollie" weiter, bei dem du mittels Bank&uuml;berweisung, EPS oder
+            Wir leiten dich zu unserem Zahlungsanbieter "Mollie" weiter, bei dem du mittels Bank&uuml;berweisung, EPS
+            oder
             Kreditkarte den Mitgliedsbeitrag begleichen kannst.
           </span>
         </div>
@@ -80,12 +82,14 @@
           <div class="col">
             <div class="jumbotron">
               <h1 class="display-4">Hallo, <span id="profileName"></span></h1>
-              <p class="lead">Deine Mitgliedschaft ist <span id="membershipValid" class="text-success"></span><span id="membershipNotValid" class="text-danger"></span></p>
+              <p class="lead">Deine Mitgliedschaft ist <span id="membershipValid" class="text-success"></span><span
+                  id="membershipNotValid" class="text-danger"></span></p>
               <hr class="my-4">
               <p>Mit der Erteilung eines Dauerauftrags, ziehen wir automatisch mit Beginn eines
                 jeden Jahres den Mitgliedsbeitrag ein. Selbstverst&auml;ndlich kannst du den Dauerauftrag
                 jederzeit stornieren.<br />
-                Wenn du keinen Dauerauftrag erteilen m&ouml;chtest, kannst du gerne eine Einmalzahlung f&uuml;r das aktuelle
+                Wenn du keinen Dauerauftrag erteilen m&ouml;chtest, kannst du gerne eine Einmalzahlung f&uuml;r das
+                aktuelle
                 Jahr durchf&uuml;hren. </p>
               <p>
                 <a class="btn btn-primary" data-toggle="collapse" href="#collapseSepaDD" role="button"
@@ -105,11 +109,11 @@
                         <div class="input-group-prepend">
                           <i class="fa fa-user input-group-text align-middle" aria-hidden="true"></i>
                         </div>
-                        <input id="name" name="name" type="text" class="form-control" placeholder="Dein Name"
-                          required />
+                        <input id="name" name="name" type="text" class="form-control form-control-lg"
+                          placeholder="Dein Name" required />
                       </div>
                     </div>
-                    <div class="form-group col">
+                    <div class="form-group col d-none">
                       <label for="email">Email Addresse</label>
                       <div class="input-group mb-2">
                         <div class="input-group-prepend">
@@ -129,6 +133,8 @@
                         </div>
                         <input id="iban" name="iban" type="text" class="form-control form-control-lg"
                           placeholder="AT12 1234 5678 8888" required />
+                        <span id="iban-invalid-feedback" class="invalid-feedback d-none">Diese IBAN Kontonummer ist
+                          ungültig</span>
                       </div>
                     </div>
                   </div>
@@ -151,7 +157,7 @@
                 </div>
 
                 <div class="row">
-                  <button class="btn btn-success btn-lg btn-block" id="confirm-subscription">
+                  <button class="btn btn-success btn-lg btn-block" id="confirm-subscription" disabled>
                     <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag von
                       &euro; 30,-- best&auml;tigen</span>
                   </button>
@@ -217,8 +223,8 @@
     <script src="https://unpkg.com/bootstrap-table@1.18.1/dist/bootstrap-table.min.js"></script>
 
     <script src="./js/constants.js"></script>
+    <script src="./js/iban.js"></script>
     <script src="./js/details.js"></script>
-    <!-- <script src="./js/iban.js"></script> -->
 
     <style>
       .ph-item,
