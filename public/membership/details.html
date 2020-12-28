@@ -133,7 +133,7 @@
                           <label for="name">Name</label>
                           <div class="input-group mb-2">
                             <div class="input-group-prepend">
-                              <i class="fa fa-user input-group-text align-middle" aria-hidden="true"></i>
+                              <i class="fa fa-user input-group-text" style="padding: 0.9rem;" aria-hidden="true"></i>
                             </div>
                             <input id="name" name="name" type="text" class="form-control form-control-lg"
                               placeholder="Dein Name" required />
@@ -155,7 +155,8 @@
                           <label for="iban-element">IBAN</label>
                           <div class="input-group mb-2">
                             <div class="input-group-prepend">
-                              <i class="fa fa-credit-card input-group-text align-middle" aria-hidden="true"></i>
+                              <i class="fa fa-credit-card input-group-text" style="padding: 0.9rem;"
+                                aria-hidden="true"></i>
                             </div>
                             <input id="iban" name="iban" type="text" class="form-control form-control-lg"
                               placeholder="AT12 1234 5678 8888" required />
@@ -166,25 +167,29 @@
                         </div>
                       </div>
 
-                      <div class="row mb-3 mt-3">
-                        <div class="col" id="mandate-acceptance">
-                          Hiermit erm&auml;chtige(n) ich/wir die Vegane Gesellschaft &Ouml;sterreich,
-                          die anfallenden Betr&auml;ge bis auf Weiteres von meinem/unserem Konto
-                          mittels Lastschrift einzuziehen. Zugleich weise(n) ich/wir
-                          mein/unser Kreditinstitut an,
-                          die von der Vegane Gesellschaft &Ouml;sterreich auf mein/unser Konto
-                          gezogenen Lastschriften einzul&ouml;sen.
-                          Innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum kann
-                          die Erstattung des belasteten Betrages verlangt werden. Es
-                          gelten dabei die mit unserem Kreditinstitut vereinbarten Bedingungen.
+                      <div class="row mb-2">
+                        <div class="col">
+                          <span class="text-secondary">
+                            Hiermit erm&auml;chtige(n) ich/wir die Vegane Gesellschaft &Ouml;sterreich,
+                            die anfallenden Betr&auml;ge bis auf Weiteres von meinem/unserem Konto
+                            mittels Lastschrift einzuziehen. Zugleich weise(n) ich/wir
+                            mein/unser Kreditinstitut an,
+                            die von der Vegane Gesellschaft &Ouml;sterreich auf mein/unser Konto
+                            gezogenen Lastschriften einzul&ouml;sen.
+                            Innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum kann
+                            die Erstattung des belasteten Betrages verlangt werden. Es
+                            gelten dabei die mit unserem Kreditinstitut vereinbarten Bedingungen.
+                          </span>
                         </div>
                       </div>
 
                       <div class="row">
-                        <button class="btn btn-success btn-lg btn-block" id="confirm-subscription" disabled>
-                          <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag von
-                            &euro; 30,-- best&auml;tigen</span>
-                        </button>
+                        <div class="col">
+                          <button class="btn btn-success btn-lg btn-block" id="confirm-subscription" disabled>
+                            <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag von
+                              &euro; 30,-- best&auml;tigen</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
