@@ -324,7 +324,7 @@ function methodFormatter(value) {
 function statusFormatter(value) {
   if (value === "paid") {
     return "Bezahlt";
-  } else if (value === "pending") {
+  } else if (value === "pending" || value === "open") {
     return "In Bearbeitung";
   } else {
     return value;

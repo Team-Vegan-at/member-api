@@ -35,7 +35,8 @@ export class Payment {
 
             payments.forEach(pymt => {
               if (pymt.status === PaymentStatus.paid
-                || pymt.status === PaymentStatus.pending) {
+                || pymt.status === PaymentStatus.pending
+                || pymt.status === PaymentStatus.open) {
 
                 pymtRes.push(new PaymentResult({
                   id: pymt.id,
