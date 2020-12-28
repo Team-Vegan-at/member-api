@@ -3,6 +3,7 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import createMollieClient, {SubscriptionStatus} from '@mollie/api-client';
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
+import moment from 'moment';
 import {MandateResult} from '../../models/mandate-return.model';
 import {SubscriptionResult} from '../../models/subscription-return.model';
 import {DashboardController} from '../dashboard.controller';
@@ -67,7 +68,7 @@ export class Subscription {
                       value: process.env.MOLLIE_PAYMENT_AMOUNT as string
                     },
                     interval: "12 months",
-                    startDate: "2021-01-30",
+                    startDate: moment().add(7, 'days').format('YYYY-MM-DD'),
                     mandateId,
                     description: process.env.MOLLIE_PAYMENT_DESCRIPTION as string,
                   }).then((subscription) => {
