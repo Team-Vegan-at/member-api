@@ -35,7 +35,7 @@
     </div>
   </nav>
 
-  <div class="modal fade" data-backdrop="static" data-keyboard="false" id="loading" tabindex="-1" aria-hidden="true">
+  <div class="modal" data-backdrop="static" data-keyboard="false" id="loading" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="spinner-border text-success" id="spinner" role="status">
       </div>
@@ -88,8 +88,8 @@
         <div class="row mt-3">
           <div class="col">
             <div class="jumbotron">
-              <h1 class="display-4">Hallo, [NAME]</h1>
-              <p class="lead">Deine Mitgliedschaft ist [g&uuml;ltig bis 31.02.2021 / abgelaufen]</p>
+              <h1 class="display-4">Hallo, <span id="profileName"></span></h1>
+              <p class="lead">Deine Mitgliedschaft ist <span id="membershipValid" class="text-success"></span><span id="membershipNotValid" class="text-danger"></span></p>
               <hr class="my-4">
               <p>Mit der Erteilung eines Dauerauftrags, ziehen wir automatisch mit Beginn eines
                 jeden Jahres den Mitgliedsbeitrag ein. Selbstverst&auml;ndlich kannst du den Dauerauftrag

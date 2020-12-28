@@ -2,6 +2,8 @@
 const authUrl = baseUrl + '/auth/otp';
 let searchParams = new URLSearchParams(window.location.search);
 let idHash;
+let email;
+
 if (!searchParams.has('user')) {
   console.error('User not found');
   // TODO Error on site
@@ -9,8 +11,24 @@ if (!searchParams.has('user')) {
   idHash = searchParams.get('user')
 }
 
-// Pre-fill e-mail field
-$('input[name="email"]').val(idHash);
+// Fetch user Profile
+$('#loading').modal('show');
+fetchProfile(function(profile) {
+  $('#profileName').text(profile.name);
+
+  if (profile.membershipValid) {
+    $('#membershipValid').text(`gültig bis ${profile.membershipValidTo}`);
+  } else {
+    $('#membershipNotValid').text('leider abgelaufen');
+  }
+
+  email = profile.email;
+
+  // Pre-fill e-mail field
+  $('input[name="email"]').val(profile.email);
+
+  $('#loading').modal('hide');
+});
 
 /*** FUNCTIONS ***/
 function fetchOTP(callback) {
@@ -25,6 +43,28 @@ function fetchOTP(callback) {
   }).fail(function (reason) {
     callback(reason.statusText);
   });
+}
+
+function fetchProfile(callback) {
+  let url = `${baseUrl}/membership/profile`;
+
+  fetchOTP(function(otp) {
+    $.ajax({
+      url,
+      crossDomain: true,
+      data: {
+        email: idHash
+      },
+      headers: {
+        Authorization: `Bearer ${otp}`
+      }
+    }).done(function (profile) {
+      callback(profile);
+    }).fail(function (reason) {
+      console.error(reason.statusText);
+      callback(reason);
+    });
+  })
 }
 
 function fetchPayments(data) {
