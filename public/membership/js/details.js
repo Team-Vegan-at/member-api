@@ -1,5 +1,4 @@
 /*** INIT ***/
-const authUrl = baseUrl + '/auth/otp';
 let searchParams = new URLSearchParams(window.location.search);
 let pat;
 let email;

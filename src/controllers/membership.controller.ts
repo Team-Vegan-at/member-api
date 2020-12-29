@@ -313,50 +313,31 @@ export class MembershipController {
         ps.generatePAT(email)
           .then((pat: string) => {
             // Build Login URL
-            const loginUrl = `${process.env.MEMBERSHIP_URL}/details.html?tok=${pat}`;
+            const loginUrl = `${process.env.MEMBERSHIP_URL}/details.html?pat=${pat}`;
 
-            this.debug(pat);
-            this.debug(loginUrl);
+            const mailgun = require("mailgun-js");
+            const DOMAIN = "mg.teamvegan.at";
+            const mg = mailgun({
+              apiKey: process.env.MAILGUN_API,
+              domain: DOMAIN,
+              host: "api.eu.mailgun.net"
+            });
+            const data = {
+              from: "Team Vegan <noreply@mg.teamvegan.at>",
+              to: email,
+              subject: "Team Vegan.at Mitgliedschaft: Login",
+              template: "mitgliedschaftlogin",
+              'v:loginUrl': loginUrl
+            };
+            mg.messages().send(data, (error: any, body: any) => {
+              if (error) {
+                this.debug(error);
+              } else {
+                this.debug(body);
+              }
 
-            return resolve("");
-            // create a buffer
-            // const buff2 = Buffer.from(buff.toString('base64'), 'base64');
-            // const str = buff2.toString('utf-8');
-
-            // await RedisUtil.redisGetAsync(`${str.substr(0, 20)}*`).then(
-            //   (val: string | null) => {
-            //     if (!email) {
-            //       this.debug(`not found`);
-            //       return false;
-            //     }
-
-            //     this.debug(`found ${val}`);
-            //   },
-            // );
-
-            // const mailgun = require("mailgun-js");
-            // const DOMAIN = "mg.teamvegan.at";
-            // const mg = mailgun({
-            //   apiKey: process.env.MAILGUN_API,
-            //   domain: DOMAIN,
-            //   host: "api.eu.mailgun.net"
-            // });
-            // const data = {
-            //   from: "Team Vegan <noreply@mg.teamvegan.at>",
-            //   to: email,
-            //   subject: "Team Vegan.at Mitgliedschaft: Login",
-            //   template: "mitgliedschaftlogin",
-            //   'v:loginUrl': loginUrl
-            // };
-            // mg.messages().send(data, (error: any, body: any) => {
-            //   if (error) {
-            //     this.debug(error);
-            //   } else {
-            //     this.debug(body);
-            //   }
-
-            //   return resolve(null);
-            // });
+              return resolve('');
+            });
           }).catch((err) => {
             return reject(err);
           });
