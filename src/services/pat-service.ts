@@ -9,13 +9,13 @@ export class PATService {
   public async generatePAT(email: string): Promise<string> {
     this.debug(`/PATService/generatePAT`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
       const ttlInSec = 21600; // 6 hours
 
       const bcrypt = require('bcrypt');
       const saltRounds = 10;
 
-      bcrypt.hash(moment().utc().toISOString(), saltRounds, (err: unknown, hash: string) => {
+      await bcrypt.hash(moment().utc().toISOString(), saltRounds, (err: unknown, hash: string) => {
         if (err) {
           this.debug(err);
           return reject(err);
