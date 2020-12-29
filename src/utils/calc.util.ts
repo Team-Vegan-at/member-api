@@ -44,4 +44,14 @@ export class CalcUtil {
 
     return expirationDate;
   }
+
+  public static getCurrentMembershipYear(): number {
+
+    if (moment().utc().month() === 11) {
+      return moment().utc().add(1, "year").year();
+    } else {
+      return moment().utc().year();
+    }
+
+  }
 }

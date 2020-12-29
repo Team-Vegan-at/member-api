@@ -8,6 +8,7 @@ import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mand
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
+import {PaymentResult} from '../models/payment-return.model';
 import {ProfileResult} from '../models/profile-return.model';
 import {SubscriptionResult} from '../models/subscription-return.model';
 import {PATService} from '../services/pat-service';
@@ -199,7 +200,7 @@ export class MembershipController {
   })
   @authenticate('team-vegan-pat')
   async getPayments(
-  ): Promise<MandateResult | null> {
+  ): Promise<PaymentResult[] | null> {
     this.debug(`/membership/payments`);
 
     return new Promise(async (resolve, reject) => {
@@ -211,7 +212,7 @@ export class MembershipController {
 
       const mp = new Payment();
       mp.getPayments(email)
-        .then((payments: any) => resolve(payments))
+        .then((payments: PaymentResult[] | null) => resolve(payments))
         .catch((reason: any) => reject(reason));
     });
   }
