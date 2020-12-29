@@ -1437,7 +1437,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"bluebird@npm:^3.1.1, bluebird@npm:^3.7.2":
+"bluebird@npm:^3.7.2":
   version: 3.7.2
   resolution: "bluebird@npm:3.7.2"
   checksum: 4f2288662f3d4eadbb82d4daa4a7d7976a28fa3c7eb4102c9b4033b03e5be4574ba123ac52a7c103cde4cb7b2d2afc1dbe41817ca15a29ff21ecd258d0286047
@@ -1788,15 +1788,6 @@ __metadata:
   version: 1.1.0
   resolution: "console-control-strings@npm:1.1.0"
   checksum: 58a404d951bf270494fb91e136cf064652c1208ccedac23e4da24e6a3a3933998f302cadc45cbf6582a007a4aa44dab944e84056b24e3b1964e9a28aeedf76c9
-  languageName: node
-  linkType: hard
-
-"consolidate@npm:^0.15.1":
-  version: 0.15.1
-  resolution: "consolidate@npm:0.15.1"
-  dependencies:
-    bluebird: ^3.1.1
-  checksum: dcab488231c0b0f98b63da526447fa700d6af792a0b3ee43c60a9e6695aa0f5353cab1f3fbe82533235001979256a0849259c4897b90db6ffde992efa2246b53
   languageName: node
   linkType: hard
 
@@ -4235,11 +4226,10 @@ fsevents@~2.1.2:
     eslint-config-prettier: ^6.15.0
     express: ^4.17.1
     jsonwebtoken: ^8.5.1
+    mailgun-js: ^0.22.0
     moment: ^2.29.1
     node-redis-retry-strategy: ^1.0.11
     node-redis-scan: ^1.2.1
-    nodemailer: ^6.4.16
-    nodemailer-mailgun-transport: ^2.0.2
     redis: ^3.0.2
     source-map-support: ^0.5.19
     tslib: ^2.0.0
@@ -4571,23 +4561,6 @@ fsevents@~2.1.2:
   version: 1.2.1
   resolution: "node-redis-scan@npm:1.2.1"
   checksum: d4d5afbcf68b7a8e12a4c4a66a7d4c6772511776dc73827297f90b4f83cc2aaa28ff39b005bc05083ec86c24f02e977940899ffee93b154370821b37d90cf634
-  languageName: node
-  linkType: hard
-
-"nodemailer-mailgun-transport@npm:^2.0.2":
-  version: 2.0.2
-  resolution: "nodemailer-mailgun-transport@npm:2.0.2"
-  dependencies:
-    consolidate: ^0.15.1
-    mailgun-js: ^0.22.0
-  checksum: 88b9ede6ad42b04fa5e1125265d1f21592fd0d0189e25bcf8c673f0f9123651a51dc74d10ad37ef87fa96983576c8d00c8c3fa732b69df6ae2e6772d7d9893b4
-  languageName: node
-  linkType: hard
-
-"nodemailer@npm:^6.4.16":
-  version: 6.4.17
-  resolution: "nodemailer@npm:6.4.17"
-  checksum: 2031aa60ea495f4e014d7236a9dd91dd7189b7b014c3edec63f1483bb975f1eb92730de495fa23317ec61c21eded62d310ac058eb20401188467cc11396386e9
   languageName: node
   linkType: hard
 

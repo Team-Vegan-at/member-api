@@ -64,11 +64,10 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "jsonwebtoken": "^8.5.1",
+    "mailgun-js": "^0.22.0",
     "moment": "^2.29.1",
     "node-redis-retry-strategy": "^1.0.11",
     "node-redis-scan": "^1.2.1",
-    "nodemailer": "^6.4.16",
-    "nodemailer-mailgun-transport": "^2.0.2",
     "redis": "^3.0.2",
     "tslib": "^2.0.0"
   },

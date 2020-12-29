@@ -1,3 +1,4 @@
+/* eslint-disable no-async-promise-executor */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
@@ -8,6 +9,7 @@ import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
 import {ProfileResult} from '../models/profile-return.model';
 import {SubscriptionResult} from '../models/subscription-return.model';
+import {DashboardController} from './dashboard.controller';
 import {Mandate} from './membership/mandate';
 import {Payment} from './membership/payment';
 import {Profile} from './membership/profile';
@@ -246,6 +248,57 @@ export class MembershipController {
       mp.getProfile(accessToken)
         .then((profile: any) => resolve(profile))
         .catch((reason: any) => reject(reason));
+    });
+  }
+
+  @post('/membership/login', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+      },
+    },
+  })
+  public async login(
+    @param.query.string('email') email: string
+  ): Promise<null> {
+    this.debug(`/membership/login`);
+
+    const dc = new DashboardController();
+    return new Promise(async (resolve, reject) => {
+
+      await dc.redisGetTeamMember(email)
+        .then(async (custObj: any) => {
+        if (custObj == null) {
+          this.debug(`${email} not found`);
+          return resolve(null);
+        }
+
+        const mailgun = require("mailgun-js");
+        const DOMAIN = "mg.teamvegan.at";
+        const mg = mailgun({
+          apiKey: process.env.MAILGUN_API,
+          domain: DOMAIN,
+          host: "api.eu.mailgun.net"
+        });
+        const data = {
+          from: "Team Vegan <noreply@mg.teamvegan.at>",
+          to: email,
+          subject: "Team Vegan.at Mitgliedschaft: Login",
+          template: "mitgliedschaftlogin",
+          'v:loginUrl': "https://api-qs.teamvegan.at/membership/details.html?user=gerhard@dinhof.eu"
+        };
+        mg.messages().send(data, (error: any, body: any) => {
+          if (error) {
+            this.debug(error);
+          } else {
+            this.debug(body);
+          }
+
+          return resolve(null);
+        });
+      });
     });
   }
 }
