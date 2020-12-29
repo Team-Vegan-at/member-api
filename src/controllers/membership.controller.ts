@@ -311,7 +311,7 @@ export class MembershipController {
 
         // Generate access token
         const ps = new PATService();
-        ps.generatePAT(email)
+        await ps.generatePAT(email)
           .then((pat: string) => {
             // Build Login URL
             const loginUrl = `${process.env.MEMBERSHIP_URL}/details.html?pat=${pat}`;
