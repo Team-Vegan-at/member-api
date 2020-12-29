@@ -13,6 +13,7 @@ import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAuthenticationStrategy';
 import {JWTAuthenticationStrategy} from './authentication-strategies/JWTAuthenticationStrategy';
+import {PATAuthenticationStrategy} from './authentication-strategies/PATAuthenticationStrategy';
 import {TokenServiceBindings, TokenServiceConstants} from './keys';
 import {MyAuthenticationSequence} from './sequence';
 import {JWTService} from './services/jwt-service';
@@ -56,6 +57,7 @@ export class MemberApiApplication extends BootMixin(
     // Bind authentication component
     registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
     registerAuthenticationStrategy(this, ApiKeyAuthenticationStrategy);
+    registerAuthenticationStrategy(this, PATAuthenticationStrategy);
 
     // Set up the custom sequence
     this.sequence(MyAuthenticationSequence);

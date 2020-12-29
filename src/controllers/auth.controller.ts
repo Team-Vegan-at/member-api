@@ -42,19 +42,4 @@ export class AuthController {
 
     return token;
   }
-
-  public generateAccessToken(email: string): string {
-    this.debug(`/auth/generateAccessToken`);
-
-    const ttlInSec = 21600; // 6 hours
-
-    // Generate Acess Token (short lived)
-    const secret = process.env.ACCESS_TOKEN_SECRET!;
-    const token = jwt.sign({}, secret, {expiresIn: `${ttlInSec}sec`});
-
-    // Store Access Token in Redis
-    RedisUtil.redisClient.set(token, email, 'EX', ttlInSec);
-
-    return token;
-  }
 }

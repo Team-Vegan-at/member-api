@@ -2,13 +2,15 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
-import {del, get, param, post, requestBody} from '@loopback/rest';
+import {inject} from '@loopback/core';
+import {del, get, param, post, Request, requestBody, RestBindings} from '@loopback/rest';
 import {MandateData} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
 import {ProfileResult} from '../models/profile-return.model';
 import {SubscriptionResult} from '../models/subscription-return.model';
+import {PATService} from '../services/pat-service';
 import {DashboardController} from './dashboard.controller';
 import {Mandate} from './membership/mandate';
 import {Payment} from './membership/payment';
@@ -19,11 +21,10 @@ import {MollieController} from './mollie.controller';
 export class MembershipController {
   private debug = require('debug')('api:MembershipController');
 
-  constructor() {}
+  constructor(@inject(RestBindings.Http.REQUEST) private request: Request) {}
 
   @post('/membership/mandate', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
     ],
     responses: {
       '200': {
@@ -36,14 +37,19 @@ export class MembershipController {
       },
     },
   })
-  @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async createMandate(
-    @param.query.string('email') email: string,
     @requestBody() payload: MandatePayload
   ): Promise<MandateData | null> {
     this.debug(`/membership/mandate`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const mm = new Mandate();
       mm.createMandate(email, payload)
         .then((mandate: any) => resolve(mandate))
@@ -53,7 +59,6 @@ export class MembershipController {
 
   @get('/membership/mandate', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
     ],
     responses: {
       '200': {
@@ -66,13 +71,18 @@ export class MembershipController {
       },
     },
   })
-  @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async getMandate(
-    @param.query.string('email') email: string
   ): Promise<MandateResult | null> {
     this.debug(`/membership/mandate`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const mm = new Mandate();
       mm.getMandate(email)
         .then((mandate: any) => resolve(mandate))
@@ -82,7 +92,6 @@ export class MembershipController {
 
   @post('/membership/subscription', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
     ],
     responses: {
       '200': {
@@ -95,13 +104,18 @@ export class MembershipController {
       },
     },
   })
-  @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async createSubscription(
-    @param.query.string('email') email: string
   ): Promise<SubscriptionData | null> {
     this.debug(`/membership/subscription`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const ms = new Subscription();
       ms.createSubscription(email)
         .then((subscription: any) => resolve(subscription))
@@ -111,7 +125,6 @@ export class MembershipController {
 
   @get('/membership/subscriptions', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
     ],
     responses: {
       '200': {
@@ -124,13 +137,18 @@ export class MembershipController {
       },
     },
   })
-  @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async getSubscriptions(
-    @param.query.string('email') email: string
   ): Promise<SubscriptionResult | null> {
     this.debug(`/membership/subscriptions`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const ms = new Subscription();
       ms.getSubscriptions(email)
         .then((subscriptions: any) => resolve(subscriptions))
@@ -140,20 +158,24 @@ export class MembershipController {
 
   @del('/membership/subscriptions', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
     ],
     responses: {
       '200': {
       },
     },
   })
-  @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async cancelSubscriptions(
-    @param.query.string('email') email: string
   ): Promise<null> {
     this.debug(`/membership/subscriptions`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const ms = new Subscription();
       ms.deleteSubscriptions(email)
         .then(() => resolve(null))
@@ -163,7 +185,6 @@ export class MembershipController {
 
   @get('/membership/payments', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
     ],
     responses: {
       '200': {
@@ -176,13 +197,18 @@ export class MembershipController {
       },
     },
   })
-  @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async getPayments(
-    @param.query.string('email') email: string
   ): Promise<MandateResult | null> {
     this.debug(`/membership/payments`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const mp = new Payment();
       mp.getPayments(email)
         .then((payments: any) => resolve(payments))
@@ -192,7 +218,6 @@ export class MembershipController {
 
   @get('/membership/onceoffpayment', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true},
       {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false}
     ],
     responses: {
@@ -206,14 +231,19 @@ export class MembershipController {
       },
     },
   })
-  @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async getOnceoffpaymentLink(
-    @param.query.string('email') email: string,
     @param.query.string('redirectUrl') redirectUrl: string
   ): Promise<MandateResult | null> {
     this.debug(`/membership/onceoffpayment`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const mc = new MollieController();
       mc.getCheckoutUrl(email, redirectUrl)
         .then((checkoutUrl: any) => resolve(checkoutUrl))
@@ -223,8 +253,6 @@ export class MembershipController {
 
   @get('/membership/profile', {
     parameters: [
-      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
-      // {name: 'acctok', schema: {type: 'string'}, in: 'query', required: true}
     ],
     responses: {
       '200': {
@@ -237,15 +265,20 @@ export class MembershipController {
       },
     },
   })
-  // @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-pat')
   async getProfile(
-    @param.query.string('email') accessToken: string
   ): Promise<ProfileResult | null> {
     this.debug(`/membership/profile`);
 
-    return new Promise((resolve, reject) => {
+    return new Promise(async (resolve, reject) => {
+      const pat = this.request.header('x-pat')!;
+      let email = '';
+      await new PATService().validatePAT(pat)
+        .then((value: string) => { email = value })
+        .catch((reason) => { return reject(reason) });
+
       const mp = new Profile();
-      mp.getProfile(accessToken)
+      mp.getProfile(email)
         .then((profile: any) => resolve(profile))
         .catch((reason: any) => reject(reason));
     });
@@ -262,7 +295,7 @@ export class MembershipController {
   })
   public async login(
     @param.query.string('email') email: string
-  ): Promise<null> {
+  ): Promise<string> {
     this.debug(`/membership/login`);
 
     const dc = new DashboardController();
@@ -272,32 +305,61 @@ export class MembershipController {
         .then(async (custObj: any) => {
         if (custObj == null) {
           this.debug(`${email} not found`);
-          return resolve(null);
+          return reject();
         }
 
-        const mailgun = require("mailgun-js");
-        const DOMAIN = "mg.teamvegan.at";
-        const mg = mailgun({
-          apiKey: process.env.MAILGUN_API,
-          domain: DOMAIN,
-          host: "api.eu.mailgun.net"
-        });
-        const data = {
-          from: "Team Vegan <noreply@mg.teamvegan.at>",
-          to: email,
-          subject: "Team Vegan.at Mitgliedschaft: Login",
-          template: "mitgliedschaftlogin",
-          'v:loginUrl': "https://api-qs.teamvegan.at/membership/details.html?user=gerhard@dinhof.eu"
-        };
-        mg.messages().send(data, (error: any, body: any) => {
-          if (error) {
-            this.debug(error);
-          } else {
-            this.debug(body);
-          }
+        // Generate access token
+        const ps = new PATService();
+        ps.generatePAT(email)
+          .then((pat: string) => {
+            // Build Login URL
+            const loginUrl = `${process.env.MEMBERSHIP_URL}/details.html?tok=${pat}`;
 
-          return resolve(null);
-        });
+            this.debug(pat);
+            this.debug(loginUrl);
+
+            return resolve("");
+            // create a buffer
+            // const buff2 = Buffer.from(buff.toString('base64'), 'base64');
+            // const str = buff2.toString('utf-8');
+
+            // await RedisUtil.redisGetAsync(`${str.substr(0, 20)}*`).then(
+            //   (val: string | null) => {
+            //     if (!email) {
+            //       this.debug(`not found`);
+            //       return false;
+            //     }
+
+            //     this.debug(`found ${val}`);
+            //   },
+            // );
+
+            // const mailgun = require("mailgun-js");
+            // const DOMAIN = "mg.teamvegan.at";
+            // const mg = mailgun({
+            //   apiKey: process.env.MAILGUN_API,
+            //   domain: DOMAIN,
+            //   host: "api.eu.mailgun.net"
+            // });
+            // const data = {
+            //   from: "Team Vegan <noreply@mg.teamvegan.at>",
+            //   to: email,
+            //   subject: "Team Vegan.at Mitgliedschaft: Login",
+            //   template: "mitgliedschaftlogin",
+            //   'v:loginUrl': loginUrl
+            // };
+            // mg.messages().send(data, (error: any, body: any) => {
+            //   if (error) {
+            //     this.debug(error);
+            //   } else {
+            //     this.debug(body);
+            //   }
+
+            //   return resolve(null);
+            // });
+          }).catch((err) => {
+            return reject(err);
+          });
       });
     });
   }

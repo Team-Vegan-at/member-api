@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/camelcase */
+/* eslint-disable @typescript-eslint/naming-convention */
 import redis from 'redis';
 import {promisify} from 'util';
 
@@ -17,9 +17,10 @@ export class RedisUtil {
     RedisUtil.redisClient,
   );
 
-  public static mollieCustomerPrefix = 'teamveganat:mollie';
   public static discourseCustomerPrefix = 'teamveganat:discourse';
+  public static mollieCustomerPrefix = 'teamveganat:mollie';
   public static teamMemberPrefix = 'teamveganat:member';
+  public static patPrefix = 'teamveganat:pat';
   public static whSubscriptionPrefix = 'teamveganat:hook-sub:';
   public static whPaymentsPrefix = 'teamveganat:hook-pay:';
 }

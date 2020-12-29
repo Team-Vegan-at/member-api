@@ -39,7 +39,6 @@ jobs:
           files: '["**/constants.js"]'
         env:
           BASEURL: ${{ secrets.QS_BASE_URL }}
-          APIKEY: ${{ secrets.QS_API_KEY }}
 
       - name: Build and push
         uses: docker/build-push-action@v2
