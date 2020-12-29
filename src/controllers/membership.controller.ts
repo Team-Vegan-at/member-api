@@ -311,39 +311,36 @@ export class MembershipController {
 
         // Generate access token
         const ps = new PATService();
-        await ps.generatePAT(email)
-          .then((pat: string) => {
-            // Build Login URL
-            const loginUrl = `${process.env.MEMBERSHIP_URL}/details.html?pat=${pat}`;
+        const pat = ps.generatePAT(email);
 
-            const mailgun = require("mailgun-js");
-            const DOMAIN = "mg.teamvegan.at";
-            const mg = mailgun({
-              apiKey: process.env.MAILGUN_API,
-              domain: DOMAIN,
-              host: "api.eu.mailgun.net"
-            });
-            const data = {
-              from: "Team Vegan <noreply@mg.teamvegan.at>",
-              to: email,
-              subject: "Team Vegan.at Mitgliedschaft: Login",
-              template: "mitgliedschaftlogin",
-              'v:loginUrl': loginUrl
-            };
-            this.debug(`Sending login credentials to ${email}, using ${process.env.MAILGUN_API}`);
+        // Build Login URL
+        const loginUrl = `${process.env.MEMBERSHIP_URL}/details.html?pat=${pat}`;
 
-            mg.messages().send(data, (error: any, body: any) => {
-              if (error) {
-                this.debug(error);
-              } else {
-                this.debug(body);
-              }
+        const mailgun = require("mailgun-js");
+        const DOMAIN = "mg.teamvegan.at";
+        const mg = mailgun({
+          apiKey: process.env.MAILGUN_API,
+          domain: DOMAIN,
+          host: "api.eu.mailgun.net"
+        });
+        const data = {
+          from: "Team Vegan <noreply@mg.teamvegan.at>",
+          to: email,
+          subject: "Team Vegan.at Mitgliedschaft: Login",
+          template: "mitgliedschaftlogin",
+          'v:loginUrl': loginUrl
+        };
+        this.debug(`Sending login credentials to ${email}, using ${process.env.MAILGUN_API}`);
 
-              return resolve('');
-            });
-          }).catch((err) => {
-            return reject(err);
-          });
+        mg.messages().send(data, (error: any, body: any) => {
+          if (error) {
+            this.debug(error);
+          } else {
+            this.debug(body);
+          }
+
+          return resolve('');
+        });
       });
     });
   }

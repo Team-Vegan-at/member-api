@@ -1,31 +1,20 @@
 /* eslint-disable no-async-promise-executor */
 /* eslint-disable @typescript-eslint/no-misused-promises */
-import moment from 'moment';
 import {RedisUtil} from '../utils/redis.util';
 
 export class PATService {
   private debug = require('debug')('api:PATService');
 
-  public async generatePAT(email: string): Promise<string> {
+  public generatePAT(email: string): string {
     this.debug(`/PATService/generatePAT`);
 
-    return new Promise(async (resolve, reject) => {
-      const ttlInSec = 21600; // 6 hours
+    const crypto = require('crypto');
+    const hash = crypto.scryptSync(email, Math.random().toString(), 24);
 
-      const bcrypt = require('bcrypt');
-      const saltRounds = 10;
-
-      await bcrypt.hash(moment().utc().toISOString(), saltRounds, (err: unknown, hash: string) => {
-        if (err) {
-          this.debug(err);
-          return reject(err);
-        }
-        const buff = Buffer.from(hash, 'utf-8');
-        const pat = buff.toString('base64').substring(0,10);
-        RedisUtil.redisClient.set(`${RedisUtil.patPrefix}:${pat}`, email, 'EX', ttlInSec);
-        return resolve(pat);
-      });
-    });
+    const ttlInSec = 21600; // 6 hours
+    const pat = hash.toString('base64').replace(/[^a-zA-Z0-9-_]/g, '').substring(0,10);
+    RedisUtil.redisClient.set(`${RedisUtil.patPrefix}:${pat}`, email, 'EX', ttlInSec);
+    return pat;
   }
 
   /**

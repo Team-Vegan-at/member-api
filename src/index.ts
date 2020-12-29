@@ -14,6 +14,7 @@ export async function main(options: ApplicationConfig = {}) {
 
   const debug = require('debug')('api:app');
   const debugCron = require('debug')('api:cron');
+  const debugRedis = require('debug')('redis');
 
   const app = new MemberApiApplication(options);
   await app.boot();
@@ -27,14 +28,14 @@ export async function main(options: ApplicationConfig = {}) {
   const job = new CronJob('0 5 */1 * * *', async function() {
     debugCron(`Cronjob start - ${moment().format()}`);
 
-    await cronProcessMembers(debugCron);
+    await cronProcessMembers(debugCron, debugRedis);
 
     debugCron(`Cronjob finished - ${moment().format()}`);
   });
   job.start();
 
   // Once off cron start
-  await cronProcessMembers(debugCron);
+  await cronProcessMembers(debugCron, debugRedis);
 
   return app;
 }
@@ -63,7 +64,7 @@ if (require.main === module) {
   });
 }
 
-async function cronProcessMembers(debugCron: any) {
+async function cronProcessMembers(debugCron: any, debugRedis: any) {
   const dbc = new DashboardController();
   await dbc.listDiscourseMembers();
   await dbc.listMollieMembers();
@@ -83,7 +84,7 @@ async function cronProcessMembers(debugCron: any) {
             `${RedisUtil.teamMemberPrefix}:${custObj.data.email.toLowerCase()}`,
           )
             .then((reply: any) => {
-              debugCron(`Redis returend ${reply}`);
+              debugRedis(reply);
               if (reply == null) {
                 // Store in Redis
                 const redisMemberPayload = {
@@ -144,7 +145,7 @@ async function cronProcessMembers(debugCron: any) {
               }:${custObj.data.email.toLowerCase()}`,
             )
               .then((reply: any) => {
-                debugCron(`Redis returend ${reply}`);
+                debugRedis(`${reply}`);
                 if (reply == null) {
                   // Store in Redis
                   const redisMemberPayload = {
@@ -161,7 +162,7 @@ async function cronProcessMembers(debugCron: any) {
                     JSON.stringify(redisMemberPayload),
                     (err: any, _reply: any) => {
                       if (err) {
-                        debugCron(`Redis error: ${err}`);
+                        debugRedis(`${err}`);
                       }
                     },
                   );
@@ -176,7 +177,7 @@ async function cronProcessMembers(debugCron: any) {
                     JSON.stringify(updatePayload),
                     (err: any, _reply: any) => {
                       if (err) {
-                        debugCron(`Redis error: ${err}`);
+                        debugRedis(`${err}`);
                       }
                     },
                   );
@@ -184,7 +185,7 @@ async function cronProcessMembers(debugCron: any) {
               })
               .catch((err: any) => {
                 if (err) {
-                  debugCron(`Redis error: ${err}`);
+                  debugRedis(`${err}`);
                 }
               });
           });
