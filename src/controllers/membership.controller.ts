@@ -330,6 +330,8 @@ export class MembershipController {
               template: "mitgliedschaftlogin",
               'v:loginUrl': loginUrl
             };
+            this.debug(`Sending login credentials to ${email}, using ${process.env.MAILGUN_API}`);
+
             mg.messages().send(data, (error: any, body: any) => {
               if (error) {
                 this.debug(error);
