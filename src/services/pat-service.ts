@@ -17,7 +17,7 @@ export class PATService {
 
       bcrypt.hash(moment().utc().toISOString(), saltRounds, (err: unknown, hash: string) => {
         if (err) {
-          this.debug.error(err);
+          this.debug(err);
           return reject(err);
         }
         const buff = Buffer.from(hash, 'utf-8');
