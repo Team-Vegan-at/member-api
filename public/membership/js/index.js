@@ -1,3 +1,4 @@
+
 /*** EVENTS  ***/
 $('#confirm-login').on('click', function() {
   $('#confirm-login').prop('disabled', true);
@@ -5,15 +6,17 @@ $('#confirm-login').on('click', function() {
   email = $('input[name="email"]').val();
 
   url = `${baseUrl}/membership/login`;
-    $.ajax({
-      url: `${url}?email=${email}`,
-      crossDomain: true,
-      method: "POST"
-    }).done(function () {
-      // TODO: Info to user
+  $.ajax({
+    url: `${url}?email=${email}`,
+    crossDomain: true,
+    method: "POST"
+  }).done(function () {
+      $('#email-success-modal').modal('show');
+      $('input[name="email"]').val('');
+      $('#confirm-login').prop('disabled', false);
     }).fail(function (reason) {
-      // TODO: Info to user
+      $('#email-failure-modal').modal('show');
+      $('input[name="email"]').val('');
+      $('#confirm-login').prop('disabled', false);
     });
-
-  // window.location.replace(`details.html?user=${$('input[id="email"]').val()}`);
 });
