@@ -1,5 +1,5 @@
 # Check out https://hub.docker.com/_/node to select a new base image
-FROM node:12-slim as build-stage
+FROM node:14-slim as build-stage
 
 # Set to a non-root built-in user `node`
 USER node
@@ -14,15 +14,18 @@ WORKDIR /home/node/app
 # where available (npm@5+)
 COPY --chown=node package*.json ./
 
-RUN yarn install
-
 # Bundle app source code
 COPY --chown=node . .
 
-RUN yarn run build && \
-    yarn cache clean
+RUN yarn set version berry
 
-FROM node:12-alpine as run-stage
+RUN yarn install
+
+
+RUN yarn run build && \
+  yarn cache clean
+
+FROM node:14-alpine as run-stage
 
 # Set to a non-root built-in user `node`
 USER node
