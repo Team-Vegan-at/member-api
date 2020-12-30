@@ -1,23 +1,23 @@
+import {
+  AuthenticationComponent, registerAuthenticationStrategy
+} from '@loopback/authentication';
 import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig, BindingKey} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
-import {
-  registerAuthenticationStrategy,
-  AuthenticationComponent,
-} from '@loopback/authentication';
+import {RestApplication} from '@loopback/rest';
 import {
   RestExplorerBindings,
-  RestExplorerComponent,
+  RestExplorerComponent
 } from '@loopback/rest-explorer';
-import {RestApplication} from '@loopback/rest';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
+import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAuthenticationStrategy';
 import {JWTAuthenticationStrategy} from './authentication-strategies/JWTAuthenticationStrategy';
+import {PATAuthenticationStrategy} from './authentication-strategies/PATAuthenticationStrategy';
 import {TokenServiceBindings, TokenServiceConstants} from './keys';
+import {MyAuthenticationSequence} from './sequence';
 import {JWTService} from './services/jwt-service';
 import {SECURITY_SCHEME_SPEC} from './utils/security-spec';
-import {MyAuthenticationSequence} from './sequence';
-import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAuthenticationStrategy';
 
 /**
  * Information from package.json
@@ -57,12 +57,17 @@ export class MemberApiApplication extends BootMixin(
     // Bind authentication component
     registerAuthenticationStrategy(this, JWTAuthenticationStrategy);
     registerAuthenticationStrategy(this, ApiKeyAuthenticationStrategy);
+    registerAuthenticationStrategy(this, PATAuthenticationStrategy);
 
     // Set up the custom sequence
     this.sequence(MyAuthenticationSequence);
 
     // Set up default home page
     this.static('/', path.join(__dirname, '../public'));
+
+    // Set up membership portal
+    this.static('/membership', path.join(__dirname, '../public/membership'));
+
 
     // Customize @loopback/rest-explorer configuration here
     this.bind(RestExplorerBindings.CONFIG).to({
@@ -86,12 +91,12 @@ export class MemberApiApplication extends BootMixin(
     // Bind package.json to the application context
     this.bind(PackageKey).to(pkg);
 
-    this.bind(TokenServiceBindings.TOKEN_SECRET).to(
-      TokenServiceConstants.TOKEN_SECRET_VALUE,
+    this.bind(TokenServiceBindings.JWT_SECRET).to(
+      TokenServiceConstants.JWT_SECRET_VALUE,
     );
 
-    this.bind(TokenServiceBindings.TOKEN_EXPIRES_IN).to(
-      TokenServiceConstants.TOKEN_EXPIRES_IN_VALUE,
+    this.bind(TokenServiceBindings.JWT_EXPIRES_IN).to(
+      TokenServiceConstants.JWT_EXPIRES_IN_VALUE,
     );
 
     this.bind(TokenServiceBindings.TOKEN_SERVICE).toClass(JWTService);

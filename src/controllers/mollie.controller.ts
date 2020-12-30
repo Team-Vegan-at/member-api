@@ -1,16 +1,17 @@
+/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import {authenticate} from '@loopback/authentication';
+import {inject} from '@loopback/core';
+import {get, HttpErrors, param, Response, RestBindings} from '@loopback/rest';
 import {
   createMollieClient,
   Customer,
   List,
   Locale,
-  Payment,
+  Payment
 } from '@mollie/api-client';
-import {get, HttpErrors, param, RestBindings, Response} from '@loopback/rest';
 import moment from 'moment';
 import {RedisUtil} from '../utils/redis.util';
-import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
 import {DashboardController} from './dashboard.controller';
 
 export class MollieController {
@@ -24,6 +25,7 @@ export class MollieController {
   @get('/pay', {
     parameters: [
       {name: 'email', schema: {type: 'string'}, in: 'query', required: true},
+      {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false},
     ],
     responses: {
       '302': {
@@ -38,29 +40,34 @@ export class MollieController {
   })
   async pay(
     @param.query.string('email') email: string,
+    @param.query.string('redirectUrl') redirectUrl: string,
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ): Promise<any> {
     this.debug(`/pay`);
 
-    let checkoutUrl: string;
+    const checkoutUrl = await this.getCheckoutUrl(email, redirectUrl);
 
+    response.redirect(checkoutUrl);
+  }
+
+  public async getCheckoutUrl(email: string, redirectUrl?: string) {
     const dc = new DashboardController();
-    checkoutUrl = await dc
+    const checkoutUrl = await dc
       .redisGetTeamMember(email)
       .then(async (custObj: any) => {
         if (custObj?.mollieObj) {
-          return (checkoutUrl = await this.createMollieCheckoutUrl(
+          return this.createMollieCheckoutUrl(
             custObj.mollieObj,
-          ));
+            redirectUrl
+          );
         } else {
-          return (checkoutUrl = 'https://teamvegan.at');
+          return 'https://teamvegan.at';
         }
       })
       .catch(() => {
         return 'https://teamvegan.at';
       });
-
-    response.redirect(checkoutUrl);
+    return checkoutUrl;
   }
 
   @get('/mollie/checkout', {
@@ -136,7 +143,9 @@ export class MollieController {
     return checkoutUrl;
   }
 
-  private async createMollieCheckoutUrl(customer: any) {
+  /******** PRIVATE FUNCTIONS *************/
+
+  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string) {
     let checkoutUrl: string;
 
     return this.mollieClient.payments
@@ -154,7 +163,7 @@ export class MollieController {
           process.env.MOLLIE_PAYMENT_DESCRIPTION
         }`,
         locale: Locale.de_AT,
-        redirectUrl: process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
+        redirectUrl: redirectUrl ? redirectUrl : process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
         webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
       })
       .then(async (payment: Payment) => {

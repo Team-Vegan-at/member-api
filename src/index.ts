@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import {MemberApiApplication} from './application';
 import {ApplicationConfig} from '@loopback/core';
-import {DashboardController} from './controllers/dashboard.controller';
 import moment from 'moment';
-import {RedisUtil} from './utils/redis.util';
+import {MemberApiApplication} from './application';
 import {MollieController} from './controllers';
+import {DashboardController} from './controllers/dashboard.controller';
+import {RedisUtil} from './utils/redis.util';
 
 export {MemberApiApplication};
 
@@ -14,6 +14,7 @@ export async function main(options: ApplicationConfig = {}) {
 
   const debug = require('debug')('api:app');
   const debugCron = require('debug')('api:cron');
+  const debugRedis = require('debug')('redis');
 
   const app = new MemberApiApplication(options);
   await app.boot();
@@ -27,19 +28,43 @@ export async function main(options: ApplicationConfig = {}) {
   const job = new CronJob('0 5 */1 * * *', async function() {
     debugCron(`Cronjob start - ${moment().format()}`);
 
-    await cronProcessMembers(debugCron);
+    await cronProcessMembers(debugCron, debugRedis);
 
     debugCron(`Cronjob finished - ${moment().format()}`);
   });
   job.start();
 
   // Once off cron start
-  await cronProcessMembers(debugCron);
+  await cronProcessMembers(debugCron, debugRedis);
 
   return app;
 }
 
-async function cronProcessMembers(debugCron: any) {
+if (require.main === module) {
+  // Run the application
+  const config = {
+    rest: {
+      port: +(process.env.PORT ?? 3000),
+      host: process.env.HOST,
+      // The `gracePeriodForClose` provides a graceful close for http/https
+      // servers with keep-alive clients. The default value is `Infinity`
+      // (don't force-close). If you want to immediately destroy all sockets
+      // upon stop, set its value to `0`.
+      // See https://www.npmjs.com/package/stoppable
+      gracePeriodForClose: 5000, // 5 seconds
+      openApiSpec: {
+        // useful when used with OpenAPI-to-GraphQL to locate your application
+        setServersFromRequest: true,
+      },
+    },
+  };
+  main(config).catch(err => {
+    console.error('Cannot start the application.', err);
+    process.exit(1);
+  });
+}
+
+async function cronProcessMembers(debugCron: any, debugRedis: any) {
   const dbc = new DashboardController();
   await dbc.listDiscourseMembers();
   await dbc.listMollieMembers();
@@ -59,7 +84,7 @@ async function cronProcessMembers(debugCron: any) {
             `${RedisUtil.teamMemberPrefix}:${custObj.data.email.toLowerCase()}`,
           )
             .then((reply: any) => {
-              debugCron(`Redis returend ${reply}`);
+              debugRedis(reply);
               if (reply == null) {
                 // Store in Redis
                 const redisMemberPayload = {
@@ -120,7 +145,7 @@ async function cronProcessMembers(debugCron: any) {
               }:${custObj.data.email.toLowerCase()}`,
             )
               .then((reply: any) => {
-                debugCron(`Redis returend ${reply}`);
+                debugRedis(`${reply}`);
                 if (reply == null) {
                   // Store in Redis
                   const redisMemberPayload = {
@@ -137,7 +162,7 @@ async function cronProcessMembers(debugCron: any) {
                     JSON.stringify(redisMemberPayload),
                     (err: any, _reply: any) => {
                       if (err) {
-                        debugCron(`Redis error: ${err}`);
+                        debugRedis(`${err}`);
                       }
                     },
                   );
@@ -152,7 +177,7 @@ async function cronProcessMembers(debugCron: any) {
                     JSON.stringify(updatePayload),
                     (err: any, _reply: any) => {
                       if (err) {
-                        debugCron(`Redis error: ${err}`);
+                        debugRedis(`${err}`);
                       }
                     },
                   );
@@ -160,7 +185,7 @@ async function cronProcessMembers(debugCron: any) {
               })
               .catch((err: any) => {
                 if (err) {
-                  debugCron(`Redis error: ${err}`);
+                  debugRedis(`${err}`);
                 }
               });
           });
