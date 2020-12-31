@@ -62,11 +62,14 @@ export class MemberApiApplication extends BootMixin(
     // Set up the custom sequence
     this.sequence(MyAuthenticationSequence);
 
-    // Set up default home page
-    this.static('/', path.join(__dirname, '../public'));
-
     // Set up membership portal
-    this.static('/membership', path.join(__dirname, '../public/membership'));
+    this.static('/', path.join(__dirname, '../public/membership'));
+    // Set up loopback site
+    this.static('/lb', path.join(__dirname, '../public/lb.html'));
+
+    // Set up Mollie checkout
+    this.static('/checkout-qs', path.join(__dirname, '../public/mollie-checkout-qs.html'));
+    this.static('/checkout', path.join(__dirname, '../public/mollie-checkout.html'));
 
 
     // Customize @loopback/rest-explorer configuration here
