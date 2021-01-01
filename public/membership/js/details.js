@@ -153,7 +153,11 @@ function onceOffPayment(callback) {
 function createSepaDD(callback) {
   let url = `${baseUrl}/membership/mandate`;
   let d = new Date();
-  let formattedDate = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+
+  let formattedDate =
+    d.getFullYear()
+    + '-' + ('0' + (d.getMonth() + 1)).slice(-2)
+    + '-' + ('0' + d.getDate()).slice(-2);
 
   // Step 1: Create Mandate
   $.ajax({
