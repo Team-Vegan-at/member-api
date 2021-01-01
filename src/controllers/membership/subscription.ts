@@ -92,7 +92,7 @@ export class Subscription {
                   value: process.env.MOLLIE_PAYMENT_AMOUNT as string
                 },
                 interval: "12 months",
-                startDate: "2021-01-30",
+                startDate: moment().add(7, 'days').format('YYYY-MM-DD'),
                 mandateId,
                 description: process.env.MOLLIE_PAYMENT_DESCRIPTION as string,
               }).then((subscription) => {
