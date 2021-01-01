@@ -157,7 +157,7 @@ function createSepaDD(callback) {
   let formattedDate =
     d.getFullYear()
     + '-' + ('0' + (d.getMonth() + 1)).slice(-2)
-    + '-' + ('0' + dgetDate()).slice(-2);
+    + '-' + ('0' + d.getDate()).slice(-2);
 
   // Step 1: Create Mandate
   $.ajax({
