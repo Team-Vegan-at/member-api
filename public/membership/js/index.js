@@ -1,4 +1,3 @@
-
 /*** EVENTS  ***/
 $('#confirm-login').on('click', function() {
   $('#confirm-login').prop('disabled', true);
@@ -15,7 +14,10 @@ $('#confirm-login').on('click', function() {
       $('input[name="email"]').val('');
       $('#confirm-login').prop('disabled', false);
     }).fail(function (reason) {
-      $('#email-failure-modal').modal('show');
+      $('#alert-modal').modal('show');
+      $('#alert-details').text(reason.responseText);
+      console.error(reason.responseText);
+
       $('input[name="email"]').val('');
       $('#confirm-login').prop('disabled', false);
     });

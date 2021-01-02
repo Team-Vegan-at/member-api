@@ -10,8 +10,6 @@ import {RedisUtil} from './utils/redis.util';
 export {MemberApiApplication};
 
 export async function main(options: ApplicationConfig = {}) {
-  require('dotenv').config();
-
   const debug = require('debug')('api:app');
   const debugCron = require('debug')('api:cron');
   const debugRedis = require('debug')('redis');
@@ -26,11 +24,11 @@ export async function main(options: ApplicationConfig = {}) {
 
   const CronJob = require('cron').CronJob;
   const job = new CronJob('0 5 */1 * * *', async function() {
-    debugCron(`Cronjob start - ${moment().format()}`);
+    debug(`Cronjob start - ${moment().format()}`);
 
     await cronProcessMembers(debugCron, debugRedis);
 
-    debugCron(`Cronjob finished - ${moment().format()}`);
+    debug(`Cronjob finished - ${moment().format()}`);
   });
   job.start();
 
