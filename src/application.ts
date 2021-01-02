@@ -15,9 +15,8 @@ import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAu
 import {JWTAuthenticationStrategy} from './authentication-strategies/JWTAuthenticationStrategy';
 import {PATAuthenticationStrategy} from './authentication-strategies/PATAuthenticationStrategy';
 import {TokenServiceBindings, TokenServiceConstants} from './keys';
-import {MyAuthenticationSequence} from './sequence';
+import {MySequence} from './sequence';
 import {JWTService} from './services/jwt-service';
-import {SECURITY_SCHEME_SPEC} from './utils/security-spec';
 
 /**
  * Information from package.json
@@ -36,19 +35,6 @@ export class MemberApiApplication extends BootMixin(
   constructor(options: ApplicationConfig = {}) {
     super(options);
 
-    /*
-           This is a workaround until an extension point is introduced
-           allowing extensions to contribute to the OpenAPI specification
-           dynamically.
-        */
-    this.api({
-      openapi: '3.0.0',
-      info: {title: pkg.name, version: pkg.version},
-      paths: {},
-      components: {securitySchemes: SECURITY_SCHEME_SPEC},
-      servers: [{url: '/'}],
-    });
-
     this.setUpBindings();
 
     // Bind authentication component related elements
@@ -60,7 +46,7 @@ export class MemberApiApplication extends BootMixin(
     registerAuthenticationStrategy(this, PATAuthenticationStrategy);
 
     // Set up the custom sequence
-    this.sequence(MyAuthenticationSequence);
+    this.sequence(MySequence);
 
     // Set up membership portal
     this.static('/', path.join(__dirname, '../public/membership'));
@@ -73,7 +59,7 @@ export class MemberApiApplication extends BootMixin(
 
 
     // Customize @loopback/rest-explorer configuration here
-    this.bind(RestExplorerBindings.CONFIG).to({
+    this.configure(RestExplorerBindings.COMPONENT).to({
       path: '/explorer',
     });
     this.component(RestExplorerComponent);

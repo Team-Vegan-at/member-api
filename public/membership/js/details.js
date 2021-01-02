@@ -43,7 +43,10 @@ function fetchProfile(callback) {
   }).done(function (profile) {
     callback(profile);
   }).fail(function (reason) {
-    console.error(reason.statusText);
+    $('#alert-modal').modal('show');
+    $('#alert-details').text(reason.responseText);
+    console.error(reason.responseText);
+
     callback(reason);
   });
 }
@@ -60,8 +63,11 @@ function fetchPayments(data) {
   }).done(function (payments) {
     data.success(payments);
   }).fail(function (reason) {
-    console.error(reason.statusText);
-    data.error(reason.statusText)
+    $('#alert-modal').modal('show');
+    $('#alert-details').text(reason.responseText);
+    console.error(reason.responseText);
+
+    data.error(reason.responseText)
   });
 }
 
@@ -92,8 +98,11 @@ function fetchSubscriptions(data) {
     activeSubscription = false;
     $('#subscriptions-table').addClass('d-none').removeClass('d-block');
     $('#create-new-subscription-section').addClass('d-block').removeClass('d-none');
-    console.error(reason.statusText);
-    data.error(reason.statusText)
+
+    $('#alert-modal').modal('show');
+    $('#alert-details').text(reason.responseText);
+    console.error(reason.responseText);
+    data.error(reason.responseText)
   });
 }
 
@@ -112,7 +121,10 @@ function cancelSubscription(callback) {
       callback();
     }
   }).fail(function (reason) {
-    console.error(reason.statusText);
+    $('#alert-modal').modal('show');
+    $('#alert-details').text(reason.responseText);
+    console.error(reason.responseText);
+    callback();
   });
 }
 
@@ -146,6 +158,9 @@ function onceOffPayment(callback) {
       });
     }
   }).fail(function (reason) {
+    $('#onceoff-payment-modal').modal('hide');
+    $('#alert-modal').modal('show');
+    $('#alert-details').text(reason.responseText);
     console.error(reason.responseText);
   });
 }
@@ -191,13 +206,19 @@ function createSepaDD(callback) {
         callback();
       }
     }).fail(function (reason) {
-      console.error(reason.statusText);
+      $('#alert-modal').modal('show');
+      $('#alert-details').text(reason.responseText);
+      console.error(reason.responseText);
+
       if (callback) {
         callback();
       }
     });
   }).fail(function (reason) {
-    console.error(reason.statusText);
+    $('#alert-modal').modal('show');
+    $('#alert-details').text(reason.responseText);
+    console.error(reason.responseText);
+
     if (callback) {
       callback();
     }
