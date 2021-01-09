@@ -367,7 +367,9 @@ export class DashboardController {
       for (let i = 0; i < memberObj.molliePayments.length; i++) {
         if (memberObj.molliePayments[i].status === 'paid'
           && memberObj.molliePayments[i].paidAt != null) {
-          if (this.withinMembershipYear(memberObj.molliePayments[i].paidAt, year)) {
+
+          if (this.withinMembershipYear(
+            memberObj.molliePayments[i].paidAt.substring(0, 10), year)) {
             paid = true;
           }
         }
