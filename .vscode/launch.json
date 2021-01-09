@@ -11,6 +11,10 @@
         "env": {
             "DEBUG": "api:*"
         },
+        "runtimeArgs": [
+          "-r",
+          "dotenv/config"
+        ],
         "program": "${workspaceFolder}/dist/index.js",
       },
       {
