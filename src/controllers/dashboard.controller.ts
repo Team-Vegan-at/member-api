@@ -1,17 +1,17 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/camelcase */
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import {get, param} from '@loopback/rest';
-import {RedisUtil} from '../utils/redis.util';
-import moment = require('moment');
-import {MollieController} from './mollie.controller';
 import {authenticate} from '@loopback/authentication';
-import {Payment, PaymentStatus, PaymentMethod} from '@mollie/api-client';
+import {get, param} from '@loopback/rest';
+import {Payment, PaymentMethod, PaymentStatus} from '@mollie/api-client';
 import {
   BankTransferDetails,
-  CreditCardDetails,
+  CreditCardDetails
 } from '@mollie/api-client/dist/types/src/data/payments/data';
+import {RedisUtil} from '../utils/redis.util';
+import {MollieController} from './mollie.controller';
+import moment = require('moment');
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
@@ -19,15 +19,28 @@ export class DashboardController {
   constructor() {}
 
   @get('/dashboard/members', {
+    parameters: [
+      {
+        name: 'year',
+        schema: {type: 'number'},
+        in: 'query',
+        required: false,
+      },
+    ],
     responses: {
       '200': {},
     },
   })
   @authenticate('team-vegan-jwt')
-  public async listTeamMembers(): Promise<any> {
+  public async listTeamMembers(
+    @param.query.number('year') year: number,
+  ): Promise<any> {
     const memberList: any = [];
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
+    if (year == null) {
+      year = moment().year();
+    }
 
     return new Promise((resolve, reject) => {
       scanner.scan(
@@ -41,85 +54,9 @@ export class DashboardController {
           const start = async () => {
             await this.asyncForEach(matchingKeys, async memberKey => {
               await this.redisGetTeamMember(
-                memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, ''),
+                memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
               ).then((memberObj: any) => {
-                // Payment Status
-                let paid = false;
-                if (memberObj.molliePayments) {
-                  for (let i = 0; i < memberObj.molliePayments.length; i++) {
-                    paid =
-                      memberObj.molliePayments[i].status === 'paid'
-                        ? true
-                        : paid;
-                  }
-                }
-
-                // Discourse Details
-                let discourse = {};
-                if (memberObj.discourseObj) {
-                  discourse = {
-                    id: memberObj.discourseObj.id,
-                    suspended_at: memberObj.discourseObj.suspended_at,
-                    username: memberObj.discourseObj.username,
-                  };
-                }
-
-                // Payment Details
-                let payment = {};
-                if (memberObj.molliePayments) {
-                  let userPaid = false;
-                  memberObj.molliePayments.forEach((pymt: Payment) => {
-                    // skip if we already processed a paid record
-                    if (userPaid) {
-                      return;
-                    }
-
-                    if (pymt.status === PaymentStatus.paid) {
-                      userPaid = true;
-                      let payerName = '';
-                      if (
-                        pymt.method === PaymentMethod.banktransfer ||
-                        pymt.method === PaymentMethod.eps
-                      ) {
-                        payerName = (pymt.details as BankTransferDetails)
-                          .consumerName;
-                      } else if (pymt.method === PaymentMethod.creditcard) {
-                        payerName = (pymt.details as CreditCardDetails)
-                          .cardHolder;
-                      }
-
-                      payment = {
-                        status: pymt.status,
-                        paidAt: pymt.paidAt,
-                        amount: pymt.amount.value,
-                        method: pymt.method,
-                        payerName,
-                      };
-                    } else if (
-                      pymt.status === PaymentStatus.open ||
-                      pymt.status === PaymentStatus.pending ||
-                      pymt.status === PaymentStatus.expired
-                    ) {
-                      payment = {
-                        status: pymt.status,
-                        createdAt: pymt.createdAt,
-                        method: pymt.method,
-                      };
-                    } else {
-                      payment = {
-                        status: pymt.status,
-                      };
-                    }
-                  });
-                }
-
-                const memberPayload = {
-                  email: memberObj.email,
-                  name: memberObj.name,
-                  paid,
-                  discourse,
-                  payment,
-                };
+                const memberPayload = this.buildMemberPayload(memberObj, year);
                 memberList.push(memberPayload);
               });
             });
@@ -144,6 +81,13 @@ export class DashboardController {
         in: 'query',
         required: true,
       },
+      {
+        name: 'year',
+        schema: {type: 'number'},
+        in: 'query',
+        required: false,
+      },
+
     ],
     responses: {
       '200': {},
@@ -151,7 +95,7 @@ export class DashboardController {
   })
   @authenticate('team-vegan-jwt')
   public async redisGetTeamMember(
-    @param.query.string('email') email: string,
+    @param.query.string('email') email: string
   ): Promise<any> {
     const custObj = await RedisUtil.redisGetAsync(
       `${RedisUtil.teamMemberPrefix}:${email}`,
@@ -408,5 +352,96 @@ export class DashboardController {
     for (let index = 0; index < array.length; index++) {
       await callback(array[index], index, array);
     }
+  }
+
+  private withinMembershipYear(date: any, year: number) {
+    return moment(date).year() === year ||
+      (moment(date).year() === moment(year, 'YYYY').subtract(1, 'year').year()
+       && moment(date).month() === 11)
+  }
+
+  private buildMemberPayload(memberObj: any, year: number) {
+    // Payment Status
+    let paid = false;
+    if (memberObj.molliePayments) {
+      for (let i = 0; i < memberObj.molliePayments.length; i++) {
+        if (memberObj.molliePayments[i].status === 'paid'
+          && memberObj.molliePayments[i].paidAt != null) {
+          if (this.withinMembershipYear(memberObj.molliePayments[i].paidAt, year)) {
+            paid = true;
+          }
+        }
+      }
+    }
+
+    // Discourse Details
+    let discourse = {};
+    if (memberObj.discourseObj) {
+      discourse = {
+        id: memberObj.discourseObj.id,
+        suspended_at: memberObj.discourseObj.suspended_at,
+        username: memberObj.discourseObj.username,
+      };
+    }
+
+    // Payment Details
+    let payment = {};
+    if (memberObj.molliePayments) {
+      let userPaid = false;
+      memberObj.molliePayments.forEach((pymt: Payment) => {
+        // skip if we already processed a paid record
+        if (userPaid) {
+          return;
+        }
+
+        if (pymt.status === PaymentStatus.paid
+          && this.withinMembershipYear(pymt.paidAt, year)) {
+          userPaid = true;
+          let payerName = '';
+          if (
+            pymt.method === PaymentMethod.banktransfer ||
+            pymt.method === PaymentMethod.eps
+          ) {
+            payerName = (pymt.details as BankTransferDetails)
+              .consumerName;
+          } else if (pymt.method === PaymentMethod.creditcard) {
+            payerName = (pymt.details as CreditCardDetails)
+              .cardHolder;
+          }
+
+          payment = {
+            status: pymt.status,
+            paidAt: pymt.paidAt,
+            amount: pymt.amount.value,
+            method: pymt.method,
+            payerName,
+          };
+        } else if (
+          pymt.status === PaymentStatus.open ||
+          pymt.status === PaymentStatus.pending ||
+          pymt.status === PaymentStatus.expired
+        ) {
+          payment = {
+            status: pymt.status,
+            createdAt: pymt.createdAt,
+            method: pymt.method,
+          };
+        } else {
+          payment = {
+            status: pymt.status,
+          };
+        }
+      });
+    }
+
+    const memberPayload = {
+      email: memberObj.email,
+      name: memberObj.name,
+      paid,
+      discourse,
+      payment,
+    };
+
+    return memberPayload;
   }
 }

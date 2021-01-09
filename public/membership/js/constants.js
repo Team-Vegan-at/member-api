@@ -1,0 +1,5 @@
+/**
+ * CONSTANTS
+ */
+
+let baseUrl = '{BASEURL}';

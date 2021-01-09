@@ -48,7 +48,11 @@ export class WebhooksController {
         // Update payment payload in customer record
         await RedisUtil.redisGetAsync(
           `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
-        ).then((custRecord: string) => {
+        ).then((custRecord: string | null) => {
+          if (!custRecord) {
+            this.debug(`Customer not found: ${payment.customerId}`);
+            throw new HttpErrors.InternalServerError(`Customer not found`);
+          }
           const redisPaymentPayload = {
             timestamp: moment().utc(),
             controller: 'mollie',

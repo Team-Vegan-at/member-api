@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Team Vegan.at SEPA Mandat</title>
+    <meta name="description" content="Team Vegan.at Direct Debit mandat" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <link rel="stylesheet" href="css/normalize.css" />
+    <link rel="stylesheet" href="css/global.css" />
+    <script src="https://js.stripe.com/v3/"></script>
+    <script src="./dd.js" defer></script>
+  </head>
+
+  <body>
+    <div class="sr-root">
+      <div class="sr-main">
+        <form id="payment-form" class="sr-payment-form">
+          <div class="sr-combo-inputs-row">
+            <div class="col">
+              <label for="name">
+                Name
+              </label>
+              <input id="name" name="name" placeholder="Dein Name" required />
+            </div>
+            <div class="col">
+              <label for="email">
+                Email Addresse
+              </label>
+              <input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="hallo@teamvegan.at"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="sr-combo-inputs-row">
+            <div class="col">
+              <label for="iban-element">
+                IBAN
+              </label>
+              <div id="iban-element">
+                <!-- A Stripe Element will be inserted here. -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Used to display form errors. -->
+          <div id="error-message" class="sr-field-error" role="alert"></div>
+
+          <!-- Display mandate acceptance text. -->
+          <div class="col" id="mandate-acceptance">
+            Hiermit ermächtige(n) ich/wir die Vegane Gesellschaft Österreich,
+            die anfallenden Beträge bis auf Weiteres von meinem/unserem Konto
+            mittels Lastschrift einzuziehen. Zugleich weise(n) ich/wir
+            mein/unser Kreditinstitut an,
+            die von der Vegane Gesellschaft Österreich auf mein/unser Konto
+            gezogenen Lastschriften einzulösen.
+            Innerhalb von 8 Wochen, beginnend mit dem Belastungsdatum kann
+            die Erstattung des belasteten Betrages verlangt werden. Es
+            gelten dabei die mit unserem Kreditinstitut vereinbarten Bedingungen.
+          </div>
+
+          <button id="confirm-mandate">
+            <div disabled class="spinner hidden" id="spinner"></div>
+            <span id="button-text"
+              >Lastschrift für den Jahresmitgliedsbeitrag von
+              <span id="order-amount"></span
+            > bestätigen</span>
+          </button>
+        </form>
+        <div class="sr-result hidden">
+          <p>Payment processing<br /></p>
+          <pre>
+            <code></code>
+          </pre>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
