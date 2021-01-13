@@ -312,7 +312,7 @@ export class MollieController {
     const paymentsArray: Payment[] = [];
     return this.mollieClient.payments
       .all({
-        limit: 2
+        // limit: 2
       })
       .then(async payments => {
         this.debug(`Fetched ${payments.count} payment(s)`);
@@ -324,28 +324,28 @@ export class MollieController {
           }
         });
 
-        let nxt = payments.nextPageCursor;
-        while (nxt) {
-          nxt = await this.mollieClient.payments
-            .all({
-              limit: 2,
-              from: nxt
-            }).then(pymts => {
-              this.debug(`Fetched ${payments.count} payment(s)`);
-              pymts.forEach(payment => {
-                if (payment.status === PaymentStatus.paid) {
-                  if (CalcUtil.isInMembershipRange(payment.paidAt!.substring(0, 10), membershipYear)) {
-                    paymentsArray.push(payment);
-                  }
-                }
-              });
-              return payments.nextPageCursor;
-            })
-            .catch(reason => {
-              this.debug(reason);
-              throw new HttpErrors.InternalServerError(reason);
-            });
-        }
+        // let nxt = payments.nextPageCursor;
+        // while (nxt) {
+        //   nxt = await this.mollieClient.payments
+        //     .all({
+        //       limit: 2,
+        //       from: nxt
+        //     }).then(pymts => {
+        //       this.debug(`Fetched ${payments.count} payment(s)`);
+        //       pymts.forEach(payment => {
+        //         if (payment.status === PaymentStatus.paid) {
+        //           if (CalcUtil.isInMembershipRange(payment.paidAt!.substring(0, 10), membershipYear)) {
+        //             paymentsArray.push(payment);
+        //           }
+        //         }
+        //       });
+        //       return payments.nextPageCursor;
+        //     })
+        //     .catch(reason => {
+        //       this.debug(reason);
+        //       throw new HttpErrors.InternalServerError(reason);
+        //     });
+        // }
 
         return paymentsArray;
       })
