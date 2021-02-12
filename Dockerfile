@@ -17,8 +17,9 @@ COPY --chown=node package*.json ./
 # Bundle app source code
 COPY --chown=node . .
 
+RUN npm install -g yarn
 RUN yarn policies set-version 2
-# RUN yarn set version berry
+RUN yarn set version berry
 
 RUN yarn install
 
