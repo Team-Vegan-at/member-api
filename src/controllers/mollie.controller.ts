@@ -413,13 +413,19 @@ export class MollieController {
           customerList.push(customer);
         });
 
-        return customers.nextPage!();
+        if (customers.nextPage) {
+          return customers.nextPage!();
+        } else {
+          return null;
+        }
         })
-        .then((customers: List<Customer>) => {
-          this.debug(`#2 Fetched ${customers.count} customer entries`);
-          customers.forEach(customer => {
-            customerList.push(customer);
-          });
+        .then((customers: List<Customer> | null) => {
+          if (customers) {
+            this.debug(`#2 Fetched ${customers.count} customer entries`);
+            customers.forEach(customer => {
+              customerList.push(customer);
+            });
+          }
       })
       .catch(reason => {
         this.debug(reason);
