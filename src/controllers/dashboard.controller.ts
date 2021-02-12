@@ -372,37 +372,10 @@ export class DashboardController {
   }
 
   private buildMemberPayload(memberObj: any, year: number) {
-    // Payment Status
+    // Shorthands
     let paid = false;
-    // if (memberObj.molliePayments) {
-
-    //   memberObj.molliePayments.forEach((pymt: Payment) => {
-    //     if (pymt.status === PaymentStatus.paid
-    //       && CalcUtil.isInMembershipRange(pymt.paidAt!, year)) {
-
-    //       // Check for Chargeback or Refund
-    //       if ( pymt.amountRefunded!pymt.hasChargebacks() && !pymt.hasRefunds()) {
-    //         paid = true;
-    //       }
-    //     }
-    //   });
-
-      // for (let i = 0; i < memberObj.molliePayments.length; i++) {
-      //   if (memberObj.molliePayments[i].status === PaymentStatus.paid
-      //     && memberObj.molliePayments[i].paidAt != null) {
-      //       if (CalcUtil.isInMembershipRange(
-      //         memberObj.molliePayments[i].paidAt.substring(0, 10), year)) {
-
-      //         // Check for Chargeback or Refund
-      //         if ( !memberObj.molliePayments[i].hasChargebacks()
-      //           && !memberObj.molliePayments[i].hasRefunds() ) {
-
-      //             paid = true;
-      //           }
-      //       }
-      //   }
-      // }
-    // }
+    let activeSubscription = false;
+    let mollieCustId: string | undefined;
 
     // Discourse Details
     let discourse = {};
@@ -415,7 +388,6 @@ export class DashboardController {
     }
 
     // Subscription Details
-    let activeSubscription = false;
     let subscription = {};
     if (memberObj.mollieSubscriptions) {
       memberObj.mollieSubscriptions.forEach((subscr: Subscription) => {
@@ -432,6 +404,8 @@ export class DashboardController {
     let payment = {};
     if (memberObj.molliePayments) {
       memberObj.molliePayments.forEach((pymt: Payment) => {
+        mollieCustId = pymt.customerId;
+
         // skip if we already processed a paid record
         if (paid) {
           return;
@@ -484,13 +458,14 @@ export class DashboardController {
     }
 
     const memberPayload = {
+      activeSubscription,
       email: memberObj.email,
+      discourse,
+      mollieCustId,
       name: memberObj.name,
       paid,
-      discourse,
-      activeSubscription,
-      subscription,
       payment,
+      subscription,
     };
 
     return memberPayload;
