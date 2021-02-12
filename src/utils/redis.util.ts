@@ -17,6 +17,18 @@ export class RedisUtil {
     RedisUtil.redisClient,
   );
 
+  public static async cleanup(): Promise<string | Error> {
+    return new Promise((resolve, reject) => {
+      RedisUtil.redisClient.flushdb((err, succeeded) => {
+        if (err) {
+          reject(err);
+        }
+        resolve(succeeded);
+      });
+
+    });
+  }
+
   public static discourseCustomerPrefix = 'teamveganat:discourse';
   public static mollieCustomerPrefix = 'teamveganat:mollie';
   public static patPrefix = 'teamveganat:pat';

@@ -406,19 +406,20 @@ export class MollieController {
     const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .all({limit: 250})
+      .all({limit: 200})
       .then((customers: List<Customer>) => {
         this.debug(`#1 Fetched ${customers.count} customer entries`);
         customers.forEach(customer => {
           customerList.push(customer);
         });
-        //   return customers.nextPage!();
-        // })
-        // .then((customers: List<Customer>) => {
-        //   this.debug(`#2 Fetched ${customers.count} customer entries`);
-        //   customers.forEach(customer => {
-        //     customerList.push(customer);
-        //   });
+
+        return customers.nextPage!();
+        })
+        .then((customers: List<Customer>) => {
+          this.debug(`#2 Fetched ${customers.count} customer entries`);
+          customers.forEach(customer => {
+            customerList.push(customer);
+          });
       })
       .catch(reason => {
         this.debug(reason);

@@ -33,8 +33,10 @@ export async function main(options: ApplicationConfig = {}) {
   });
   job.start();
 
+  // Clean up
+  // await RedisUtil.cleanup();
   // Once off cron start
-  await cronProcessMembers(debugCron, debugRedis);
+  // await cronProcessMembers(debugCron, debugRedis);
 
   return app;
 }
@@ -213,7 +215,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           const statsPayload = {
             subscriptions: subscriptions.length,
             members: activeMembersInCurrentYear,
-            year: 2021
+            year: membershipYear
           };
           RedisUtil.redisClient.set(
             `${RedisUtil.statsPrefix}:all`,

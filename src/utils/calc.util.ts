@@ -6,11 +6,11 @@ export class CalcUtil {
   public static isInMembershipRange(shortDate: string, year: number): boolean {
     const from =  moment(year, "YYYY")
                   .startOf("year")
-                  .subtract(1, 'month')
+                  .subtract(2, 'month') // first of november
                   .startOf("month");
     const to =    moment(year, "YYYY")
                   .endOf("year")
-                  .add(1, 'month')
+                  .add(1, 'month')      // end of january
                   .endOf("month");
 
     CalcUtil.debug(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
