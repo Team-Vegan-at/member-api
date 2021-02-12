@@ -34,9 +34,9 @@ export async function main(options: ApplicationConfig = {}) {
   job.start();
 
   // Clean up
-  // await RedisUtil.cleanup();
+  await RedisUtil.cleanup();
   // Once off cron start
-  // await cronProcessMembers(debugCron, debugRedis);
+  await cronProcessMembers(debugCron, debugRedis);
 
   return app;
 }
