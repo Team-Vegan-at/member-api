@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {ApplicationConfig} from '@loopback/core';
+import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import moment from 'moment';
 import {MemberApiApplication} from './application';
 import {MollieController} from './controllers';
@@ -32,6 +33,8 @@ export async function main(options: ApplicationConfig = {}) {
   });
   job.start();
 
+  // Clean up
+  await RedisUtil.cleanup();
   // Once off cron start
   await cronProcessMembers(debugCron, debugRedis);
 
@@ -63,6 +66,7 @@ if (require.main === module) {
 }
 
 async function cronProcessMembers(debugCron: any, debugRedis: any) {
+  const mc = new MollieController();
   const dbc = new DashboardController();
   await dbc.listDiscourseMembers();
   await dbc.listMollieMembers();
@@ -74,22 +78,26 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
         )
         .then(async (custObj: any) => {
           debugCron(custObj);
-          const mc = new MollieController();
           const paymentObj = await mc.listCustomerPayments(
             custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
           );
+          const subscriptionObj = await mc.listCustomerSubscriptions(
+            custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
+          );
+
           RedisUtil.redisGetAsync(
             `${RedisUtil.teamMemberPrefix}:${custObj.data.email.toLowerCase()}`,
           )
             .then((reply: any) => {
               debugRedis(reply);
               if (reply == null) {
-                // Store in Redis
+                // Store new record in Redis
                 const redisMemberPayload = {
                   name: custObj.data.name,
                   email: custObj.data.email.toLowerCase(),
                   mollieObj: custObj.data,
                   molliePayments: paymentObj,
+                  mollieSubscriptions: subscriptionObj,
                   discourseObj: null,
                 };
                 RedisUtil.redisClient.set(
@@ -109,6 +117,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                 updatePayload.name = custObj.data.name;
                 updatePayload.mollieObj = custObj.data;
                 updatePayload.molliePayments = paymentObj;
+                updatePayload.mollieSubscriptions = subscriptionObj;
                 RedisUtil.redisClient.set(
                   `${
                     RedisUtil.teamMemberPrefix
@@ -151,6 +160,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                     email: custObj.data.email,
                     mollieObj: null,
                     molliePayments: null,
+                    mollieSubscriptions: null,
                     discourseObj: custObj.data,
                   };
                   RedisUtil.redisClient.set(
@@ -190,4 +200,54 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
       });
     });
   });
+
+  // Stats
+  const membershipYear = moment().utc().year();
+  const activeMembersInCurrentYear = (await mc.listAllPaidPayments(membershipYear)).length;
+  await mc.listAllActiveSubscriptions().then((subscriptions: SubscriptionData[]) => {
+    RedisUtil.redisGetAsync(
+      `${RedisUtil.statsPrefix}:all`,
+    )
+      .then((reply: any) => {
+        debugRedis(reply);
+        if (reply == null) {
+          // Store new record in Redis
+          const statsPayload = {
+            subscriptions: subscriptions.length,
+            members: activeMembersInCurrentYear,
+            year: membershipYear
+          };
+          RedisUtil.redisClient.set(
+            `${RedisUtil.statsPrefix}:all`,
+            JSON.stringify(statsPayload),
+            (err: any, _reply: any) => {
+              if (err) {
+                debugCron(`Redis error: ${err}`);
+              }
+            },
+          );
+        } else {
+          // Update in Redis
+          const statsPayload = JSON.parse(reply);
+          statsPayload.subscriptions = subscriptions.length;
+          statsPayload.members = activeMembersInCurrentYear;
+          RedisUtil.redisClient.set(
+            `${
+              RedisUtil.statsPrefix
+            }:all`,
+            JSON.stringify(statsPayload),
+            (err: any, _reply: any) => {
+              if (err) {
+                debugCron(`Redis error: ${err}`);
+              }
+            },
+          );
+        }
+      })
+      .catch((err: any) => {
+        if (err) {
+          debugCron(`Redis error: ${err}`);
+        }
+      });
+  })
 }

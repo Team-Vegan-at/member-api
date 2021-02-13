@@ -4,11 +4,12 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import {authenticate} from '@loopback/authentication';
 import {get, param} from '@loopback/rest';
-import {Payment, PaymentMethod, PaymentStatus} from '@mollie/api-client';
+import {Payment, PaymentMethod, PaymentStatus, Subscription} from '@mollie/api-client';
 import {
   BankTransferDetails,
   CreditCardDetails
 } from '@mollie/api-client/dist/types/src/data/payments/data';
+import {CalcUtil} from '../utils/calc.util';
 import {RedisUtil} from '../utils/redis.util';
 import {MollieController} from './mollie.controller';
 import moment = require('moment');
@@ -31,7 +32,7 @@ export class DashboardController {
       '200': {},
     },
   })
-  @authenticate('team-vegan-jwt')
+  // @authenticate('team-vegan-jwt')
   public async listTeamMembers(
     @param.query.number('year') year: number,
   ): Promise<any> {
@@ -39,7 +40,7 @@ export class DashboardController {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
     if (year == null) {
-      year = moment().year();
+      year = CalcUtil.getCurrentMembershipYear();
     }
 
     return new Promise((resolve, reject) => {
@@ -57,7 +58,17 @@ export class DashboardController {
                 memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
               ).then((memberObj: any) => {
                 const memberPayload = this.buildMemberPayload(memberObj, year);
-                memberList.push(memberPayload);
+
+                // Only return members who have
+                // 1. Paid at least once OR
+                // 2. Have an active subscription OR
+                // 3. Have an active forum user
+                if ( Object.keys(memberPayload.discourse).length > 0
+                  || Object.keys(memberPayload.payment).length > 0
+                  || Object.keys(memberPayload.subscription).length > 0) {
+
+                  memberList.push(memberPayload);
+                }
               });
             });
             resolve(memberList);
@@ -93,16 +104,22 @@ export class DashboardController {
       '200': {},
     },
   })
-  @authenticate('team-vegan-jwt')
+  // @authenticate('team-vegan-jwt')
   public async redisGetTeamMember(
     @param.query.string('email') email: string
   ): Promise<any> {
     const custObj = await RedisUtil.redisGetAsync(
       `${RedisUtil.teamMemberPrefix}:${email}`,
     )
-      .then((reply: any) => {
-        this.debug(`Return ${reply}`);
-        return JSON.parse(reply);
+      .then((memberObj: any) => {
+        this.debug(`Return ${memberObj}`);
+
+        // const year = CalcUtil.getCurrentMembershipYear();
+        // const memberPayload = this.buildMemberPayload(JSON.parse(memberObj), year);
+
+        // return memberPayload;
+
+        return JSON.parse(memberObj);
       })
       .catch((err: any) => {
         if (err) {
@@ -354,29 +371,15 @@ export class DashboardController {
     }
   }
 
-  private withinMembershipYear(date: any, year: number) {
-    return moment(date).year() === year ||
-      (moment(date).year() === moment(year, 'YYYY').subtract(1, 'year').year()
-       && moment(date).month() === 11)
-  }
-
   private buildMemberPayload(memberObj: any, year: number) {
-    // Payment Status
+    // Shorthands
     let paid = false;
-    if (memberObj.molliePayments) {
-      for (let i = 0; i < memberObj.molliePayments.length; i++) {
-        if (memberObj.molliePayments[i].status === 'paid'
-          && memberObj.molliePayments[i].paidAt != null) {
-          if (this.withinMembershipYear(memberObj.molliePayments[i].paidAt, year)) {
-            paid = true;
-          }
-        }
-      }
-    }
+    let activeSubscription = false;
+    let mollieCustId: string | undefined;
 
     // Discourse Details
     let discourse = {};
-    if (memberObj.discourseObj) {
+    if (memberObj.discourseObj && Object.keys(memberObj.discourseObj).length > 0) {
       discourse = {
         id: memberObj.discourseObj.id,
         suspended_at: memberObj.discourseObj.suspended_at,
@@ -384,38 +387,58 @@ export class DashboardController {
       };
     }
 
+    // Subscription Details
+    let subscription = {};
+    if (memberObj.mollieSubscriptions) {
+      memberObj.mollieSubscriptions.forEach((subscr: Subscription) => {
+        activeSubscription = true;
+        subscription = {
+          id: subscr.id,
+          startDate: subscr.startDate,
+          nextPaymentDate: subscr.nextPaymentDate,
+        };
+      });
+    }
+
     // Payment Details
     let payment = {};
     if (memberObj.molliePayments) {
-      let userPaid = false;
       memberObj.molliePayments.forEach((pymt: Payment) => {
+        mollieCustId = pymt.customerId;
+
         // skip if we already processed a paid record
-        if (userPaid) {
+        if (paid) {
           return;
         }
 
         if (pymt.status === PaymentStatus.paid
-          && this.withinMembershipYear(pymt.paidAt, year)) {
-          userPaid = true;
-          let payerName = '';
-          if (
-            pymt.method === PaymentMethod.banktransfer ||
-            pymt.method === PaymentMethod.eps
-          ) {
-            payerName = (pymt.details as BankTransferDetails)
-              .consumerName;
-          } else if (pymt.method === PaymentMethod.creditcard) {
-            payerName = (pymt.details as CreditCardDetails)
-              .cardHolder;
-          }
+          && CalcUtil.isInMembershipRange(pymt.paidAt!, year)) {
 
-          payment = {
-            status: pymt.status,
-            paidAt: pymt.paidAt,
-            amount: pymt.amount.value,
-            method: pymt.method,
-            payerName,
-          };
+          // Check for Chargeback
+          // eslint-disable-next-line no-prototype-builtins
+          if (!pymt.hasOwnProperty("amountChargedBack")) {
+
+            paid = true;
+            let payerName = '';
+            if (
+              pymt.method === PaymentMethod.banktransfer ||
+              pymt.method === PaymentMethod.eps
+            ) {
+              payerName = (pymt.details as BankTransferDetails)
+                .consumerName;
+            } else if (pymt.method === PaymentMethod.creditcard) {
+              payerName = (pymt.details as CreditCardDetails)
+                .cardHolder;
+            }
+
+            payment = {
+              status: pymt.status,
+              paidAt: pymt.paidAt,
+              amount: pymt.amount.value,
+              method: pymt.method,
+              payerName,
+            };
+          }
         } else if (
           pymt.status === PaymentStatus.open ||
           pymt.status === PaymentStatus.pending ||
@@ -435,11 +458,14 @@ export class DashboardController {
     }
 
     const memberPayload = {
+      activeSubscription,
       email: memberObj.email,
+      discourse,
+      mollieCustId,
       name: memberObj.name,
       paid,
-      discourse,
       payment,
+      subscription,
     };
 
     return memberPayload;
