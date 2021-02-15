@@ -345,6 +345,8 @@ function statusFormatter(value) {
     return "Bezahlt";
   } else if (value === "pending" || value === "open") {
     return "In Bearbeitung";
+  } else if (value === "rejected") {
+    return "Abgelehnt";
   } else {
     return value;
   }
