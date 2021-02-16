@@ -38,15 +38,34 @@ export class Payment {
                 || pymt.status === PaymentStatus.pending
                 || pymt.status === PaymentStatus.open) {
 
-                pymtRes.push(new PaymentResult({
-                  id: pymt.id,
-                  method: pymt.method,
-                  paidAt: pymt.paidAt,
-                  createdAt: pymt.createdAt,
-                  amount: pymt.amount.value,
-                  description: pymt.description,
-                  status: pymt.status
-                }));
+                // Check for chargeback
+                // eslint-disable-next-line no-prototype-builtins
+                if (!pymt.hasOwnProperty("amountChargedBack")) {
+
+                  pymtRes.push(new PaymentResult({
+                    id: pymt.id,
+                    method: pymt.method,
+                    paidAt: pymt.paidAt,
+                    createdAt: pymt.createdAt,
+                    amount: pymt.amount.value,
+                    description: pymt.description,
+                    status: pymt.status
+                  }));
+
+                } else {
+
+                  // Assumption: If chargeback property exists - no payment
+                  pymtRes.push(new PaymentResult({
+                    id: pymt.id,
+                    method: pymt.method,
+                    paidAt: pymt.paidAt,
+                    createdAt: pymt.createdAt,
+                    amount: undefined,
+                    description: pymt.description,
+                    status: 'rejected'
+                  }));
+
+                }
               }
             });
 
