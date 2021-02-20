@@ -15,8 +15,8 @@ $('#confirm-login').on('click', function() {
       $('#confirm-login').prop('disabled', false);
     }).fail(function (reason) {
       $('#alert-modal').modal('show');
-      $('#alert-details').text(reason.responseText);
-      console.error(reason.responseText);
+      $('#alert-details').text(`email=${email} | error=${reason.responseText}`);
+      console.error(`email=${email} | error=${reason.responseText}`);
 
       $('input[name="email"]').val('');
       $('#confirm-login').prop('disabled', false);

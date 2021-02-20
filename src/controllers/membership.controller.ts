@@ -299,6 +299,9 @@ export class MembershipController {
   ): Promise<string> {
     this.debug(`/membership/login`);
 
+    if (email) {
+      email = email.toLowerCase();
+    }
     const dc = new DashboardController();
     return new Promise(async (resolve, reject) => {
 
@@ -306,7 +309,7 @@ export class MembershipController {
         .then(async (custObj: any) => {
         if (custObj == null) {
           this.debug(`${email} not found`);
-          return reject();
+          return reject(`${email} lookup error`);
         }
 
         // Generate access token

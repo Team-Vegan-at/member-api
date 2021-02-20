@@ -51,7 +51,11 @@ export class MollieController {
 
     const checkoutUrl = await this.getCheckoutUrl(email, redirectUrl);
 
-    response.redirect(checkoutUrl);
+    if (checkoutUrl) {
+      response.redirect(checkoutUrl);
+    } else {
+      throw new HttpErrors.InternalServerError();
+    }
   }
 
   public async getCheckoutUrl(email: string, redirectUrl?: string) {
@@ -141,7 +145,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return null;
       });
 
     return checkoutUrl;
@@ -178,7 +182,7 @@ export class MollieController {
         ).then((custRecord: string | null) => {
           if (!custRecord) {
             this.debug(`Customer not found: ${customer.id}`);
-            throw new HttpErrors.InternalServerError(`Customer not found`);
+            return null;
           }
           const redisPaymentPayload = {
             timestamp: moment().utc(),
@@ -207,7 +211,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return null;
       });
   }
 
@@ -242,7 +246,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return [];
       });
   }
 
@@ -272,7 +276,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return [];
       });
   }
 
@@ -295,7 +299,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return [];
       });
   }
 
@@ -351,7 +355,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return [];
       });
   }
 
@@ -387,7 +391,7 @@ export class MollieController {
         })
         .catch(reason => {
           this.debug(reason);
-          throw new HttpErrors.InternalServerError(reason);
+          return [];
         });
     }
 
@@ -429,7 +433,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return [];
       });
 
     return customerList;
