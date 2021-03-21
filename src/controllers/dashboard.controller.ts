@@ -33,7 +33,7 @@ export class DashboardController {
       '200': {},
     },
   })
-  // @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-jwt')
   public async listTeamMembers(
     @param.query.number('year') year: number,
   ): Promise<any> {
@@ -105,12 +105,12 @@ export class DashboardController {
       '200': {},
     },
   })
-  // @authenticate('team-vegan-jwt')
+  @authenticate('team-vegan-jwt')
   public async redisGetTeamMember(
     @param.query.string('email') email: string
   ): Promise<any> {
     const custObj = await RedisUtil.redisGetAsync(
-      `${RedisUtil.teamMemberPrefix}:${email}`,
+      `${RedisUtil.teamMemberPrefix}:${email.toLowerCase()}`,
     )
       .then((memberObj: any) => {
         this.debug(`Return ${memberObj}`);
@@ -288,20 +288,6 @@ export class DashboardController {
     return null;
   }
 
-  @get('/dashboard/redis/mollie/customer', {
-    parameters: [
-      {
-        name: 'customerId',
-        schema: {type: 'string'},
-        in: 'query',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
   public async redisGetMollieCustomer(
     @param.query.string('mollieCustomerKey') customerId: string,
   ): Promise<any> {
@@ -321,20 +307,6 @@ export class DashboardController {
     return custObj;
   }
 
-  @get('/dashboard/redis/discourse/customer', {
-    parameters: [
-      {
-        name: 'customerId',
-        schema: {type: 'string'},
-        in: 'query',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
   public async redisGetDiscourseCustomer(
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
@@ -354,12 +326,25 @@ export class DashboardController {
     return custObj;
   }
 
-  @get('/dashboard/redis/mollie/customers', {
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
+  public async redisGetMailchimpMember(
+    memberId: string,
+  ): Promise<any> {
+    const custObj = await RedisUtil.redisGetAsync(
+      `${RedisUtil.mailchimpMemberPrefix}:${memberId}`,
+    )
+      .then((reply: any) => {
+        this.debug(`Return ${reply}`);
+        return JSON.parse(reply);
+      })
+      .catch((err: any) => {
+        if (err) {
+          this.debug(`Redis: ${err}`);
+        }
+      });
+
+    return custObj;
+  }
+
   public async redisGetMollieCustomers(): Promise<any> {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
@@ -383,12 +368,6 @@ export class DashboardController {
     });
   }
 
-  @get('/dashboard/redis/discourse/customers', {
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
   public async redisGetDiscourseCustomers(): Promise<any> {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
@@ -406,6 +385,28 @@ export class DashboardController {
           // otherwise it will be an empty array.
           this.debug(`Return ${matchingKeys}`);
           // return JSON.parse(matchingKeys);
+          resolve(matchingKeys);
+        },
+      );
+    });
+  }
+
+  public async redisGetMailchimpMembers(): Promise<any> {
+    const redisScan = require('node-redis-scan');
+    const scanner = new redisScan(RedisUtil.redisClient);
+
+    return new Promise((resolve, reject) => {
+      scanner.scan(
+        `${RedisUtil.mailchimpMemberPrefix}:*`,
+        (err: any, matchingKeys: any) => {
+          if (err) {
+            this.debug(`Redis error: ${err}`);
+            reject();
+          }
+
+          // matchingKeys will be an array of strings if matches were found
+          // otherwise it will be an empty array.
+          this.debug(`Return ${matchingKeys}`);
           resolve(matchingKeys);
         },
       );
@@ -509,7 +510,7 @@ export class DashboardController {
 
     const memberPayload = {
       activeSubscription,
-      email: memberObj.email,
+      email: memberObj.email.toLowerCase(),
       discourse,
       mollieCustId,
       name: memberObj.name,
