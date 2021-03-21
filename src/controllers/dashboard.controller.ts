@@ -11,6 +11,7 @@ import {
 } from '@mollie/api-client/dist/types/src/data/payments/data';
 import {CalcUtil} from '../utils/calc.util';
 import {RedisUtil} from '../utils/redis.util';
+import {MailchimpController} from './mailchimp.controller';
 import {MollieController} from './mollie.controller';
 import moment = require('moment');
 
@@ -128,6 +129,55 @@ export class DashboardController {
       });
 
     return custObj;
+  }
+
+  @get('/dashboard/mailchimp/members', {
+    responses: {
+      '200': {
+        description: 'List mailchimp members and populate Redis store',
+        content: {
+          'application/json': {
+            schema: {type: 'array'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async listMailchimpMembers(): Promise<any[] | null> {
+    this.debug(`/dashboard/mailchimp/members`);
+
+    const result = [];
+    const mc = new MailchimpController();
+
+    result.push(
+      await mc.listMembersInfo()
+        .then((response: any) => {
+          response.members?.forEach((mailchimpMember: any) => {
+            // Store in Redis
+            const redisCustomerPayload = {
+              timestamp: moment().utc(),
+              controller: 'dashboard',
+              method: 'listMailchimpMembers',
+              data: mailchimpMember,
+            };
+            RedisUtil.redisClient.set(
+              `${RedisUtil.mailchimpMemberPrefix}:${mailchimpMember.id}`,
+              JSON.stringify(redisCustomerPayload),
+              (err: any, _reply: any) => {
+                this.debug(`Redis: ${_reply}`);
+                if (err) {
+                  this.debug(`Redis: ${err}`);
+                }
+              },
+            );
+          });
+
+          return response.data;
+        }),
+    );
+
+    return result;
   }
 
   @get('/dashboard/discourse/members', {

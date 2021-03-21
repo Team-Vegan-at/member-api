@@ -30,6 +30,7 @@ export class RedisUtil {
   }
 
   public static discourseCustomerPrefix = 'teamveganat:discourse';
+  public static mailchimpMemberPrefix = 'teamveganat:mailchimp';
   public static mollieCustomerPrefix = 'teamveganat:mollie';
   public static patPrefix = 'teamveganat:pat';
   public static statsPrefix = 'teamveganat:stats';

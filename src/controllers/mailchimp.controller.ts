@@ -1,16 +1,15 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable no-async-promise-executor */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
-import {inject} from '@loopback/core';
-import {get, param, Request, RestBindings} from '@loopback/rest';
+import {get, param} from '@loopback/rest';
 
 export class MailchimpController {
   private debug = require('debug')('api:MailchimpController');
   private mailchimp = require('@mailchimp/mailchimp_marketing');
 
-  constructor(@inject(RestBindings.Http.REQUEST) private request: Request) {
-
+  constructor() {
     this.mailchimp.setConfig({
       apiKey: process.env.MAILCHIMP_KEY,
       server: 'us4',
@@ -19,7 +18,51 @@ export class MailchimpController {
 
   @get('/mailchimp/members/', {
     parameters: [
-      {name: 'member_id', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+        description: 'Members Details',
+        content: {
+          'application/json': {
+            schema: {type: 'string'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async listMembersInfo(
+  ): Promise<any | null> {
+    this.debug(`/mailchimp/members`);
+
+    return new Promise(async (resolve, reject) => {
+
+      await this.mailchimp.lists.getListMembersInfo(
+        process.env.MAILCHIMP_LIST,
+        {
+          "count": 1000,
+          "fields": [
+            "members.id",
+            "members.email_address",
+            "members.status",
+            "members.merge_fields",
+            "members.last_changed",
+            "tags_count",
+            "tags",
+          ]
+        }
+      ).then((response: any) => {
+        resolve(response);
+      }).catch((err: any) => {
+        this.debug(`${err}`);
+        reject(err);
+      });
+    });
+  }
+
+  @get('/mailchimp/member/{member_id}', {
+    parameters: [
+      {name: 'member_id', schema: {type: 'string'}, in: 'path', required: true}
     ],
     responses: {
       '200': {
@@ -33,10 +76,10 @@ export class MailchimpController {
     },
   })
   @authenticate('team-vegan-jwt')
-  async getMandate(
-    @param.query.string('member_id') memberId: string
+  async getMemberDetails(
+    @param.path.string('member_id') memberId: string
   ): Promise<any | null> {
-    this.debug(`/mailchimp/members/:${memberId}`);
+    this.debug(`/mailchimp/member/:${memberId}`);
 
     return new Promise(async (resolve, reject) => {
 
