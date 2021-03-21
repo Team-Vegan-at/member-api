@@ -12,7 +12,7 @@ export class MailchimpController {
   constructor(@inject(RestBindings.Http.REQUEST) private request: Request) {
 
     this.mailchimp.setConfig({
-      apiKey: 'a591f9f3827bc88fa93d66ea270af11a-us4',
+      apiKey: process.env.MAILCHIMP_KEY,
       server: 'us4',
     });
   }
