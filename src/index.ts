@@ -23,15 +23,19 @@ export async function main(options: ApplicationConfig = {}) {
   debug(`Server is running at ${url}`);
   debug(`Try ${url}/ping`);
 
-  const CronJob = require('cron').CronJob;
-  const job = new CronJob('0 5 */1 * * *', async function() {
-    debug(`Cronjob start - ${moment().format()}`);
+  if (process.env.DISABLE_CRON !== '1') {
+    const CronJob = require('cron').CronJob;
+    const job = new CronJob('0 5 */1 * * *', async function() {
+      debug(`Cronjob start - ${moment().format()}`);
 
-    await cronProcessMembers(debugCron, debugRedis);
+      await cronProcessMembers(debugCron, debugRedis);
 
-    debug(`Cronjob finished - ${moment().format()}`);
-  });
-  job.start();
+      debug(`Cronjob finished - ${moment().format()}`);
+    });
+    if (process.env.DISABLE_CRON_FIRE_ON_STARTUP !== '1') {
+      job.start();
+    }
+  }
 
   // Clean up
   await RedisUtil.cleanup();
