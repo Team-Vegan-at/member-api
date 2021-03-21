@@ -32,15 +32,15 @@ export async function main(options: ApplicationConfig = {}) {
 
       debug(`Cronjob finished - ${moment().format()}`);
     });
-    if (process.env.DISABLE_CRON_FIRE_ON_STARTUP !== '1') {
-      job.start();
-    }
+    job.start();
   }
 
   // Clean up
   await RedisUtil.cleanup();
   // Once off cron start
-  await cronProcessMembers(debugCron, debugRedis);
+  if (process.env.DISABLE_CRON_FIRE_ON_STARTUP !== '1') {
+    await cronProcessMembers(debugCron, debugRedis);
+  }
 
   return app;
 }
