@@ -36,7 +36,9 @@ export async function main(options: ApplicationConfig = {}) {
   }
 
   // Clean up
-  await RedisUtil.cleanup();
+  if (process.env.DISABLE_REDIS_CLEANUP !== '1') {
+    await RedisUtil.cleanup();
+  }
   // Once off cron start
   if (process.env.DISABLE_CRON_FIRE_ON_STARTUP !== '1') {
     await cronProcessMembers(debugCron, debugRedis);
