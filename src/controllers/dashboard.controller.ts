@@ -438,6 +438,9 @@ export class DashboardController {
       };
     }
 
+    // Mailchimp Details
+    const mailchimpId = memberObj?.mailchimpObj?.web_id;
+
     // Subscription Details
     let subscription = {};
     if (memberObj.mollieSubscriptions) {
@@ -513,6 +516,7 @@ export class DashboardController {
       email: memberObj.email.toLowerCase(),
       discourse,
       mollieCustId,
+      mailchimpId,
       name: memberObj.name,
       paid,
       payment,

@@ -44,6 +44,8 @@ export class MailchimpController {
           "fields": [
             "members.id",
             "members.email_address",
+            "members.unique_email_id",
+            "members.web_id",
             "members.status",
             "members.merge_fields",
             "members.last_changed",
