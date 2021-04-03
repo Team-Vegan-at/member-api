@@ -1,7 +1,7 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/camelcase */
-import {param, put} from '@loopback/rest';
 import {authenticate} from '@loopback/authentication';
+import {param, put} from '@loopback/rest';
 
 export class DiscourseController {
   private debug = require('debug')('api:DiscourseController');

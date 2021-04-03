@@ -23,20 +23,26 @@ export async function main(options: ApplicationConfig = {}) {
   debug(`Server is running at ${url}`);
   debug(`Try ${url}/ping`);
 
-  const CronJob = require('cron').CronJob;
-  const job = new CronJob('0 5 */1 * * *', async function() {
-    debug(`Cronjob start - ${moment().format()}`);
+  if (process.env.DISABLE_CRON !== '1') {
+    const CronJob = require('cron').CronJob;
+    const job = new CronJob('0 5 */1 * * *', async function() {
+      debug(`Cronjob start - ${moment().format()}`);
 
-    await cronProcessMembers(debugCron, debugRedis);
+      await cronProcessMembers(debugCron, debugRedis);
 
-    debug(`Cronjob finished - ${moment().format()}`);
-  });
-  job.start();
+      debug(`Cronjob finished - ${moment().format()}`);
+    });
+    job.start();
+  }
 
   // Clean up
-  await RedisUtil.cleanup();
+  if (process.env.DISABLE_REDIS_CLEANUP !== '1') {
+    await RedisUtil.cleanup();
+  }
   // Once off cron start
-  await cronProcessMembers(debugCron, debugRedis);
+  if (process.env.DISABLE_CRON_FIRE_ON_STARTUP !== '1') {
+    await cronProcessMembers(debugCron, debugRedis);
+  }
 
   return app;
 }
@@ -69,9 +75,10 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   const mc = new MollieController();
   const dbc = new DashboardController();
   await dbc.listDiscourseMembers();
+  await dbc.listMailchimpMembers();
   await dbc.listMollieMembers();
-  await dbc.redisGetMollieCustomers().then((custList: any) => {
-    custList.forEach((custKey: string) => {
+  await dbc.redisGetMollieCustomers().then(async (custList: any) => {
+    await custList.forEach((custKey: string) => {
       dbc
         .redisGetMollieCustomer(
           custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
@@ -138,8 +145,8 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
             });
         });
     });
-    dbc.redisGetDiscourseCustomers().then((discourseList: any) => {
-      discourseList.forEach((custKey: string) => {
+    await dbc.redisGetDiscourseCustomers().then(async (discourseList: any) => {
+      await discourseList.forEach((custKey: string) => {
         dbc
           .redisGetDiscourseCustomer(
             custKey.replace(`${RedisUtil.discourseCustomerPrefix}:`, ''),
@@ -157,7 +164,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                   // Store in Redis
                   const redisMemberPayload = {
                     name: custObj.data.name,
-                    email: custObj.data.email,
+                    email: custObj.data.email.toLowerCase(),
                     mollieObj: null,
                     molliePayments: null,
                     mollieSubscriptions: null,
@@ -182,6 +189,68 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                     `${
                       RedisUtil.teamMemberPrefix
                     }:${custObj.data.email.toLowerCase()}`,
+                    JSON.stringify(updatePayload),
+                    (err: any, _reply: any) => {
+                      if (err) {
+                        debugRedis(`${err}`);
+                      }
+                    },
+                  );
+                }
+              })
+              .catch((err: any) => {
+                if (err) {
+                  debugRedis(`${err}`);
+                }
+              });
+          });
+      });
+    });
+    await dbc.redisGetMailchimpMembers().then(async (mailchimpList: any) => {
+      await mailchimpList.forEach((custKey: string) => {
+        dbc
+          .redisGetMailchimpMember(
+            custKey.replace(`${RedisUtil.mailchimpMemberPrefix}:`, ''),
+          )
+          .then((custObj: any) => {
+            debugCron(custObj);
+            RedisUtil.redisGetAsync(
+              `${
+                RedisUtil.teamMemberPrefix
+              }:${custObj.data.email_address.toLowerCase()}`,
+            )
+              .then((reply: any) => {
+                debugRedis(`${reply}`);
+                if (reply == null) {
+                  // Store in Redis
+                  const redisMemberPayload = {
+                    name: `${custObj.data.merge_fields.FIRSTNAME} ${custObj.data.merge_fields.LASTNAME}`,
+                    email: custObj.data.email_address.toLowerCase(),
+                    mollieObj: null,
+                    molliePayments: null,
+                    mollieSubscriptions: null,
+                    discourseObj: null,
+                    mailchimpObj: custObj.data,
+                  };
+                  RedisUtil.redisClient.set(
+                    `${
+                      RedisUtil.teamMemberPrefix
+                    }:${custObj.data.email_address.toLowerCase()}`,
+                    JSON.stringify(redisMemberPayload),
+                    (err: any, _reply: any) => {
+                      if (err) {
+                        debugRedis(`${err}`);
+                      }
+                    },
+                  );
+                } else {
+                  // Update in Redis
+                  const updatePayload = JSON.parse(reply);
+                  updatePayload.mailchimpObj = custObj.data;
+                  RedisUtil.redisClient.set(
+                    `${
+                      RedisUtil.teamMemberPrefix
+                    }:${custObj.data.email_address.toLowerCase()}`,
                     JSON.stringify(updatePayload),
                     (err: any, _reply: any) => {
                       if (err) {
