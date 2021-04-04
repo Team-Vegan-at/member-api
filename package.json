@@ -1,10 +1,6 @@
 {
   "name": "member-api",
-<<<<<<< HEAD
   "version": "2.1.1",
-=======
-  "version": "2.1.0",
->>>>>>> 23a43d1ab14b00c32f03634d5f4d70de269f07fe
   "description": "Team Vegan.at Member API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
