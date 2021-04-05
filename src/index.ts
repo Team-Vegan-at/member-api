@@ -273,7 +273,6 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           });
       });
     });
-
   });
 
   // ******* MAILCHIMP SYNC ********

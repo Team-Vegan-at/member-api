@@ -426,6 +426,7 @@ export class DashboardController {
     // Shorthands
     let paid = false;
     let activeSubscription = false;
+    let discourseStatus = 'na';
     let mollieCustId: string | undefined;
 
     // Discourse Details
@@ -436,6 +437,10 @@ export class DashboardController {
         suspended_at: memberObj.discourseObj.suspended_at,
         username: memberObj.discourseObj.username,
       };
+
+      discourseStatus = memberObj.discourseObj.suspended_at
+        && Object.keys(memberObj.discourseObj.suspended_at).length > 0 ?
+        'suspended' : 'active';
     }
 
     // Mailchimp Details
@@ -515,6 +520,7 @@ export class DashboardController {
       activeSubscription,
       email: memberObj.email.toLowerCase(),
       discourse,
+      discourseStatus,
       mollieCustId,
       mailchimpId,
       name: memberObj.name,
