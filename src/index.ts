@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {ApplicationConfig} from '@loopback/core';
+import {Payment, PaymentStatus, Subscription, SubscriptionStatus} from '@mollie/api-client';
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import moment from 'moment';
 import {MemberApiApplication} from './application';
 import {MollieController} from './controllers';
 import {DashboardController} from './controllers/dashboard.controller';
+import {MailchimpController} from './controllers/mailchimp.controller';
+import {CalcUtil} from './utils/calc.util';
 import {RedisUtil} from './utils/redis.util';
 
 export {MemberApiApplication};
@@ -74,6 +77,8 @@ if (require.main === module) {
 async function cronProcessMembers(debugCron: any, debugRedis: any) {
   const mc = new MollieController();
   const dbc = new DashboardController();
+  const mcc = new MailchimpController();
+
   await dbc.listDiscourseMembers();
   await dbc.listMailchimpMembers();
   await dbc.listMollieMembers();
@@ -268,9 +273,57 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           });
       });
     });
+
   });
 
-  // Stats
+  // ******* MAILCHIMP SYNC ********
+  // Iterate over all member entries
+  await RedisUtil.scan(RedisUtil.teamMemberPrefix).then(async (members: any) => {
+    await members.forEach(async (memberKey: string) => {
+      await RedisUtil.redisGetAsync(memberKey)
+      .then(async (memberObj: any) => {
+        memberObj = JSON.parse(memberObj);
+        const currentYear = CalcUtil.getCurrentMembershipYear();
+        const tags = memberObj.mailchimpObj?.tags;
+
+        let updateTag = true;
+        if (tags) {
+          tags.forEach((tag: any) => {
+            if (tag.name === currentYear.toString()) {
+              updateTag = false;
+            }
+          });
+        }
+
+        if (updateTag) {
+          let paid = false;
+          memberObj.molliePayments?.forEach((pymt: Payment) => {
+            // if paid => tag with membership year (if tag not exists)
+            paid = (pymt.status === PaymentStatus.paid
+              && CalcUtil.isInMembershipRange(pymt.paidAt!, currentYear))
+              ? true : paid;
+          });
+          // if active subscription, mark as paid
+          memberObj.mollieSubscriptions?.forEach((subscr: Subscription) => {
+            paid = (subscr.status === SubscriptionStatus.active)
+              ? true : paid;
+          });
+
+          if (paid ) {
+            // call mailchimp api
+            await mcc.updateMemberTag(
+              memberObj.mailchimpObj?.id,
+              currentYear.toString(),
+              "active"
+            );
+          }
+        }
+      });
+    });
+  });
+
+
+  // ******* STATS *****************
   const membershipYear = moment().utc().year();
   const activeMembersInCurrentYear = (await mc.listAllPaidPayments(membershipYear)).length;
   await mc.listAllActiveSubscriptions().then((subscriptions: SubscriptionData[]) => {
