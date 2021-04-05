@@ -277,50 +277,51 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
 
   // ******* MAILCHIMP SYNC ********
   // Iterate over all member entries
-  await RedisUtil.scan(RedisUtil.teamMemberPrefix).then(async (members: any) => {
-    await members.forEach(async (memberKey: string) => {
-      await RedisUtil.redisGetAsync(memberKey)
-      .then(async (memberObj: any) => {
-        memberObj = JSON.parse(memberObj);
-        const currentYear = CalcUtil.getCurrentMembershipYear();
-        const tags = memberObj.mailchimpObj?.tags;
+  if (process.env.DISABLE_MAILCHIMP_SYNC !== '1') {
+    await RedisUtil.scan(RedisUtil.teamMemberPrefix).then(async (members: any) => {
+      await members.forEach(async (memberKey: string) => {
+        await RedisUtil.redisGetAsync(memberKey)
+        .then(async (memberObj: any) => {
+          memberObj = JSON.parse(memberObj);
+          const currentYear = CalcUtil.getCurrentMembershipYear();
+          const tags = memberObj.mailchimpObj?.tags;
 
-        let updateTag = true;
-        if (tags) {
-          tags.forEach((tag: any) => {
-            if (tag.name === currentYear.toString()) {
-              updateTag = false;
-            }
-          });
-        }
-
-        if (updateTag) {
-          let paid = false;
-          memberObj.molliePayments?.forEach((pymt: Payment) => {
-            // if paid => tag with membership year (if tag not exists)
-            paid = (pymt.status === PaymentStatus.paid
-              && CalcUtil.isInMembershipRange(pymt.paidAt!, currentYear))
-              ? true : paid;
-          });
-          // if active subscription, mark as paid
-          memberObj.mollieSubscriptions?.forEach((subscr: Subscription) => {
-            paid = (subscr.status === SubscriptionStatus.active)
-              ? true : paid;
-          });
-
-          if (paid ) {
-            // call mailchimp api
-            await mcc.updateMemberTag(
-              memberObj.mailchimpObj?.id,
-              currentYear.toString(),
-              "active"
-            );
+          let updateTag = true;
+          if (tags) {
+            tags.forEach((tag: any) => {
+              if (tag.name === currentYear.toString()) {
+                updateTag = false;
+              }
+            });
           }
-        }
+
+          if (updateTag) {
+            let paid = false;
+            memberObj.molliePayments?.forEach((pymt: Payment) => {
+              // if paid => tag with membership year (if tag not exists)
+              paid = (pymt.status === PaymentStatus.paid
+                && CalcUtil.isInMembershipRange(pymt.paidAt!, currentYear))
+                ? true : paid;
+            });
+            // if active subscription, mark as paid
+            memberObj.mollieSubscriptions?.forEach((subscr: Subscription) => {
+              paid = (subscr.status === SubscriptionStatus.active)
+                ? true : paid;
+            });
+
+            if (paid ) {
+              // call mailchimp api
+              await mcc.updateMemberTag(
+                memberObj.mailchimpObj?.id,
+                currentYear.toString(),
+                "active"
+              );
+            }
+          }
+        });
       });
     });
-  });
-
+  }
 
   // ******* STATS *****************
   const membershipYear = moment().utc().year();
