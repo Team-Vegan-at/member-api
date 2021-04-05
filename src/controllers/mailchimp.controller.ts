@@ -49,8 +49,8 @@ export class MailchimpController {
             "members.status",
             "members.merge_fields",
             "members.last_changed",
-            "tags_count",
-            "tags",
+            "members.tags_count",
+            "members.tags",
           ]
         }
       ).then((response: any) => {
@@ -93,6 +93,33 @@ export class MailchimpController {
         resolve(response);
       }).catch((err: any) => {
         this.debug(`No result for ${memberId}: ${err}`);
+        reject(err);
+      });
+    });
+  }
+
+  async updateMemberTag(
+    memberId: string, tag: string, status: string
+  ): Promise<any | null> {
+    this.debug(`/mailchimp/member/:${memberId}`);
+
+    return new Promise(async (resolve, reject) => {
+
+      await this.mailchimp.lists.updateListMemberTags(
+        process.env.MAILCHIMP_LIST,
+        memberId,
+        {
+          tags:
+            [ {
+              "name": tag,
+              "status": status
+            } ]
+        }
+      ).then((response: any) => {
+        this.debug(`Tagged ${memberId} with ${tag} ${status}`);
+        resolve(response);
+      }).catch((err: any) => {
+        this.debug(`ERR: Tagging ${memberId} with ${tag} ${status} failed`);
         reject(err);
       });
     });
