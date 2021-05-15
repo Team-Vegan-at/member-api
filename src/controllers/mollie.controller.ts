@@ -8,9 +8,13 @@ import {
   Customer,
   List,
   Locale,
-  Payment
+  Payment,
+  PaymentStatus,
+  SubscriptionStatus
 } from '@mollie/api-client';
+import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import moment from 'moment';
+import {CalcUtil} from '../utils/calc.util';
 import {RedisUtil} from '../utils/redis.util';
 import {DashboardController} from './dashboard.controller';
 
@@ -47,7 +51,11 @@ export class MollieController {
 
     const checkoutUrl = await this.getCheckoutUrl(email, redirectUrl);
 
-    response.redirect(checkoutUrl);
+    if (checkoutUrl) {
+      response.redirect(checkoutUrl);
+    } else {
+      throw new HttpErrors.InternalServerError();
+    }
   }
 
   public async getCheckoutUrl(email: string, redirectUrl?: string) {
@@ -137,7 +145,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return null;
       });
 
     return checkoutUrl;
@@ -174,7 +182,7 @@ export class MollieController {
         ).then((custRecord: string | null) => {
           if (!custRecord) {
             this.debug(`Customer not found: ${customer.id}`);
-            throw new HttpErrors.InternalServerError(`Customer not found`);
+            return null;
           }
           const redisPaymentPayload = {
             timestamp: moment().utc(),
@@ -203,7 +211,7 @@ export class MollieController {
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return null;
       });
   }
 
@@ -218,7 +226,7 @@ export class MollieController {
   @authenticate('team-vegan-jwt')
   public async listCustomerPayments(
     @param.query.string('custId') custId: string,
-  ): Promise<any[]> {
+  ): Promise<Payment[]> {
     this.debug(`/mollie/payments`);
 
     return this.mollieClient.customers_payments
@@ -228,14 +236,126 @@ export class MollieController {
         const paymentsArray: Payment[] = [];
 
         payments.forEach(payment => {
-          paymentsArray.push(payment);
+          // filter successful payments only
+          if (payment.status === PaymentStatus.paid) {
+            paymentsArray.push(payment);
+          }
         });
 
         return paymentsArray;
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return [];
+      });
+  }
+
+  /**
+   * Methods NOT exposed as endpoints
+   */
+
+  public async listCustomerSubscriptions(
+    @param.query.string('custId') custId: string,
+  ): Promise<SubscriptionData[]> {
+    this.debug(`/mollie/subscriptions/${custId}`);
+
+    return this.mollieClient.customers_subscriptions
+      .all({customerId: custId})
+      .then((subscriptions: List<SubscriptionData>) => {
+        this.debug(`Fetched ${subscriptions.count} subscription(s) for ${custId}`);
+        const subscriptionsArray: SubscriptionData[] = [];
+
+        subscriptions.forEach(subscription => {
+          // Filter active subscriptions only
+          if (subscription.status === SubscriptionStatus.active) {
+            subscriptionsArray.push(subscription);
+          }
+        });
+
+        return subscriptionsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        return [];
+      });
+  }
+
+  public async listAllActiveSubscriptions(): Promise<SubscriptionData[]> {
+    this.debug(`/mollie/subscriptions`);
+
+    return this.mollieClient.subscription
+      .list()
+      .then((subscriptions: List<SubscriptionData>) => {
+        this.debug(`Fetched ${subscriptions.count} subscription(s)`);
+        const subscriptionsArray: SubscriptionData[] = [];
+
+        subscriptions.forEach(subscription => {
+          if (subscription.status === SubscriptionStatus.active) {
+            subscriptionsArray.push(subscription);
+          }
+        });
+
+        return subscriptionsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        return [];
+      });
+  }
+
+  @get('/mollie/payments/paid', {
+    responses: {
+      '200': {},
+    },
+  })
+  public async listAllPaidPayments(membershipYear: number): Promise<Payment[]> {
+    this.debug(`/mollie/payments/paid`);
+
+    // TODO PAGINATION!
+
+    const paymentsArray: Payment[] = [];
+    return this.mollieClient.payments
+      .all({
+        // limit: 2
+      })
+      .then(async payments => {
+        this.debug(`Fetched ${payments.count} payment(s)`);
+        payments.forEach(payment => {
+          if (payment.status === PaymentStatus.paid) {
+            if (CalcUtil.isInMembershipRange(payment.paidAt!.substring(0, 10), membershipYear)) {
+              paymentsArray.push(payment);
+            }
+          }
+        });
+
+        // let nxt = payments.nextPageCursor;
+        // while (nxt) {
+        //   nxt = await this.mollieClient.payments
+        //     .all({
+        //       limit: 2,
+        //       from: nxt
+        //     }).then(pymts => {
+        //       this.debug(`Fetched ${payments.count} payment(s)`);
+        //       pymts.forEach(payment => {
+        //         if (payment.status === PaymentStatus.paid) {
+        //           if (CalcUtil.isInMembershipRange(payment.paidAt!.substring(0, 10), membershipYear)) {
+        //             paymentsArray.push(payment);
+        //           }
+        //         }
+        //       });
+        //       return payments.nextPageCursor;
+        //     })
+        //     .catch(reason => {
+        //       this.debug(reason);
+        //       throw new HttpErrors.InternalServerError(reason);
+        //     });
+        // }
+
+        return paymentsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        return [];
       });
   }
 
@@ -271,7 +391,7 @@ export class MollieController {
         })
         .catch(reason => {
           this.debug(reason);
-          throw new HttpErrors.InternalServerError(reason);
+          return [];
         });
     }
 
@@ -290,23 +410,30 @@ export class MollieController {
     const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .all({limit: 250})
+      .all({limit: 200})
       .then((customers: List<Customer>) => {
         this.debug(`#1 Fetched ${customers.count} customer entries`);
         customers.forEach(customer => {
           customerList.push(customer);
         });
-        //   return customers.nextPage!();
-        // })
-        // .then((customers: List<Customer>) => {
-        //   this.debug(`#2 Fetched ${customers.count} customer entries`);
-        //   customers.forEach(customer => {
-        //     customerList.push(customer);
-        //   });
+
+        if (customers.nextPage) {
+          return customers.nextPage!();
+        } else {
+          return null;
+        }
+        })
+        .then((customers: List<Customer> | null) => {
+          if (customers) {
+            this.debug(`#2 Fetched ${customers.count} customer entries`);
+            customers.forEach(customer => {
+              customerList.push(customer);
+            });
+          }
       })
       .catch(reason => {
         this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
+        return [];
       });
 
     return customerList;

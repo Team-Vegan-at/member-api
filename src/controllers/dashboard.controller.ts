@@ -4,12 +4,14 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import {authenticate} from '@loopback/authentication';
 import {get, param} from '@loopback/rest';
-import {Payment, PaymentMethod, PaymentStatus} from '@mollie/api-client';
+import {Payment, PaymentMethod, PaymentStatus, Subscription} from '@mollie/api-client';
 import {
   BankTransferDetails,
   CreditCardDetails
 } from '@mollie/api-client/dist/types/src/data/payments/data';
+import {CalcUtil} from '../utils/calc.util';
 import {RedisUtil} from '../utils/redis.util';
+import {MailchimpController} from './mailchimp.controller';
 import {MollieController} from './mollie.controller';
 import moment = require('moment');
 
@@ -39,7 +41,7 @@ export class DashboardController {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
     if (year == null) {
-      year = moment().year();
+      year = CalcUtil.getCurrentMembershipYear();
     }
 
     return new Promise((resolve, reject) => {
@@ -57,7 +59,17 @@ export class DashboardController {
                 memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
               ).then((memberObj: any) => {
                 const memberPayload = this.buildMemberPayload(memberObj, year);
-                memberList.push(memberPayload);
+
+                // Only return members who have
+                // 1. Paid at least once OR
+                // 2. Have an active subscription OR
+                // 3. Have an active forum user
+                if ( Object.keys(memberPayload.discourse).length > 0
+                  || Object.keys(memberPayload.payment).length > 0
+                  || Object.keys(memberPayload.subscription).length > 0) {
+
+                  memberList.push(memberPayload);
+                }
               });
             });
             resolve(memberList);
@@ -98,11 +110,17 @@ export class DashboardController {
     @param.query.string('email') email: string
   ): Promise<any> {
     const custObj = await RedisUtil.redisGetAsync(
-      `${RedisUtil.teamMemberPrefix}:${email}`,
+      `${RedisUtil.teamMemberPrefix}:${email.toLowerCase()}`,
     )
-      .then((reply: any) => {
-        this.debug(`Return ${reply}`);
-        return JSON.parse(reply);
+      .then((memberObj: any) => {
+        this.debug(`Return ${memberObj}`);
+
+        // const year = CalcUtil.getCurrentMembershipYear();
+        // const memberPayload = this.buildMemberPayload(JSON.parse(memberObj), year);
+
+        // return memberPayload;
+
+        return JSON.parse(memberObj);
       })
       .catch((err: any) => {
         if (err) {
@@ -111,6 +129,55 @@ export class DashboardController {
       });
 
     return custObj;
+  }
+
+  @get('/dashboard/mailchimp/members', {
+    responses: {
+      '200': {
+        description: 'List mailchimp members and populate Redis store',
+        content: {
+          'application/json': {
+            schema: {type: 'array'},
+          },
+        },
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  async listMailchimpMembers(): Promise<any[] | null> {
+    this.debug(`/dashboard/mailchimp/members`);
+
+    const result = [];
+    const mc = new MailchimpController();
+
+    result.push(
+      await mc.listMembersInfo()
+        .then((response: any) => {
+          response.members?.forEach((mailchimpMember: any) => {
+            // Store in Redis
+            const redisCustomerPayload = {
+              timestamp: moment().utc(),
+              controller: 'dashboard',
+              method: 'listMailchimpMembers',
+              data: mailchimpMember,
+            };
+            RedisUtil.redisClient.set(
+              `${RedisUtil.mailchimpMemberPrefix}:${mailchimpMember.id}`,
+              JSON.stringify(redisCustomerPayload),
+              (err: any, _reply: any) => {
+                this.debug(`Redis: ${_reply}`);
+                if (err) {
+                  this.debug(`Redis: ${err}`);
+                }
+              },
+            );
+          });
+
+          return response.data;
+        }),
+    );
+
+    return result;
   }
 
   @get('/dashboard/discourse/members', {
@@ -221,20 +288,6 @@ export class DashboardController {
     return null;
   }
 
-  @get('/dashboard/redis/mollie/customer', {
-    parameters: [
-      {
-        name: 'customerId',
-        schema: {type: 'string'},
-        in: 'query',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
   public async redisGetMollieCustomer(
     @param.query.string('mollieCustomerKey') customerId: string,
   ): Promise<any> {
@@ -254,20 +307,6 @@ export class DashboardController {
     return custObj;
   }
 
-  @get('/dashboard/redis/discourse/customer', {
-    parameters: [
-      {
-        name: 'customerId',
-        schema: {type: 'string'},
-        in: 'query',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
   public async redisGetDiscourseCustomer(
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
@@ -287,12 +326,25 @@ export class DashboardController {
     return custObj;
   }
 
-  @get('/dashboard/redis/mollie/customers', {
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
+  public async redisGetMailchimpMember(
+    memberId: string,
+  ): Promise<any> {
+    const custObj = await RedisUtil.redisGetAsync(
+      `${RedisUtil.mailchimpMemberPrefix}:${memberId}`,
+    )
+      .then((reply: any) => {
+        this.debug(`Return ${reply}`);
+        return JSON.parse(reply);
+      })
+      .catch((err: any) => {
+        if (err) {
+          this.debug(`Redis: ${err}`);
+        }
+      });
+
+    return custObj;
+  }
+
   public async redisGetMollieCustomers(): Promise<any> {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
@@ -316,12 +368,6 @@ export class DashboardController {
     });
   }
 
-  @get('/dashboard/redis/discourse/customers', {
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
   public async redisGetDiscourseCustomers(): Promise<any> {
     const redisScan = require('node-redis-scan');
     const scanner = new redisScan(RedisUtil.redisClient);
@@ -345,6 +391,28 @@ export class DashboardController {
     });
   }
 
+  public async redisGetMailchimpMembers(): Promise<any> {
+    const redisScan = require('node-redis-scan');
+    const scanner = new redisScan(RedisUtil.redisClient);
+
+    return new Promise((resolve, reject) => {
+      scanner.scan(
+        `${RedisUtil.mailchimpMemberPrefix}:*`,
+        (err: any, matchingKeys: any) => {
+          if (err) {
+            this.debug(`Redis error: ${err}`);
+            reject();
+          }
+
+          // matchingKeys will be an array of strings if matches were found
+          // otherwise it will be an empty array.
+          this.debug(`Return ${matchingKeys}`);
+          resolve(matchingKeys);
+        },
+      );
+    });
+  }
+
   private async asyncForEach(
     array: string | any[],
     callback: (arg0: any, arg1: number, arg2: any) => any,
@@ -354,68 +422,82 @@ export class DashboardController {
     }
   }
 
-  private withinMembershipYear(date: any, year: number) {
-    return moment(date).year() === year ||
-      (moment(date).year() === moment(year, 'YYYY').subtract(1, 'year').year()
-       && moment(date).month() === 11)
-  }
-
   private buildMemberPayload(memberObj: any, year: number) {
-    // Payment Status
+    // Shorthands
     let paid = false;
-    if (memberObj.molliePayments) {
-      for (let i = 0; i < memberObj.molliePayments.length; i++) {
-        if (memberObj.molliePayments[i].status === 'paid'
-          && memberObj.molliePayments[i].paidAt != null) {
-          if (this.withinMembershipYear(memberObj.molliePayments[i].paidAt, year)) {
-            paid = true;
-          }
-        }
-      }
-    }
+    let activeSubscription = false;
+    let discourseStatus = 'na';
+    let mollieCustId: string | undefined;
 
     // Discourse Details
     let discourse = {};
-    if (memberObj.discourseObj) {
+    if (memberObj.discourseObj && Object.keys(memberObj.discourseObj).length > 0) {
       discourse = {
         id: memberObj.discourseObj.id,
         suspended_at: memberObj.discourseObj.suspended_at,
         username: memberObj.discourseObj.username,
       };
+
+      discourseStatus = memberObj.discourseObj.suspended_at
+        && Object.keys(memberObj.discourseObj.suspended_at).length > 0 ?
+        'suspended' : 'active';
+    }
+
+    // Mailchimp Details
+    const mailchimpId = memberObj?.mailchimpObj?.web_id;
+
+    // Subscription Details
+    let subscription = {};
+    if (memberObj.mollieSubscriptions) {
+      memberObj.mollieSubscriptions.forEach((subscr: Subscription) => {
+        activeSubscription = true;
+        subscription = {
+          id: subscr.id,
+          startDate: subscr.startDate,
+          nextPaymentDate: subscr.nextPaymentDate,
+        };
+      });
     }
 
     // Payment Details
     let payment = {};
     if (memberObj.molliePayments) {
-      let userPaid = false;
       memberObj.molliePayments.forEach((pymt: Payment) => {
+        mollieCustId = pymt.customerId;
+
         // skip if we already processed a paid record
-        if (userPaid) {
+        if (paid) {
           return;
         }
 
         if (pymt.status === PaymentStatus.paid
-          && this.withinMembershipYear(pymt.paidAt, year)) {
-          userPaid = true;
-          let payerName = '';
-          if (
-            pymt.method === PaymentMethod.banktransfer ||
-            pymt.method === PaymentMethod.eps
-          ) {
-            payerName = (pymt.details as BankTransferDetails)
-              .consumerName;
-          } else if (pymt.method === PaymentMethod.creditcard) {
-            payerName = (pymt.details as CreditCardDetails)
-              .cardHolder;
-          }
+          && CalcUtil.isInMembershipRange(pymt.paidAt!, year)) {
 
-          payment = {
-            status: pymt.status,
-            paidAt: pymt.paidAt,
-            amount: pymt.amount.value,
-            method: pymt.method,
-            payerName,
-          };
+          // Check for Chargeback
+          // eslint-disable-next-line no-prototype-builtins
+          if (!pymt.hasOwnProperty("amountChargedBack")) {
+
+            paid = true;
+            let payerName = '';
+            if (
+              pymt.method === PaymentMethod.banktransfer ||
+              pymt.method === PaymentMethod.eps
+            ) {
+              payerName = (pymt.details as BankTransferDetails)
+                .consumerName;
+            } else if (pymt.method === PaymentMethod.creditcard) {
+              payerName = (pymt.details as CreditCardDetails)
+                .cardHolder;
+            }
+
+            payment = {
+              status: pymt.status,
+              paidAt: pymt.paidAt,
+              amount: pymt.amount.value,
+              method: pymt.method,
+              payerName,
+            };
+          }
         } else if (
           pymt.status === PaymentStatus.open ||
           pymt.status === PaymentStatus.pending ||
@@ -435,11 +517,16 @@ export class DashboardController {
     }
 
     const memberPayload = {
-      email: memberObj.email,
+      activeSubscription,
+      email: memberObj.email.toLowerCase(),
+      discourse,
+      discourseStatus,
+      mollieCustId,
+      mailchimpId,
       name: memberObj.name,
       paid,
-      discourse,
       payment,
+      subscription,
     };
 
     return memberPayload;
