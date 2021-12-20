@@ -19,7 +19,7 @@ COPY --chown=node . .
 
 RUN npm install yarn
 # RUN yarn policies set-version 2
-# RUN yarn set version berry
+RUN yarn set version 3
 
 RUN yarn install
 
