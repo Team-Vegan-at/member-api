@@ -1,5 +1,5 @@
 # Check out https://hub.docker.com/_/node to select a new base image
-FROM node:14-slim as build-stage
+FROM node:16-slim as build-stage
 
 # Set to a non-root built-in user `node`
 USER node
@@ -23,11 +23,10 @@ RUN yarn set version 3
 
 RUN yarn install
 
-
 RUN yarn run build && \
   yarn cache clean
 
-FROM node:14-alpine as run-stage
+FROM node:16-alpine as run-stage
 
 # Set to a non-root built-in user `node`
 USER node
