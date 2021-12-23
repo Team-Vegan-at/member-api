@@ -935,10 +935,10 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/node@npm:*":
-  version: 17.0.3
-  resolution: "@types/node@npm:17.0.3"
-  checksum: aa08e2ecc70a0c45d8a34f986300b491e0eaef9c028ae49ff799ff876cd3e1bbb8eb734378ac0b0265453d2cdfc5b4c7724dc64c043421c162590d22214870ad
+"@types/node@npm:*, @types/node@npm:^16.6.1":
+  version: 16.11.17
+  resolution: "@types/node@npm:16.11.17"
+  checksum: 86ed84f79450f6aba1a6ef09f8407c10076966c3cc7cc4eb3d35b8ae4f47817e525641396ef0a667fa0a88fcdf484f6182812c074601403083bdf3b5e1ac0313
   languageName: node
   linkType: hard
 
@@ -946,13 +946,6 @@ __metadata:
   version: 10.17.60
   resolution: "@types/node@npm:10.17.60"
   checksum: 2cdb3a77d071ba8513e5e8306fa64bf50e3c3302390feeaeff1fd325dd25c8441369715dfc8e3701011a72fed5958c7dfa94eb9239a81b3c286caa4d97db6eef
-  languageName: node
-  linkType: hard
-
-"@types/node@npm:^16.6.1":
-  version: 16.11.16
-  resolution: "@types/node@npm:16.11.16"
-  checksum: cb334e321efafdf896f9698ce02d846c3a9c989bb53bfb3699d6e6f0441e1c3979f01311d31634d692e63f047505c8d3d9e524ca36e5a92227025a37bd82fe23
   languageName: node
   linkType: hard
 
@@ -3817,8 +3810,8 @@ __metadata:
   linkType: hard
 
 "mailgun.js@npm:^4.1.2":
-  version: 4.1.2
-  resolution: "mailgun.js@npm:4.1.2"
+  version: 4.1.4
+  resolution: "mailgun.js@npm:4.1.4"
   dependencies:
     base-64: ^1.0.0
     bluebird: ^3.7.2
@@ -3828,7 +3821,7 @@ __metadata:
     url-join: 0.0.1
     web-streams-polyfill: ^3.0.1
     webpack-merge: ^5.4.0
-  checksum: b3e701f549660bb413e46f5114adf645f26d950008856c9f1132e86139c3a05a4615d3d179095eacd3310914fc7da26b94fbeb4f5d2a1b002435892c102cff2c
+  checksum: 3b03889901904e0307a6925d32dcdd9347f401f3a50cfc3d928cfe9b41a27d1d378e67516c702d93679f3ca20ed190f1fdb4ceb8e6166fa9d9b03874f7aa34b7
   languageName: node
   linkType: hard
 
@@ -3941,7 +3934,7 @@ __metadata:
     node-redis-retry-strategy: ^2.1.1
     node-redis-scan: ^1.3.2
     redis: ^3.1.2
-    source-map-support: ^0.5.19
+    source-map-support: ^0.5.21
     tslib: ^2.3.1
     typescript: ^4.5.4
   languageName: unknown
@@ -4179,14 +4172,14 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ms@npm:2.1.2":
+"ms@npm:2.1.2, ms@npm:^2.1.1":
   version: 2.1.2
   resolution: "ms@npm:2.1.2"
   checksum: 673cdb2c3133eb050c745908d8ce632ed2c02d85640e2edb3ace856a2266a813b30c613569bf3354fdf4ea7d1a1494add3bfa95e2713baa27d0c2c71fc44f58f
   languageName: node
   linkType: hard
 
-"ms@npm:2.1.3, ms@npm:^2.0.0, ms@npm:^2.1.1":
+"ms@npm:2.1.3, ms@npm:^2.0.0":
   version: 2.1.3
   resolution: "ms@npm:2.1.3"
   checksum: aa92de608021b242401676e35cfa5aa42dd70cbdc082b916da7fb925c542173e36bce97ea3e804923fe92c0ad991434e4a38327e15a1b5b5f945d66df615ae6d
@@ -5092,7 +5085,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"safe-buffer@npm:5.2.1, safe-buffer@npm:^5.0.1, safe-buffer@npm:^5.1.0, safe-buffer@npm:^5.1.1, safe-buffer@npm:^5.1.2, safe-buffer@npm:~5.2.0":
+"safe-buffer@npm:5.2.1, safe-buffer@npm:^5.0.1, safe-buffer@npm:^5.1.0, safe-buffer@npm:^5.1.1, safe-buffer@npm:^5.1.2":
   version: 5.2.1
   resolution: "safe-buffer@npm:5.2.1"
   checksum: b99c4b41fdd67a6aaf280fcd05e9ffb0813654894223afb78a31f14a19ad220bba8aba1cb14eddce1fcfb037155fe6de4e861784eb434f7d11ed58d1e70dd491
@@ -5387,7 +5380,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"source-map-support@npm:^0.5.19, source-map-support@npm:^0.5.20":
+"source-map-support@npm:^0.5.20, source-map-support@npm:^0.5.21":
   version: 0.5.21
   resolution: "source-map-support@npm:0.5.21"
   dependencies:
@@ -5473,16 +5466,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"string_decoder@npm:^1.1.1":
-  version: 1.3.0
-  resolution: "string_decoder@npm:1.3.0"
-  dependencies:
-    safe-buffer: ~5.2.0
-  checksum: 8417646695a66e73aefc4420eb3b84cc9ffd89572861fe004e6aeb13c7bc00e2f616247505d2dbbef24247c372f70268f594af7126f43548565c68c117bdeb56
-  languageName: node
-  linkType: hard
-
-"string_decoder@npm:~1.1.1":
+"string_decoder@npm:^1.1.1, string_decoder@npm:~1.1.1":
   version: 1.1.1
   resolution: "string_decoder@npm:1.1.1"
   dependencies:
@@ -6100,7 +6084,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"yargs-parser@npm:20.2.4":
+"yargs-parser@npm:20.2.4, yargs-parser@npm:^20.2.2":
   version: 20.2.4
   resolution: "yargs-parser@npm:20.2.4"
   checksum: d251998a374b2743a20271c2fd752b9fbef24eb881d53a3b99a7caa5e8227fcafd9abf1f345ac5de46435821be25ec12189a11030c12ee6481fef6863ed8b924
@@ -6114,13 +6098,6 @@ __metadata:
     camelcase: ^5.0.0
     decamelize: ^1.2.0
   checksum: 60e8c7d1b85814594d3719300ecad4e6ae3796748b0926137bfec1f3042581b8646d67e83c6fc80a692ef08b8390f21ddcacb9464476c39bbdf52e34961dd4d9
-  languageName: node
-  linkType: hard
-
-"yargs-parser@npm:^20.2.2":
-  version: 20.2.9
-  resolution: "yargs-parser@npm:20.2.9"
-  checksum: 8bb69015f2b0ff9e17b2c8e6bfe224ab463dd00ca211eece72a4cd8a906224d2703fb8a326d36fdd0e68701e201b2a60ed7cf81ce0fd9b3799f9fe7745977ae3
   languageName: node
   linkType: hard
 
