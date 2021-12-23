@@ -4,9 +4,18 @@ export class CalcUtil {
   private static debug = require('debug')('api:CalcUtil');
 
   public static isInMembershipRange(shortDate: string, year: number): boolean {
+
+    let monthsOfPreviousYear = 2;
+
+    // Exception case 2022: Sportfoerderung for all new members from 01. September
+    if (year === 2022) {
+      monthsOfPreviousYear = 4;
+    }
+
+
     const from =  moment(year, "YYYY")
                   .startOf("year")
-                  .subtract(2, 'month') // first of november
+                  .subtract(monthsOfPreviousYear, 'month') // first of november
                   .startOf("month");
     const to =    moment(year, "YYYY")
                   .endOf("year")
@@ -25,7 +34,13 @@ export class CalcUtil {
     const month = moment(shortDate, "YYYY-MM-DD").month();
     let expirationDate: Moment;
 
-    if (month === 11) {
+    if (year === 2021 && month > 7) {
+      // Exception case 2022: Sportfoerderung for all new members
+      // from 01. September 2021 - 31. December 2021
+      expirationDate =  moment(2023, 'YYYY')
+                        .startOf("year")
+                        .endOf('month');
+    } else if (month === 11) {
       // Year before
       expirationDate =  moment(year, 'YYYY')
                         .endOf("year")
