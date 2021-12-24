@@ -5,10 +5,10 @@ import {BootMixin} from '@loopback/boot';
 import {ApplicationConfig, BindingKey} from '@loopback/core';
 import {RepositoryMixin} from '@loopback/repository';
 import {RestApplication} from '@loopback/rest';
-import {
-  RestExplorerBindings,
-  RestExplorerComponent
-} from '@loopback/rest-explorer';
+// import {
+//   RestExplorerBindings,
+//   RestExplorerComponent
+// } from '@loopback/rest-explorer';
 import {ServiceMixin} from '@loopback/service-proxy';
 import path from 'path';
 import {ApiKeyAuthenticationStrategy} from './authentication-strategies/ApiKeyAuthenticationStrategy';
@@ -59,10 +59,10 @@ export class MemberApiApplication extends BootMixin(
 
 
     // Customize @loopback/rest-explorer configuration here
-    this.configure(RestExplorerBindings.COMPONENT).to({
-      path: '/explorer',
-    });
-    this.component(RestExplorerComponent);
+    // this.configure(RestExplorerBindings.COMPONENT).to({
+    //   path: '/explorer',
+    // });
+    // this.component(RestExplorerComponent);
 
     this.projectRoot = __dirname;
     // Customize @loopback/boot Booter Conventions here
