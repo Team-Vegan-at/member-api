@@ -106,6 +106,10 @@ export class MailchimpController {
   ): Promise<any | null> {
     this.debug(`/mailchimp/member/:${memberId}`);
 
+    if (!memberId) {
+      return;
+    }
+
     return new Promise(async (resolve, reject) => {
       if (!memberId) {
         resolve(null);
