@@ -20,6 +20,8 @@ jobs:
       - name: get-npm-version
         id: package-version
         uses: martinbeentjes/npm-get-version-action@master
+        with:
+          path: package.json
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
