@@ -84,6 +84,9 @@ export class MailchimpController {
     this.debug(`/mailchimp/member/:${memberId}`);
 
     return new Promise(async (resolve, reject) => {
+      if (!memberId) {
+        resolve(null);
+      }
 
       await this.mailchimp.lists.getListMember(
         process.env.MAILCHIMP_LIST,
@@ -103,11 +106,10 @@ export class MailchimpController {
   ): Promise<any | null> {
     this.debug(`/mailchimp/member/:${memberId}`);
 
-    if (!memberId) {
-      return;
-    }
-
     return new Promise(async (resolve, reject) => {
+      if (!memberId) {
+        resolve(null);
+      }
 
       await this.mailchimp.lists.updateListMemberTags(
         process.env.MAILCHIMP_LIST,
