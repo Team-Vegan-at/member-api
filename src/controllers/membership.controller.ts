@@ -319,13 +319,16 @@ export class MembershipController {
         // Build Login URL
         const loginUrl = `${process.env.MEMBERSHIP_URL}/details.html?pat=${pat}`;
 
-        const mailgun = require("mailgun-js");
+        const formData = require('form-data');
+        const Mailgun = require('mailgun.js');
+        const mailgun = new Mailgun(formData);
         const DOMAIN = "mg.teamvegan.at";
-        const mg = mailgun({
-          apiKey: process.env.MAILGUN_API,
-          domain: DOMAIN,
-          host: "api.eu.mailgun.net"
+        const mg = mailgun.client({
+          username: 'api',
+          url: "https://api.eu.mailgun.net",
+          key: process.env.MAILGUN_API
         });
+
         const data = {
           from: "Team Vegan <noreply@mg.teamvegan.at>",
           to: email,
@@ -335,15 +338,15 @@ export class MembershipController {
         };
         this.debug(`Sending login credentials to ${email}, using ${process.env.MAILGUN_API}`);
 
-        mg.messages().send(data, (error: any, body: any) => {
-          if (error) {
+        mg.messages.create(DOMAIN, data)
+          .then((msg: any) => {
+            this.debug(msg);
+            resolve(msg);
+          })
+          .catch((error: any) => {
             this.debug(error);
-          } else {
-            this.debug(body);
-          }
-
-          return resolve('');
-        });
+            reject(error);
+          });
       });
     });
   }
