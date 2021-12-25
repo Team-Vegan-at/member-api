@@ -1,6 +1,6 @@
 {
   "name": "member-api",
-  "verion": "2.1.11",
+  "verion": "2.1.12",
   "description": "Team Vegan.at Member API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -62,6 +62,7 @@
     "debug": "^4.3.2",
     "dotenv": "^10.0.0",
     "express": "^4.17.1",
+    "form-data": "^4.0.0",
     "jsonwebtoken": "^8.5.1",
     "mailgun.js": "^4.1.2",
     "moment": "^2.29.1",
