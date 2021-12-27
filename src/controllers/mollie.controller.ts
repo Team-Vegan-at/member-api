@@ -154,7 +154,17 @@ export class MollieController {
   /******** PRIVATE FUNCTIONS *************/
 
   private async createMollieCheckoutUrl(customer: any, redirectUrl?: string) {
-    let checkoutUrl: string;
+    if (!process.env.MOLLIE_PAYMENT_AMOUNT_FULL) {
+      this.debug('ERROR: MOLLIE_PAYMENT_AMOUNT_FULL not set');
+      return null;
+    }
+
+    const discount = process.env.MOLLIE_PAYMENT_DISCOUNT ?
+      parseFloat(process.env.MOLLIE_PAYMENT_DISCOUNT) : 1;
+    const totalAmount = (parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_FULL!, 10) * discount).toFixed(2);
+    this.debug(`Calculated amount: ${totalAmount}
+      (${parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_FULL!, 10)} *
+      ${discount})`);
 
     return this.mollieClient.payments
       .create({
@@ -165,7 +175,7 @@ export class MollieController {
           .format('YYYY-MM-DD'),
         amount: {
           currency: 'EUR',
-          value: process.env.MOLLIE_PAYMENT_AMOUNT!,
+          value: totalAmount.toString(),
         },
         description: `${
           process.env.MOLLIE_PAYMENT_DESCRIPTION
@@ -205,9 +215,8 @@ export class MollieController {
             },
           );
         });
-        checkoutUrl = payment.getCheckoutUrl()!;
         // TODO: send mail
-        return checkoutUrl;
+        return payment.getCheckoutUrl()!;
       })
       .catch(reason => {
         this.debug(reason);
