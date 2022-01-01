@@ -2,7 +2,7 @@
 $('#confirm-login').on('click', function() {
   $('#confirm-login').prop('disabled', true);
 
-  email = $('input[name="email"]').val();
+  email = encodeURIComponent($('input[name="email"]').val());
 
   url = `${baseUrl}/membership/login`;
   $.ajax({
