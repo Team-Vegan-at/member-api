@@ -58,7 +58,7 @@ export class MollieController {
     }
   }
 
-  public async getCheckoutUrl(email: string, redirectUrl?: string) {
+  public async getCheckoutUrl(email: string, redirectUrl?: string, membershipType?: string) {
     const dc = new DashboardController();
     const checkoutUrl = await dc
       .redisGetTeamMember(email)
@@ -66,7 +66,8 @@ export class MollieController {
         if (custObj?.mollieObj) {
           return this.createMollieCheckoutUrl(
             custObj.mollieObj,
-            redirectUrl
+            redirectUrl,
+            membershipType
           );
         } else {
           return 'https://teamvegan.at';
@@ -153,8 +154,22 @@ export class MollieController {
 
   /******** PRIVATE FUNCTIONS *************/
 
-  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string) {
-    let checkoutUrl: string;
+  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string, membershipType: string = 'regular') {
+    if (!process.env.MOLLIE_PAYMENT_AMOUNT_FULL) {
+      this.debug('ERROR: MOLLIE_PAYMENT_AMOUNT_FULL not set');
+      return null;
+    }
+
+    const discount = process.env.MOLLIE_PAYMENT_DISCOUNT ?
+      parseFloat(process.env.MOLLIE_PAYMENT_DISCOUNT) : 1;
+    let amount = parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_FULL!, 10);
+    if (membershipType && membershipType === 'reduced') {
+      amount = parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_REDUCED!, 10);
+    }
+    const totalAmount = (amount * discount).toFixed(2);
+
+    this.debug(`Membership Type: ${membershipType}`);
+    this.debug(`Calculated amount: ${totalAmount} (${amount} * ${discount})`);
 
     return this.mollieClient.payments
       .create({
@@ -165,7 +180,7 @@ export class MollieController {
           .format('YYYY-MM-DD'),
         amount: {
           currency: 'EUR',
-          value: process.env.MOLLIE_PAYMENT_AMOUNT!,
+          value: totalAmount.toString(),
         },
         description: `${
           process.env.MOLLIE_PAYMENT_DESCRIPTION
@@ -205,9 +220,8 @@ export class MollieController {
             },
           );
         });
-        checkoutUrl = payment.getCheckoutUrl()!;
         // TODO: send mail
-        return checkoutUrl;
+        return payment.getCheckoutUrl()!;
       })
       .catch(reason => {
         this.debug(reason);

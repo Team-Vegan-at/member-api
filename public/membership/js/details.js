@@ -128,14 +128,15 @@ function cancelSubscription(callback) {
   });
 }
 
-function onceOffPayment(callback) {
+function onceOffPayment(type, callback) {
   let url = `${baseUrl}/membership/onceoffpayment`;
 
   $.ajax({
     url,
     crossDomain: true,
     data: {
-      redirectUrl: window.location.href
+      redirectUrl: window.location.href,
+      membershipType: type
     },
     headers: {
       'x-pat': pat
@@ -197,6 +198,10 @@ function createSepaDD(callback) {
       url: `${url}`,
       crossDomain: true,
       method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        "membershiptype": $('select[name="membershiptype"]').val()
+      }),
       headers: {
         'x-pat': pat
       }
@@ -271,10 +276,18 @@ $('#confirm-subscription').on('click', function() {
   });
 });
 
+$('#onceoff-type').on('change', function() {
+  let type = $('#onceoff-type').val();
+
+  onceOffPayment(type, function() {
+    // no action
+  });
+});
+
 $('#onceoff-payment').on('click', function() {
   $('#onceoff-payment-modal').modal('show');
 
-  onceOffPayment(function() {
+  onceOffPayment("regular", function() {
     // no action
   });
 });

@@ -10,6 +10,7 @@ import {MandatePayload} from '../models/mandate-payload.model';
 import {MandateResult} from '../models/mandate-return.model';
 import {PaymentResult} from '../models/payment-return.model';
 import {ProfileResult} from '../models/profile-return.model';
+import {SubscriptionPayload} from '../models/subscription-payload.model';
 import {SubscriptionResult} from '../models/subscription-return.model';
 import {PATService} from '../services/pat-service';
 import {DashboardController} from './dashboard.controller';
@@ -107,6 +108,7 @@ export class MembershipController {
   })
   @authenticate('team-vegan-pat')
   async createSubscription(
+    @requestBody() payload: SubscriptionPayload
   ): Promise<SubscriptionData | null> {
     this.debug(`/membership/subscription`);
 
@@ -118,7 +120,7 @@ export class MembershipController {
         .catch((reason) => { return reject(reason) });
 
       const ms = new Subscription();
-      ms.createSubscription(email)
+      ms.createSubscription(email, payload)
         .then((subscription: any) => resolve(subscription))
         .catch((reason: any) => reject(reason));
     });
@@ -219,7 +221,8 @@ export class MembershipController {
 
   @get('/membership/onceoffpayment', {
     parameters: [
-      {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false}
+      {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false},
+      {name: 'membershipType', schema: {type: 'string'}, in: 'query', required: false}
     ],
     responses: {
       '200': {
@@ -234,7 +237,8 @@ export class MembershipController {
   })
   @authenticate('team-vegan-pat')
   async getOnceoffpaymentLink(
-    @param.query.string('redirectUrl') redirectUrl: string
+    @param.query.string('redirectUrl') redirectUrl: string,
+    @param.query.string('membershipType') membershipType: string
   ): Promise<MandateResult | null> {
     this.debug(`/membership/onceoffpayment`);
 
@@ -246,7 +250,7 @@ export class MembershipController {
         .catch((reason) => { return reject(reason) });
 
       const mc = new MollieController();
-      mc.getCheckoutUrl(email, redirectUrl)
+      mc.getCheckoutUrl(email, redirectUrl, membershipType)
         .then((checkoutUrl: any) => resolve(checkoutUrl))
         .catch((reason: any) => reject(reason));
     });

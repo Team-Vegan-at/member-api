@@ -5,6 +5,7 @@ import createMollieClient, {SubscriptionStatus} from '@mollie/api-client';
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import moment from 'moment';
 import {MandateResult} from '../../models/mandate-return.model';
+import {SubscriptionPayload} from '../../models/subscription-payload.model';
 import {SubscriptionResult} from '../../models/subscription-return.model';
 import {DashboardController} from '../dashboard.controller';
 import {Mandate} from './mandate';
@@ -16,8 +17,13 @@ export class Subscription {
   });
 
   public async createSubscription(
-    email:string
+    email:string, payload:SubscriptionPayload
   ) : Promise<SubscriptionData> {
+
+      const amount = (payload.membershiptype === 'reduced') ?
+      process.env.MOLLIE_PAYMENT_AMOUNT_REDUCED as string :
+      process.env.MOLLIE_PAYMENT_AMOUNT_FULL as string;
+      this.debug(`Membership Type: ${payload.membershiptype}, Amount: ${amount}`);
 
       return new Promise(async(resolve, reject) => {
         const dc = new DashboardController();
@@ -61,11 +67,12 @@ export class Subscription {
               };
               start().then(
                 async () => {
+
                   await this.mollieClient.customers_subscriptions.create({
                     customerId: custObj.mollieObj.id,
                     amount: {
                       currency: "EUR",
-                      value: process.env.MOLLIE_PAYMENT_AMOUNT as string
+                      value: amount
                     },
                     interval: "12 months",
                     startDate: moment().add(7, 'days').format('YYYY-MM-DD'),
@@ -89,7 +96,7 @@ export class Subscription {
                 customerId: custObj.mollieObj.id,
                 amount: {
                   currency: "EUR",
-                  value: process.env.MOLLIE_PAYMENT_AMOUNT as string
+                  value: amount
                 },
                 interval: "12 months",
                 startDate: moment().add(7, 'days').format('YYYY-MM-DD'),
