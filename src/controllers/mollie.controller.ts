@@ -154,7 +154,7 @@ export class MollieController {
 
   /******** PRIVATE FUNCTIONS *************/
 
-  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string, membershipType?: string) {
+  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string, membershipType: string = 'regular') {
     if (!process.env.MOLLIE_PAYMENT_AMOUNT_FULL) {
       this.debug('ERROR: MOLLIE_PAYMENT_AMOUNT_FULL not set');
       return null;
