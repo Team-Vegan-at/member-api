@@ -58,7 +58,7 @@ export class MollieController {
     }
   }
 
-  public async getCheckoutUrl(email: string, redirectUrl?: string) {
+  public async getCheckoutUrl(email: string, redirectUrl?: string, membershipType?: string) {
     const dc = new DashboardController();
     const checkoutUrl = await dc
       .redisGetTeamMember(email)
@@ -66,7 +66,8 @@ export class MollieController {
         if (custObj?.mollieObj) {
           return this.createMollieCheckoutUrl(
             custObj.mollieObj,
-            redirectUrl
+            redirectUrl,
+            membershipType
           );
         } else {
           return 'https://teamvegan.at';
@@ -153,7 +154,7 @@ export class MollieController {
 
   /******** PRIVATE FUNCTIONS *************/
 
-  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string) {
+  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string, membershipType?: string) {
     if (!process.env.MOLLIE_PAYMENT_AMOUNT_FULL) {
       this.debug('ERROR: MOLLIE_PAYMENT_AMOUNT_FULL not set');
       return null;
@@ -161,10 +162,14 @@ export class MollieController {
 
     const discount = process.env.MOLLIE_PAYMENT_DISCOUNT ?
       parseFloat(process.env.MOLLIE_PAYMENT_DISCOUNT) : 1;
-    const totalAmount = (parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_FULL!, 10) * discount).toFixed(2);
-    this.debug(`Calculated amount: ${totalAmount}
-      (${parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_FULL!, 10)} *
-      ${discount})`);
+    let amount = parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_FULL!, 10);
+    if (membershipType && membershipType === 'reduced') {
+      amount = parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_REDUCED!, 10);
+    }
+    const totalAmount = (amount * discount).toFixed(2);
+
+    this.debug(`Membership Type: ${membershipType}`);
+    this.debug(`Calculated amount: ${totalAmount} (${amount} * ${discount})`);
 
     return this.mollieClient.payments
       .create({

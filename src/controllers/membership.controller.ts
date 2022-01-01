@@ -221,7 +221,8 @@ export class MembershipController {
 
   @get('/membership/onceoffpayment', {
     parameters: [
-      {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false}
+      {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false},
+      {name: 'membershipType', schema: {type: 'string'}, in: 'query', required: false}
     ],
     responses: {
       '200': {
@@ -236,7 +237,8 @@ export class MembershipController {
   })
   @authenticate('team-vegan-pat')
   async getOnceoffpaymentLink(
-    @param.query.string('redirectUrl') redirectUrl: string
+    @param.query.string('redirectUrl') redirectUrl: string,
+    @param.query.string('membershipType') membershipType: string
   ): Promise<MandateResult | null> {
     this.debug(`/membership/onceoffpayment`);
 
@@ -248,7 +250,7 @@ export class MembershipController {
         .catch((reason) => { return reject(reason) });
 
       const mc = new MollieController();
-      mc.getCheckoutUrl(email, redirectUrl)
+      mc.getCheckoutUrl(email, redirectUrl, membershipType)
         .then((checkoutUrl: any) => resolve(checkoutUrl))
         .catch((reason: any) => reject(reason));
     });
