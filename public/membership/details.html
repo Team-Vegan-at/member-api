@@ -187,6 +187,22 @@
                           </div>
                         </div>
                       </div>
+                      <div class="form-row">
+                        <div class="form-group col">
+                          <label for="iban-element">Mitgliedschaft</label>
+                          <div class="input-group mb-2">
+                            <div class="input-group-prepend">
+                              <i class="fa fa-leaf input-group-text" style="padding: 0.9rem;"
+                                aria-hidden="true"></i>
+                            </div>
+                            <select id="membershiptype" name="membershiptype" class="form-select form-control-lg mb-6"
+                              required>
+                              <option selected value="regular">Regul&auml;r (&euro; 50,--)</option>
+                              <option value="reduced">Erm&auml;&szlig;igt (&euro;30,--)</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
 
                       <div class="row mb-2">
                         <div class="col">
@@ -207,8 +223,7 @@
                       <div class="row">
                         <div class="col">
                           <button class="btn btn-success btn-lg btn-block" id="confirm-subscription" disabled>
-                            <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag von
-                              &euro; 30,-- best&auml;tigen</span>
+                            <span id="button-text">Lastschrift f&uuml;r den Jahresmitgliedsbeitrag best&auml;tigen</span>
                           </button>
                         </div>
                       </div>

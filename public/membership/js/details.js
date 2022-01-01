@@ -197,6 +197,10 @@ function createSepaDD(callback) {
       url: `${url}`,
       crossDomain: true,
       method: "POST",
+      contentType: "application/json",
+      data: JSON.stringify({
+        "membershiptype": $('select[name="membershiptype"]').val()
+      }),
       headers: {
         'x-pat': pat
       }
