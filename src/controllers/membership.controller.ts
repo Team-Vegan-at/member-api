@@ -20,6 +20,7 @@ import {Payment} from './membership/payment';
 import {Profile} from './membership/profile';
 import {Subscription} from './membership/subscription';
 import {MollieController} from './mollie.controller';
+import moment = require('moment');
 
 
 export class MembershipController {
@@ -404,47 +405,51 @@ export class MembershipController {
           }
         });
 
-        filteredList.forEach((member: any) => {
-          if (member.memberemail === 'geahaad+100@gmail.com') {
-            this.debug(`Send reminder to ${member.memberemail}`);
+        const formData = require('form-data');
+        const Mailgun = require('mailgun.js');
+        const mailgun = new Mailgun(formData);
+        const DOMAIN = "mg.teamvegan.at";
+        const mg = mailgun.client({
+          username: 'api',
+          url: "https://api.eu.mailgun.net",
+          key: process.env.MAILGUN_API
+        });
 
-            const formData = require('form-data');
-            const Mailgun = require('mailgun.js');
-            const mailgun = new Mailgun(formData);
-            const DOMAIN = "mg.teamvegan.at";
-            const mg = mailgun.client({
-              username: 'api',
-              url: "https://api.eu.mailgun.net",
-              key: process.env.MAILGUN_API
-            });
+        await this.asyncForEach(filteredList, async (member: any) => {
+          const diff = moment(member.paymentdate, "YYYY-MM-DD").diff(moment().utc(), "days");
+          // Within the next month -> send reminder
+          if (diff < 32) {
+            this.debug(`Sending to ${email}, for next payment ${member.paymentdate}, difference ${diff} days`);
+          } else {
+            this.debug(`NOT sending to ${email}, for next payment ${member.paymentdate}, difference ${diff} days`);
+          }
 
+          // if (member.memberemail.startsWith('geahaad')) {
             const data = {
               from: "Team Vegan <noreply@mg.teamvegan.at>",
               to: member.memberemail,
               subject: "Erinnerung an Zahlungseinzug",
               template: "dd-reminder",
+              'h:Reply-To': "info@teamvegan.at; admin@teamvegan.at",
               'v:membername': member.membername,
               'v:obfuscatediban': member.obfuscatediban,
               'v:paymentamount': member.paymentamount,
               'v:paymentdate': member.paymentdate,
               'v:paymentmandat': member.paymentmandat
             };
-            this.debug(`Sending direct debit reminder to ${email}, using ${process.env.MAILGUN_API}`);
 
             mg.messages.create(DOMAIN, data)
               .then((msg: any) => {
+                this.debug(`Sent reminder to ${member.memberemail}`);
                 this.debug(msg);
-                resolve(msg);
               })
               .catch((error: any) => {
                 this.debug(error);
-                reject(error);
               });
-          }
+          // }
         });
 
         resolve(filteredList);
-
       });
     });
   }
