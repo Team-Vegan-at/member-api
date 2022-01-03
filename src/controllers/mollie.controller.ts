@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-misused-promises */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
 import {inject} from '@loopback/core';
@@ -112,10 +111,18 @@ export class MollieController {
 
     let checkoutUrl: string | null = null;
 
+    // const dc = new DashboardController();
+    // await dc.redisGetTeamMember(email).then((memberObj: any) => {
+    //   this.debug(`Member already exists`);
+    //   this.debug(memberObj);
+
+    //   return null;
+    // });
+
     await this.mollieClient.customers
       .create({
-        name: `${unescape(firstname)} ${unescape(lastname)}`,
-        email: unescape(email),
+        name: `${decodeURIComponent(firstname)} ${decodeURIComponent(lastname)}`,
+        email: decodeURIComponent(email),
         locale: Locale.de_AT,
         metadata: {
           dob,
@@ -154,7 +161,7 @@ export class MollieController {
 
   /******** PRIVATE FUNCTIONS *************/
 
-  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string, membershipType: string = 'regular') {
+  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string, membershipType = 'regular') {
     if (!process.env.MOLLIE_PAYMENT_AMOUNT_FULL) {
       this.debug('ERROR: MOLLIE_PAYMENT_AMOUNT_FULL not set');
       return null;
