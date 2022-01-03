@@ -370,8 +370,6 @@ export class MembershipController {
   ): Promise<any> {
     this.debug(`/membership/reminder`);
 
-    const email = "geahaad@gmail.com";
-
     const dbc = new DashboardController();
     const sub = new Subscription();
 
@@ -419,12 +417,8 @@ export class MembershipController {
           const diff = moment(member.paymentdate, "YYYY-MM-DD").diff(moment().utc(), "days");
           // Within the next month -> send reminder
           if (diff < 32) {
-            this.debug(`Sending to ${email}, for next payment ${member.paymentdate}, difference ${diff} days`);
-          } else {
-            this.debug(`NOT sending to ${email}, for next payment ${member.paymentdate}, difference ${diff} days`);
-          }
+            this.debug(`Sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
 
-          // if (member.memberemail.startsWith('geahaad')) {
             const data = {
               from: "Team Vegan <noreply@mg.teamvegan.at>",
               to: member.memberemail,
@@ -446,7 +440,9 @@ export class MembershipController {
               .catch((error: any) => {
                 this.debug(error);
               });
-          // }
+          } else {
+            this.debug(`NOT sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
+          }
         });
 
         resolve(filteredList);
