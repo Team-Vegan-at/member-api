@@ -13,12 +13,15 @@ import {ProfileResult} from '../models/profile-return.model';
 import {SubscriptionPayload} from '../models/subscription-payload.model';
 import {SubscriptionResult} from '../models/subscription-return.model';
 import {PATService} from '../services/pat-service';
+import {CalcUtil} from '../utils/calc.util';
 import {DashboardController} from './dashboard.controller';
 import {Mandate} from './membership/mandate';
 import {Payment} from './membership/payment';
 import {Profile} from './membership/profile';
 import {Subscription} from './membership/subscription';
 import {MollieController} from './mollie.controller';
+import moment = require('moment');
+
 
 export class MembershipController {
   private debug = require('debug')('api:MembershipController');
@@ -250,7 +253,7 @@ export class MembershipController {
         .catch((reason) => { return reject(reason) });
 
       const mc = new MollieController();
-      mc.getCheckoutUrl(email, redirectUrl, membershipType)
+      mc.getCheckoutUrl(email, redirectUrl, membershipType, true)
         .then((checkoutUrl: any) => resolve(checkoutUrl))
         .catch((reason: any) => reject(reason));
     });
@@ -353,5 +356,108 @@ export class MembershipController {
           });
       });
     });
+  }
+
+  @post('/membership/reminder', {
+    parameters: [],
+    responses: {
+      '200': {
+      },
+    },
+  })
+  @authenticate('team-vegan-jwt')
+  public async reminder(
+  ): Promise<any> {
+    this.debug(`/membership/reminder`);
+
+    const dbc = new DashboardController();
+    const sub = new Subscription();
+
+    return new Promise(async (resolve, reject) => {
+
+      const previousYear = CalcUtil.getCurrentMembershipYear() - 1;
+      this.debug(`Look up members from ${previousYear}`);
+
+      await dbc.listTeamMembers(previousYear).then(async (custList: any) => {
+        let filteredList: any = [];
+        this.debug(`Filter active subscriptions only`);
+
+        await this.asyncForEach(custList, async custObj => {
+          if ('activeSubscription' in custObj) {
+            if (custObj.activeSubscription === true
+              && ('email' in custObj)) {
+
+              await sub.getSubscriptions(custObj.email).then((subObj: any) => {
+
+                filteredList.push({
+                  membername: custObj.name,
+                  memberemail: custObj.email,
+                  obfuscatediban: subObj.consumerAccount,
+                  paymentdate: subObj.nextPaymentDate,
+                  paymentamount: subObj.amount,
+                  paymentmandat: subObj.mandateReference
+                });
+                this.debug(subObj);
+              });
+            }
+          }
+        });
+
+        const formData = require('form-data');
+        const Mailgun = require('mailgun.js');
+        const mailgun = new Mailgun(formData);
+        const DOMAIN = "mg.teamvegan.at";
+        const mg = mailgun.client({
+          username: 'api',
+          url: "https://api.eu.mailgun.net",
+          key: process.env.MAILGUN_API
+        });
+
+        await this.asyncForEach(filteredList, async (member: any) => {
+          const diff = moment(member.paymentdate, "YYYY-MM-DD").diff(moment().utc(), "days");
+          // Within the next month -> send reminder
+          if (diff < 32) {
+            this.debug(`Sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
+
+            const data = {
+              from: "Team Vegan <noreply@mg.teamvegan.at>",
+              to: member.memberemail,
+              subject: "Erinnerung an Zahlungseinzug",
+              template: "dd-reminder",
+              'h:Reply-To': "info@teamvegan.at; admin@teamvegan.at",
+              'v:membername': member.membername,
+              'v:obfuscatediban': member.obfuscatediban,
+              'v:paymentamount': member.paymentamount,
+              'v:paymentdate': member.paymentdate,
+              'v:paymentmandat': member.paymentmandat
+            };
+
+            mg.messages.create(DOMAIN, data)
+              .then((msg: any) => {
+                this.debug(`Sent reminder to ${member.memberemail}`);
+                this.debug(msg);
+              })
+              .catch((error: any) => {
+                this.debug(error);
+              });
+          } else {
+            this.debug(`NOT sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
+          }
+        });
+
+        resolve(filteredList);
+      });
+    });
+  }
+
+
+
+  private async asyncForEach(
+    array: string | any[],
+    callback: (arg0: any, arg1: number, arg2: any) => any,
+  ) {
+    for (let index = 0; index < array.length; index++) {
+      await callback(array[index], index, array);
+    }
   }
 }
