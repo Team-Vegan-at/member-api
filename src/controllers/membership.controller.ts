@@ -253,7 +253,7 @@ export class MembershipController {
         .catch((reason) => { return reject(reason) });
 
       const mc = new MollieController();
-      mc.getCheckoutUrl(email, redirectUrl, membershipType)
+      mc.getCheckoutUrl(email, redirectUrl, membershipType, true)
         .then((checkoutUrl: any) => resolve(checkoutUrl))
         .catch((reason: any) => reject(reason));
     });

@@ -28,6 +28,8 @@ export class MollieController {
   @get('/pay', {
     parameters: [
       {name: 'email', schema: {type: 'string'}, in: 'query', required: true},
+      {name: 'type', schema: {type: 'string'}, in: 'query', required: false},
+      {name: 'recurring', schema: {type: 'string'}, in: 'query', required: false},
       {name: 'redirectUrl', schema: {type: 'string'}, in: 'query', required: false},
     ],
     responses: {
@@ -44,11 +46,22 @@ export class MollieController {
   async pay(
     @param.query.string('email') email: string,
     @param.query.string('redirectUrl') redirectUrl: string,
+    @param.query.string('type') type: string = 'regular',
+    @param.query.string('recurring') recurring: string = '0',
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ): Promise<any> {
     this.debug(`/pay`);
 
-    const checkoutUrl = await this.getCheckoutUrl(email, redirectUrl);
+    let recurringParsed = false;
+    if (typeof recurring === 'string') {
+      recurringParsed = recurring.toLowerCase() === 'true' || !!+recurring;
+      // https://stackoverflow.com/a/50697299
+    } else {
+      recurringParsed = false;
+    }
+
+    const checkoutUrl = await this.getCheckoutUrl(
+      email, redirectUrl, type, recurringParsed);
 
     if (checkoutUrl) {
       response.redirect(checkoutUrl);
@@ -57,7 +70,7 @@ export class MollieController {
     }
   }
 
-  public async getCheckoutUrl(email: string, redirectUrl?: string, membershipType?: string) {
+  public async getCheckoutUrl(email: string, redirectUrl?: string, membershipType: string = 'regular', membershipRecurring: boolean = false) {
     const dc = new DashboardController();
     const checkoutUrl = await dc
       .redisGetTeamMember(email)
@@ -66,7 +79,8 @@ export class MollieController {
           return this.createMollieCheckoutUrl(
             custObj.mollieObj,
             redirectUrl,
-            membershipType
+            membershipType,
+            membershipRecurring
           );
         } else {
           return 'https://teamvegan.at';
@@ -109,6 +123,9 @@ export class MollieController {
   ): Promise<string | null> {
     this.debug(`/mollie/checkout`);
 
+    // TODO make dynamic!
+    const membershipType = 'regular';
+
     let checkoutUrl: string | null = null;
 
     // const dc = new DashboardController();
@@ -149,7 +166,8 @@ export class MollieController {
           },
         );
 
-        checkoutUrl = await this.createMollieCheckoutUrl(customer);
+        checkoutUrl = await this.createMollieCheckoutUrl(
+          customer, "", membershipType, false);
       })
       .catch(reason => {
         this.debug(reason);
@@ -161,22 +179,42 @@ export class MollieController {
 
   /******** PRIVATE FUNCTIONS *************/
 
-  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string, membershipType = 'regular') {
-    if (!process.env.MOLLIE_PAYMENT_AMOUNT_FULL) {
-      this.debug('ERROR: MOLLIE_PAYMENT_AMOUNT_FULL not set');
+  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string,
+    membershipType = 'regular', membershipRecurring = false) {
+    if (!process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR) {
+      this.debug('ERROR: MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR not set');
       return null;
     }
 
-    const discount = process.env.MOLLIE_PAYMENT_DISCOUNT ?
-      parseFloat(process.env.MOLLIE_PAYMENT_DISCOUNT) : 1;
-    let amount = parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_FULL!, 10);
-    if (membershipType && membershipType === 'reduced') {
-      amount = parseInt(process.env.MOLLIE_PAYMENT_AMOUNT_REDUCED!, 10);
+    // Default: No discount
+    let discount = 1;
+    if (membershipRecurring) {
+      discount = process.env.MOLLIE_PAYMENT_RECURRING_DISCOUNT ?
+        parseFloat(process.env.MOLLIE_PAYMENT_RECURRING_DISCOUNT) : 1;
+    } else {
+      discount = process.env.MOLLIE_PAYMENT_NEW_DISCOUNT ?
+        parseFloat(process.env.MOLLIE_PAYMENT_NEW_DISCOUNT) : 1;
     }
+
+    // Default: New Member, regular
+    let amount = parseInt(process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR!, 10);
+
+    if (membershipType && membershipType === 'reduced') {
+      // 1) New member, reduced
+      amount = parseInt(process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REDUCED!, 10);
+    } else if (membershipRecurring && membershipType === ' regular') {
+      // 2) Recurring member, regular
+      amount = parseInt(process.env.MOLLIE_PAYMENT_RECURRING_AMOUNT_REGULAR!, 10);
+    } else if (membershipRecurring && membershipType === ' reduced') {
+      // 3) Recurring member, reduced
+      amount = parseInt(process.env.MOLLIE_PAYMENT_RECURRING_AMOUNT_REDUCED!, 10);
+    }
+
     const totalAmount = (amount * discount).toFixed(2);
 
-    this.debug(`Membership Type: ${membershipType}`);
-    this.debug(`Calculated amount: ${totalAmount} (${amount} * ${discount})`);
+    this.debug(`Membership Type: ${membershipType},
+                Recurring: ${membershipRecurring},
+                Calculated amount: ${totalAmount} (${amount} * ${discount})`);
 
     return this.mollieClient.payments
       .create({
@@ -191,7 +229,7 @@ export class MollieController {
         },
         description: `${
           process.env.MOLLIE_PAYMENT_DESCRIPTION
-        }`,
+        } (${ membershipType === 'regular' ? 'Regulär' : 'Ermässigt'})`,
         locale: Locale.de_AT,
         redirectUrl: redirectUrl ? redirectUrl : process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
         webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
