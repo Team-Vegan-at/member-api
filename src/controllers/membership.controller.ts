@@ -358,11 +358,7 @@ export class MembershipController {
     });
   }
 
-<<<<<<< HEAD
   @post('/membership/reminder-dd', {
-=======
-  @post('/membership/reminder', {
->>>>>>> 8fd49d01b5e9de70e760ce2c61a53e889dcaf701
     parameters: [],
     responses: {
       '200': {
