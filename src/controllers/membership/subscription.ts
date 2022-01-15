@@ -21,8 +21,8 @@ export class Subscription {
   ) : Promise<SubscriptionData> {
 
       const amount = (payload.membershiptype === 'reduced') ?
-      process.env.MOLLIE_PAYMENT_AMOUNT_REDUCED as string :
-      process.env.MOLLIE_PAYMENT_AMOUNT_FULL as string;
+        process.env.MOLLIE_PAYMENT_RECURRING_AMOUNT_REDUCED as string :
+        process.env.MOLLIE_PAYMENT_RECURRING_AMOUNT_REGULAR as string;
       this.debug(`Membership Type: ${payload.membershiptype}, Amount: ${amount}`);
 
       return new Promise(async(resolve, reject) => {
@@ -77,7 +77,9 @@ export class Subscription {
                     interval: "12 months",
                     startDate: moment().add(7, 'days').format('YYYY-MM-DD'),
                     mandateId,
-                    description: process.env.MOLLIE_PAYMENT_DESCRIPTION as string,
+                    description: `${
+                      process.env.MOLLIE_PAYMENT_DESCRIPTION
+                    } (${ payload.membershiptype === 'regular' ? 'Regulär' : 'Ermässigt'})`,
                   }).then((subscription) => {
                     this.debug(`Created new subscription ${subscription.id} for customer ${custObj.email}`);
                     return resolve(subscription);
@@ -101,7 +103,9 @@ export class Subscription {
                 interval: "12 months",
                 startDate: moment().add(7, 'days').format('YYYY-MM-DD'),
                 mandateId,
-                description: process.env.MOLLIE_PAYMENT_DESCRIPTION as string,
+                description: `${
+                  process.env.MOLLIE_PAYMENT_DESCRIPTION
+                } (${ payload.membershiptype === 'regular' ? 'Regulär' : 'Ermässigt'})`,
               }).then((subscription) => {
                 this.debug(`Created new subscription ${subscription.id} for customer ${custObj.email}`);
                 return resolve(subscription);

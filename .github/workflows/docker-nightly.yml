@@ -41,7 +41,7 @@ jobs:
         env:
           BASEURL: ${{ secrets.QS_BASE_URL }}
 
-      - name: Add version number to force js/css refresh
+      - name: Add version number to force js/css cache refresh
         uses: cschleiden/replace-tokens@v1
         with:
           tokenPrefix: '{'
