@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import {post, requestBody, HttpErrors} from '@loopback/rest';
-import util from 'util';
-import moment from 'moment';
-import {RedisUtil} from '../utils/redis.util';
+import {HttpErrors, post, requestBody} from '@loopback/rest';
 import createMollieClient, {Payment} from '@mollie/api-client';
+import moment from 'moment';
+import util from 'util';
+import {RedisUtil} from '../utils/redis.util';
 
 export class WebhooksController {
   private debug = require('debug')('api:WebhooksController');
@@ -63,6 +63,10 @@ export class WebhooksController {
           const redisCustomerUpdate = JSON.parse(custRecord);
 
           let found = false;
+          if (!redisCustomerUpdate.payments) {
+            redisCustomerUpdate.payments = [];
+          }
+
           redisCustomerUpdate.payments.forEach(
             (custPayment: any, index: number) => {
               if (payment.id === custPayment.data.id) {
