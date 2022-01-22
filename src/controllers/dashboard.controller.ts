@@ -85,6 +85,63 @@ export class DashboardController {
     });
   }
 
+  @get('/dashboard/numberofmembers', {
+    parameters: [
+      {
+        name: 'year',
+        schema: {type: 'number'},
+        in: 'query',
+        required: false,
+      },
+    ],
+    responses: {
+      '200': {},
+    },
+  })
+  public async numberofmembers(
+    @param.query.number('year') year: number,
+  ): Promise<number> {
+    const memberList: any = [];
+    const redisScan = require('node-redis-scan');
+    const scanner = new redisScan(RedisUtil.redisClient);
+    if (year == null) {
+      year = CalcUtil.getCurrentMembershipYear();
+    }
+
+    return new Promise((resolve, reject) => {
+      scanner.scan(
+        `${RedisUtil.teamMemberPrefix}:*`,
+        async (err: any, matchingKeys: any) => {
+          if (err) {
+            this.debug(`Redis error: ${err}`);
+            reject();
+          }
+
+          const start = async () => {
+            await this.asyncForEach(matchingKeys, async memberKey => {
+              await this.redisGetTeamMember(
+                memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
+              ).then((memberObj: any) => {
+                const memberPayload = this.buildMemberPayload(memberObj, year);
+
+                if (memberPayload.paid) {
+                  memberList.push(memberPayload);
+                }
+              });
+            });
+            resolve(memberList.length);
+          };
+          start().then(
+            () => {},
+            () => {},
+          );
+
+          await matchingKeys.forEach((memberKey: string) => {});
+        },
+      );
+    });
+  }
+
   @get('/dashboard/member', {
     parameters: [
       {
