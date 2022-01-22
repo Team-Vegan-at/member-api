@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {ApplicationConfig} from '@loopback/core';
 import {Payment, PaymentStatus, Subscription, SubscriptionStatus} from '@mollie/api-client';
-import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import moment from 'moment';
 import {MemberApiApplication} from './application';
 import {MollieController} from './controllers';
@@ -324,52 +323,52 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   }
 
   // ******* STATS *****************
-  const membershipYear = moment().utc().year();
-  const activeMembersInCurrentYear = (await mc.listAllPaidPayments(membershipYear)).length;
-  await mc.listAllActiveSubscriptions().then((subscriptions: SubscriptionData[]) => {
-    RedisUtil.redisGetAsync(
-      `${RedisUtil.statsPrefix}:all`,
-    )
-      .then((reply: any) => {
-        debugRedis(reply);
-        if (reply == null) {
-          // Store new record in Redis
-          const statsPayload = {
-            subscriptions: subscriptions.length,
-            members: activeMembersInCurrentYear,
-            year: membershipYear
-          };
-          RedisUtil.redisClient.set(
-            `${RedisUtil.statsPrefix}:all`,
-            JSON.stringify(statsPayload),
-            (err: any, _reply: any) => {
-              if (err) {
-                debugCron(`Redis error: ${err}`);
-              }
-            },
-          );
-        } else {
-          // Update in Redis
-          const statsPayload = JSON.parse(reply);
-          statsPayload.subscriptions = subscriptions.length;
-          statsPayload.members = activeMembersInCurrentYear;
-          RedisUtil.redisClient.set(
-            `${
-              RedisUtil.statsPrefix
-            }:all`,
-            JSON.stringify(statsPayload),
-            (err: any, _reply: any) => {
-              if (err) {
-                debugCron(`Redis error: ${err}`);
-              }
-            },
-          );
-        }
-      })
-      .catch((err: any) => {
-        if (err) {
-          debugCron(`Redis error: ${err}`);
-        }
-      });
-  })
+  // const membershipYear = moment().utc().year();
+  // const activeMembersInCurrentYear = (await mc.listAllPaidPayments(membershipYear)).length;
+  // await mc.listAllActiveSubscriptions().then((subscriptions: SubscriptionData[]) => {
+  //   RedisUtil.redisGetAsync(
+  //     `${RedisUtil.statsPrefix}:all`,
+  //   )
+  //     .then((reply: any) => {
+  //       debugRedis(reply);
+  //       if (reply == null) {
+  //         // Store new record in Redis
+  //         const statsPayload = {
+  //           subscriptions: subscriptions.length,
+  //           members: activeMembersInCurrentYear,
+  //           year: membershipYear
+  //         };
+  //         RedisUtil.redisClient.set(
+  //           `${RedisUtil.statsPrefix}:all`,
+  //           JSON.stringify(statsPayload),
+  //           (err: any, _reply: any) => {
+  //             if (err) {
+  //               debugCron(`Redis error: ${err}`);
+  //             }
+  //           },
+  //         );
+  //       } else {
+  //         // Update in Redis
+  //         const statsPayload = JSON.parse(reply);
+  //         statsPayload.subscriptions = subscriptions.length;
+  //         statsPayload.members = activeMembersInCurrentYear;
+  //         RedisUtil.redisClient.set(
+  //           `${
+  //             RedisUtil.statsPrefix
+  //           }:all`,
+  //           JSON.stringify(statsPayload),
+  //           (err: any, _reply: any) => {
+  //             if (err) {
+  //               debugCron(`Redis error: ${err}`);
+  //             }
+  //           },
+  //         );
+  //       }
+  //     })
+  //     .catch((err: any) => {
+  //       if (err) {
+  //         debugCron(`Redis error: ${err}`);
+  //       }
+  //     });
+  // });
 }
