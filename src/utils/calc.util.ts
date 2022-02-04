@@ -25,7 +25,7 @@ export class CalcUtil {
                   .endOf("month");
 
     CalcUtil.debug(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
-    console.log(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
+    // console.log(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
 
     return moment(shortDate, "YYYY-MM-DD").isBetween(from, to);
   }
