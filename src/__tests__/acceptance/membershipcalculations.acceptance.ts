@@ -15,18 +15,23 @@ describe('MembershipYearCalculations', () => {
     expect(CalcUtil.isInMembershipRange("2020-06-20", 2020)).to.be.true();
     expect(CalcUtil.isInMembershipRange("2019-12-02", 2020)).to.be.true();
     expect(CalcUtil.isInMembershipRange("2019-11-28", 2020)).to.be.true();
-    expect(CalcUtil.isInMembershipRange("2020-12-05", 2020)).to.be.true();
-    expect(CalcUtil.isInMembershipRange("2021-01-15", 2020)).to.be.true();
+    expect(CalcUtil.isInMembershipRange("2020-12-05", 2020)).to.be.false();
+    expect(CalcUtil.isInMembershipRange("2021-01-15", 2021)).to.be.true();
     expect(CalcUtil.isInMembershipRange("2021-02-02", 2020)).to.be.false();
+    expect(CalcUtil.isInMembershipRange("2021-02-02", 2021)).to.be.true();
     expect(CalcUtil.isInMembershipRange("2021-11-02", 2022)).to.be.true();
+    expect(CalcUtil.isInMembershipRange("2021-08-01", 2021)).to.be.true();
     // Sportfoerderung
     expect(CalcUtil.isInMembershipRange("2021-08-02", 2022)).to.be.false();
     expect(CalcUtil.isInMembershipRange("2020-09-02", 2021)).to.be.false();
     expect(CalcUtil.isInMembershipRange("2021-09-02", 2022)).to.be.true();
     expect(CalcUtil.isInMembershipRange("2021-12-02", 2022)).to.be.true();
     // Sportfoerderung - end
+    expect(CalcUtil.isInMembershipRange("2022-01-02", 2021)).to.be.false();
     expect(CalcUtil.isInMembershipRange("2022-01-02", 2022)).to.be.true();
     expect(CalcUtil.isInMembershipRange("2022-02-02", 2023)).to.be.false();
+    expect(CalcUtil.isInMembershipRange("2022-09-04", 2022)).to.be.true();
+    expect(CalcUtil.isInMembershipRange("2022-11-04", 2022)).to.be.false();
   });
 
   it('CalcUtil.getExpirationDate', async () => {

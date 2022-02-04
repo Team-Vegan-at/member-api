@@ -5,24 +5,27 @@ export class CalcUtil {
 
   public static isInMembershipRange(shortDate: string, year: number): boolean {
 
-    let monthsOfPreviousYear = 2;
+    let subtractMonthsOfPreviousYear = 2;
+    let subtractMonthsOfCurrentYear = 2;
 
     // Exception case 2022: Sportfoerderung for all new members from 01. September
-    if (year === 2022) {
-      monthsOfPreviousYear = 4;
+    if (year === 2021) {
+      subtractMonthsOfCurrentYear = 4;
+    } else if (year === 2022) {
+      subtractMonthsOfPreviousYear = 4;
     }
-
 
     const from =  moment(year, "YYYY")
                   .startOf("year")
-                  .subtract(monthsOfPreviousYear, 'month') // first of november
+                  .subtract(subtractMonthsOfPreviousYear, 'month') // first of november
                   .startOf("month");
     const to =    moment(year, "YYYY")
                   .endOf("year")
-                  .add(1, 'month')      // end of january
+                  .subtract(subtractMonthsOfCurrentYear, 'month') // first of november
                   .endOf("month");
 
     CalcUtil.debug(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
+    console.log(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
 
     return moment(shortDate, "YYYY-MM-DD").isBetween(from, to);
   }
