@@ -556,9 +556,10 @@ export class DashboardController {
             };
           }
         } else if (
+          CalcUtil.isInMembershipRange(pymt.paidAt!, year) && (
           pymt.status === PaymentStatus.open ||
           pymt.status === PaymentStatus.pending ||
-          pymt.status === PaymentStatus.expired
+          pymt.status === PaymentStatus.expired)
         ) {
           payment = {
             status: pymt.status,
