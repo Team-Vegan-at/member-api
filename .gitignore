@@ -72,3 +72,6 @@ typings/
 *.tsbuildinfo
 
 /redis
+
+# Webstorm
+.idea
