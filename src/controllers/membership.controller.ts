@@ -370,12 +370,6 @@ export class MembershipController {
   ): Promise<any> {
     this.debug(`/membership/reminder-dd`);
 
-    const reminderEnabled = process.env.ENABLE_REMINDER ? process.env.ENABLE_REMINDER : "0";
-    if (reminderEnabled === "0") {
-      this.debug("ENABLE_REMINDER disabled");
-      return;
-    }
-
     const dbc = new DashboardController();
     const sub = new Subscription();
 
@@ -409,47 +403,52 @@ export class MembershipController {
           }
         });
 
-        const formData = require('form-data');
-        const Mailgun = require('mailgun.js');
-        const mailgun = new Mailgun(formData);
-        const DOMAIN = "mg.teamvegan.at";
-        const mg = mailgun.client({
-          username: 'api',
-          url: "https://api.eu.mailgun.net",
-          key: process.env.MAILGUN_API
-        });
+        const reminderEnabled = process.env.ENABLE_REMINDER_MAIL ? process.env.ENABLE_REMINDER_MAIL : "0";
+        if (reminderEnabled === "0") {
+          this.debug("ENABLE_REMINDER_MAIL disabled - no mails sent");
+        } else {
+          const formData = require('form-data');
+          const Mailgun = require('mailgun.js');
+          const mailgun = new Mailgun(formData);
+          const DOMAIN = "mg.teamvegan.at";
+          const mg = mailgun.client({
+            username: 'api',
+            url: "https://api.eu.mailgun.net",
+            key: process.env.MAILGUN_API
+          });
 
-        await this.asyncForEach(filteredList, async (member: any) => {
-          const diff = moment(member.paymentdate, "YYYY-MM-DD").diff(moment().utc(), "days");
-          // Within the next month -> send reminder
-          if (diff < 32) {
-            this.debug(`Sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
+          await this.asyncForEach(filteredList, async (member: any) => {
+            const diff = moment(member.paymentdate, "YYYY-MM-DD").diff(moment().utc(), "days");
+            // Within the next month -> send reminder
+            if (diff < 32) {
+              this.debug(`Sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
 
-            const data = {
-              from: "Team Vegan <noreply@mg.teamvegan.at>",
-              to: member.memberemail,
-              subject: "Erinnerung an Zahlungseinzug",
-              template: "dd-reminder",
-              'h:Reply-To': "info@teamvegan.at; admin@teamvegan.at",
-              'v:membername': member.membername,
-              'v:obfuscatediban': member.obfuscatediban,
-              'v:paymentamount': member.paymentamount,
-              'v:paymentdate': member.paymentdate,
-              'v:paymentmandat': member.paymentmandat
-            };
+              const data = {
+                from: "Team Vegan <noreply@mg.teamvegan.at>",
+                to: member.memberemail,
+                subject: "Erinnerung an Zahlungseinzug",
+                template: "dd-reminder",
+                'h:Reply-To': "info@teamvegan.at; admin@teamvegan.at",
+                'v:membername': member.membername,
+                'v:obfuscatediban': member.obfuscatediban,
+                'v:paymentamount': member.paymentamount,
+                'v:paymentdate': member.paymentdate,
+                'v:paymentmandat': member.paymentmandat
+              };
 
-            mg.messages.create(DOMAIN, data)
-              .then((msg: any) => {
-                this.debug(`Sent reminder to ${member.memberemail}`);
-                this.debug(msg);
-              })
-              .catch((error: any) => {
-                this.debug(error);
-              });
-          } else {
-            this.debug(`NOT sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
-          }
-        });
+              mg.messages.create(DOMAIN, data)
+                .then((msg: any) => {
+                  this.debug(`Sent reminder to ${member.memberemail}`);
+                  this.debug(msg);
+                })
+                .catch((error: any) => {
+                  this.debug(error);
+                });
+            } else {
+              this.debug(`NOT sending to ${member.memberemail}, for next payment ${member.paymentdate}, difference ${diff} days`);
+            }
+          });
+        }
 
         resolve(filteredList);
       });
@@ -468,12 +467,6 @@ export class MembershipController {
   ): Promise<any> {
     this.debug(`/membership/reminder-expiring-membership`);
 
-    const reminderEnabled = process.env.ENABLE_REMINDER ? process.env.ENABLE_REMINDER : "0";
-    if (reminderEnabled === "0") {
-      this.debug("ENABLE_REMINDER disabled");
-      return;
-    }
-
     const dbc = new DashboardController();
     const prof = new Profile();
     const sub = new Subscription();
@@ -484,79 +477,79 @@ export class MembershipController {
       const previousYear = currentYear - 1;
       this.debug(`Look up members from ${previousYear}`);
 
-
       await dbc.listTeamMembers(previousYear).then(async (custList: any) => {
         let filteredList: any = [];
 
-        this.debug(`Filter non-active subscriptions, and non-payments for ${currentYear}`);
+        const custListCurrent = await dbc.listTeamMembers(currentYear);
 
-        await this.asyncForEach(custList, async custObj => {
-          if ('activeSubscription' in custObj) {
-            if (custObj.activeSubscription === true
-              && ('email' in custObj)) {
-              // skip active direct debit members
-            } else if (custObj.paid === true) {
-              // filter those, who have already paid for current Membership year
-              await prof.getProfile(custObj.email).then((custProfile: ProfileResult | null) => {
-                if (custProfile!.membershipValidTo) {
-                  if (moment(custProfile!.membershipValidTo, 'YYYY-MM-DD').year() > currentYear) {
-                    // all good - active member, not eligible for reminding
-                  } else {
-                    filteredList.push({
-                      membername: custObj.name,
-                      memberemail: custObj.email,
-                      mollie: custObj.mollieCustId,
-                      debug: `membershipValidTo ${custProfile!.membershipValidTo}`
-                    });
-                  }
-                } else {
-                  filteredList.push({
-                    membername: custObj.name,
-                    memberemail: custObj.email,
-                    mollie: custObj.mollieCustId,
-                    debug: 'no membershipValidTo'
-                  });
-                }
-              });
+        this.debug(`Filter non-payments for ${currentYear}`);
+        custList.forEach((custPreviousYear: any) => {
+          if (custPreviousYear.paid === true) {
 
-            } else {
-              // skip inactive members
+            const custCurrentYear = custListCurrent.find((v: any) => v.email === custPreviousYear.email)
+
+            if (custCurrentYear && custCurrentYear.paid === false) {
+              // filter members who unsubscribed
+              if (!['dominic.moritz@gmx.at'
+                   ,'kristinwegscheidler@gmx.at'
+                   ,'miriam669@hotmail.es'
+                   ,'office@sdemmerer.at'
+                   ,'ursula.visconti@gmail.com'
+                   ,'freddy.pinteritsch@icloud.com'].includes(custCurrentYear.email)) {
+                filteredList.push({
+                  membername: custCurrentYear.name,
+                  memberemail: custCurrentYear.email,
+                  mollie: custCurrentYear.mollieCustId
+                });
+              }
             }
           }
         });
         this.debug(`Found ${filteredList.length} members eligible for a reminder`);
 
-        const formData = require('form-data');
-        const Mailgun = require('mailgun.js');
-        const mailgun = new Mailgun(formData);
-        const DOMAIN = "mg.teamvegan.at";
-        const mg = mailgun.client({
-          username: 'api',
-          url: "https://api.eu.mailgun.net",
-          key: process.env.MAILGUN_API
-        });
+        const reminderEnabled = process.env.ENABLE_REMINDER_MAIL ? process.env.ENABLE_REMINDER_MAIL : "0";
+        if (reminderEnabled === "0") {
+          this.debug("ENABLE_REMINDER_MAIL disabled - no mails sent");
+        } else {
+          const formData = require('form-data');
+          const Mailgun = require('mailgun.js');
+          const mailgun = new Mailgun(formData);
+          const DOMAIN = "mg.teamvegan.at";
+          const mg = mailgun.client({
+            username: 'api',
+            url: "https://api.eu.mailgun.net",
+            key: process.env.MAILGUN_API
+          });
 
-        await this.asyncForEach(filteredList, async (member: any) => {
-          const data = {
-            from: "Team Vegan <noreply@mg.teamvegan.at>",
-            to: member.memberemail,
-            subject: "Erinnerung an deine Mitgliedschaft",
-            template: "membership-renewal-reminder",
-            'h:Reply-To': "info@teamvegan.at; admin@teamvegan.at",
-            'v:membername': member.membername,
-            'v:link_payment_regular': `https://api.teamvegan.at/pay?email=${member.memberemail}&recurring=1&type=regular`,
-            'v:link_payment_reduced': `https://api.teamvegan.at/pay?email=${member.memberemail}&recurring=1&type=reduced`
-          };
+          // DEBUG
+          // dbc.redisGetTeamMember("geahaad@gmail.com").then((memberObj: any) => {
+          //   const member = {
+          //     membername: memberObj.name,
+          //     memberemail: memberObj.email,
+          //   };
+          // END DEBUG
+          await this.asyncForEach(filteredList, async (member: any) => {
+            const data = {
+              from: "Team Vegan <noreply@mg.teamvegan.at>",
+              to: member.memberemail,
+              subject: "Erinnerung an deine Team Vegan.at Mitgliedschaft",
+              template: "membership-renewal-reminder",
+              'h:Reply-To': "info@teamvegan.at; admin@teamvegan.at",
+              'v:membername': member.membername,
+              'v:link_payment_regular': `https://api.teamvegan.at/pay?email=${member.memberemail}&recurring=1&type=regular`,
+              'v:link_payment_reduced': `https://api.teamvegan.at/pay?email=${member.memberemail}&recurring=1&type=reduced`
+            };
 
-          mg.messages.create(DOMAIN, data)
-            .then((msg: any) => {
-              this.debug(`Sent reminder to ${member.memberemail}`);
-              this.debug(msg);
-            })
-            .catch((error: any) => {
-              this.debug(error);
-            });
-        });
+            mg.messages.create(DOMAIN, data)
+              .then((msg: any) => {
+                this.debug(`Sent reminder to ${member.memberemail}`);
+                this.debug(msg);
+              })
+              .catch((error: any) => {
+                this.debug(error);
+              });
+          });
+        }
 
         resolve(filteredList);
       });

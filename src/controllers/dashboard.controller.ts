@@ -502,6 +502,7 @@ export class DashboardController {
 
     // Mailchimp Details
     const mailchimpId = memberObj?.mailchimpObj?.web_id;
+    const dob = memberObj?.mailchimpObj?.merge_fields?.BIRTHDAY;
 
     // Subscription Details
     let subscription = {};
@@ -579,6 +580,7 @@ export class DashboardController {
       email: memberObj.email.toLowerCase(),
       discourse,
       discourseStatus,
+      dob,
       mollieCustId,
       mailchimpId,
       name: memberObj.name,
