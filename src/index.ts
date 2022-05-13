@@ -9,6 +9,7 @@ import {DashboardController} from './controllers/dashboard.controller';
 import {MailchimpController} from './controllers/mailchimp.controller';
 import {CalcUtil} from './utils/calc.util';
 import {RedisUtil} from './utils/redis.util';
+import {RedisMemberPayload} from './models/redis-member-payload.model';
 
 export {MemberApiApplication};
 
@@ -103,14 +104,14 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
               debugRedis(reply);
               if (reply == null) {
                 // Store new record in Redis
-                const redisMemberPayload = {
+                const redisMemberPayload: RedisMemberPayload = new RedisMemberPayload({
                   name: custObj.data.name,
                   email: custObj.data.email.toLowerCase(),
                   mollieObj: custObj.data,
                   molliePayments: paymentObj,
                   mollieSubscriptions: subscriptionObj,
-                  discourseObj: null,
-                };
+                  discourseObj: null
+                });
                 RedisUtil.redisClient.set(
                   `${
                     RedisUtil.teamMemberPrefix
@@ -166,14 +167,14 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                 debugRedis(`${reply}`);
                 if (reply == null) {
                   // Store in Redis
-                  const redisMemberPayload = {
+                  const redisMemberPayload: RedisMemberPayload = new RedisMemberPayload({
                     name: custObj.data.name,
                     email: custObj.data.email.toLowerCase(),
                     mollieObj: null,
                     molliePayments: null,
                     mollieSubscriptions: null,
                     discourseObj: custObj.data,
-                  };
+                  });
                   RedisUtil.redisClient.set(
                     `${
                       RedisUtil.teamMemberPrefix
