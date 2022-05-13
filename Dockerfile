@@ -17,8 +17,8 @@ COPY --chown=node package*.json ./
 # Bundle app source code
 COPY --chown=node . .
 
-RUN corepack enable
-RUN yarn set version stable
+#RUN corepack enable
+#RUN yarn set version stable
 
 RUN yarn install
 
