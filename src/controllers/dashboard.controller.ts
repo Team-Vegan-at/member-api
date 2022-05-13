@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable @typescript-eslint/prefer-for-of */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-floating-promises */
 import {authenticate} from '@loopback/authentication';
 import {get, param} from '@loopback/rest';
 import {Payment, PaymentMethod, PaymentStatus, Subscription} from '@mollie/api-client';
@@ -14,6 +10,7 @@ import {RedisUtil} from '../utils/redis.util';
 import {MailchimpController} from './mailchimp.controller';
 import {MollieController} from './mollie.controller';
 import moment = require('moment');
+import {RedisMemberPayload} from '../models/redis-member-payload.model';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
@@ -30,7 +27,8 @@ export class DashboardController {
       },
     ],
     responses: {
-      '200': {},
+      // eslint-disable-next-line @typescript-eslint/naming-convention
+      "200": {},
     },
   })
   @authenticate('team-vegan-jwt')
@@ -52,9 +50,8 @@ export class DashboardController {
             this.debug(`Redis error: ${err}`);
             reject();
           }
-
           const start = async () => {
-            await this.asyncForEach(matchingKeys, async memberKey => {
+            await DashboardController.asyncForEach(matchingKeys, async memberKey => {
               await this.redisGetTeamMember(
                 memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
               ).then((memberObj: any) => {
@@ -79,7 +76,7 @@ export class DashboardController {
             () => {},
           );
 
-          await matchingKeys.forEach((memberKey: string) => {});
+          await matchingKeys.forEach(() => {});
         },
       );
     });
@@ -118,7 +115,7 @@ export class DashboardController {
           }
 
           const start = async () => {
-            await this.asyncForEach(matchingKeys, async memberKey => {
+            await DashboardController.asyncForEach(matchingKeys, async memberKey => {
               await this.redisGetTeamMember(
                 memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
               ).then((memberObj: any) => {
@@ -136,7 +133,7 @@ export class DashboardController {
             () => {},
           );
 
-          await matchingKeys.forEach((memberKey: string) => {});
+          await matchingKeys.forEach(() => {});
         },
       );
     });
@@ -165,27 +162,27 @@ export class DashboardController {
   @authenticate('team-vegan-jwt')
   public async redisGetTeamMember(
     @param.query.string('email') email: string
-  ): Promise<any> {
-    const custObj = await RedisUtil.redisGetAsync(
-      `${RedisUtil.teamMemberPrefix}:${email.toLowerCase()}`,
-    )
-      .then((memberObj: any) => {
-        this.debug(`Return ${memberObj}`);
+  ): Promise<RedisMemberPayload> {
+    return new Promise((resolve, reject) => {
+      RedisUtil.redisGetAsync(
+        `${RedisUtil.teamMemberPrefix}:${email.toLowerCase()}`,
+      )
+        .then((memberObj: any) => {
+          this.debug(`Return ${memberObj}`);
 
-        // const year = CalcUtil.getCurrentMembershipYear();
-        // const memberPayload = this.buildMemberPayload(JSON.parse(memberObj), year);
+          // const year = CalcUtil.getCurrentMembershipYear();
+          // const memberPayload = this.buildMemberPayload(JSON.parse(memberObj), year);
 
-        // return memberPayload;
-
-        return JSON.parse(memberObj);
-      })
-      .catch((err: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      });
-
-    return custObj;
+          // return memberPayload;
+          resolve(JSON.parse(memberObj));
+        })
+        .catch((err: any) => {
+          if (err) {
+            this.debug(`Redis: ${err}`);
+            reject(err);
+          }
+        });
+    });
   }
 
   @get('/dashboard/mailchimp/members', {
@@ -348,58 +345,61 @@ export class DashboardController {
   public async redisGetMollieCustomer(
     @param.query.string('mollieCustomerKey') customerId: string,
   ): Promise<any> {
-    const custObj = await RedisUtil.redisGetAsync(
-      `${RedisUtil.mollieCustomerPrefix}:${customerId}`,
-    )
-      .then((reply: any) => {
-        this.debug(`Return ${reply}`);
-        return JSON.parse(reply);
-      })
-      .catch((err: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      });
-
-    return custObj;
+    return new Promise((resolve, reject) => {
+      RedisUtil.redisGetAsync(
+        `${RedisUtil.mollieCustomerPrefix}:${customerId}`,
+      )
+        .then((reply: any) => {
+          this.debug(`Return ${reply}`);
+          resolve(JSON.parse(reply));
+        })
+        .catch((err: any) => {
+          if (err) {
+            this.debug(`Redis: ${err}`);
+            reject(err);
+          }
+        });
+    });
   }
 
   public async redisGetDiscourseCustomer(
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
-    const custObj = await RedisUtil.redisGetAsync(
-      `${RedisUtil.discourseCustomerPrefix}:${customerId}`,
-    )
-      .then((reply: any) => {
-        this.debug(`Return ${reply}`);
-        return JSON.parse(reply);
-      })
-      .catch((err: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      });
-
-    return custObj;
+    return new Promise((resolve, reject) => {
+      RedisUtil.redisGetAsync(
+        `${RedisUtil.discourseCustomerPrefix}:${customerId}`,
+      )
+        .then((reply: any) => {
+          this.debug(`Return ${reply}`);
+          resolve(JSON.parse(reply));
+        })
+        .catch((err: any) => {
+          if (err) {
+            this.debug(`Redis: ${err}`);
+            reject(err);
+          }
+        });
+    });
   }
 
   public async redisGetMailchimpMember(
     memberId: string,
   ): Promise<any> {
-    const custObj = await RedisUtil.redisGetAsync(
-      `${RedisUtil.mailchimpMemberPrefix}:${memberId}`,
-    )
-      .then((reply: any) => {
-        this.debug(`Return ${reply}`);
-        return JSON.parse(reply);
-      })
-      .catch((err: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      });
-
-    return custObj;
+    return new Promise((resolve, reject) => {
+      RedisUtil.redisGetAsync(
+        `${RedisUtil.mailchimpMemberPrefix}:${memberId}`,
+      )
+        .then((reply: any) => {
+          this.debug(`Return ${reply}`);
+          resolve(JSON.parse(reply));
+        })
+        .catch((err: any) => {
+          if (err) {
+            this.debug(`Redis: ${err}`);
+            reject(err);
+          }
+        });
+    });
   }
 
   public async redisGetMollieCustomers(): Promise<any> {
@@ -470,7 +470,7 @@ export class DashboardController {
     });
   }
 
-  private async asyncForEach(
+  private static async asyncForEach(
     array: string | any[],
     callback: (arg0: any, arg1: number, arg2: any) => any,
   ) {
@@ -506,7 +506,7 @@ export class DashboardController {
 
     // Subscription Details
     let subscription = {};
-    if (memberObj.mollieSubscriptions) {
+    if (memberObj.mollieSubscriptions && memberObj.mollieSubscriptions !== {}) {
       memberObj.mollieSubscriptions.forEach((subscr: Subscription) => {
         activeSubscription = true;
         subscription = {
@@ -574,8 +574,7 @@ export class DashboardController {
         }
       });
     }
-
-    const memberPayload = {
+    return {
       activeSubscription,
       email: memberObj.email.toLowerCase(),
       discourse,
@@ -588,7 +587,5 @@ export class DashboardController {
       payment,
       subscription,
     };
-
-    return memberPayload;
   }
 }
