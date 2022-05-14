@@ -1,5 +1,5 @@
 import {AuthenticationStrategy} from '@loopback/authentication';
-import {HttpErrors, Request} from '@loopback/rest';
+import {HttpErrors, RedirectRoute, Request} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
 import {PATService} from '../services/pat-service';
 
@@ -9,11 +9,11 @@ export class PATAuthenticationStrategy implements AuthenticationStrategy {
 
   constructor() {}
 
-  async authenticate(request: Request): Promise<UserProfile | undefined> {
+  async authenticate(request: Request): Promise<UserProfile | RedirectRoute | undefined> {
     const pat: string = this.extractCredentials(request);
     const valid = await new PATService().validatePAT(pat)
-      .then((value: string) => { return true })
-      .catch((reason) => { return false });
+      .then(() => { return true })
+      .catch(() => { return false });
 
     if (!valid) {
       throw new HttpErrors.Unauthorized(`x-pat invalid`);
