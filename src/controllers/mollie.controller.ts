@@ -156,15 +156,13 @@ export class MollieController {
           data: customer,
           payments: [],
         };
-        RedisUtil.redisClient.set(
+        RedisUtil.redisClient().set(
           `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-          JSON.stringify(redisCustomerPayload),
-          (err: any, _reply: any) => {
-            if (err) {
-              this.debug(`Redis: ${err}`);
-            }
-          },
-        );
+          JSON.stringify(redisCustomerPayload))
+        .then(() => {})
+        .catch((err: any) => {
+            this.debug(`Redis: ${err}`);
+        });
 
         checkoutUrl = await this.createMollieCheckoutUrl(
           customer, "", membershipType, false);
@@ -237,7 +235,7 @@ export class MollieController {
       .then(async (payment: Payment) => {
         this.debug(`Payment ${payment.id} for ${customer.id} created`);
         // Add payment payload to customer record
-        await RedisUtil.redisGetAsync(
+        await RedisUtil.redisClient().get(
           `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
         ).then((custRecord: string | null) => {
           if (!custRecord) {
@@ -255,15 +253,12 @@ export class MollieController {
             redisCustomerUpdate = {...redisCustomerUpdate, ...{payments: []}};
           }
           redisCustomerUpdate.payments.push(redisPaymentPayload);
-          RedisUtil.redisClient.set(
+          RedisUtil.redisClient().set(
             `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-            JSON.stringify(redisCustomerUpdate),
-            (err: any, _reply: any) => {
-              if (err) {
-                this.debug(`Redis: ${err}`);
-              }
-            },
-          );
+            JSON.stringify(redisCustomerUpdate)
+          ).catch((err: any) => {
+            this.debug(`Redis: ${err}`);
+          });
         });
         // TODO: send mail
         return payment.getCheckoutUrl()!;
