@@ -1,11 +1,11 @@
 {
   "name": "member-api",
-  "verion": "2.1.22",
+  "verion": "2.2.0",
   "description": "Team Vegan.at Member API",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "engines": {
-    "node": ">=14"
+    "node": ">=16"
   },
   "scripts": {
     "build": "lb-tsc",
