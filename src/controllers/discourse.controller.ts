@@ -27,7 +27,7 @@ export class DiscourseController {
     const axios = require('axios');
 
     axios.defaults.baseURL = process.env.DISCOURSE_URL;
-    axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_KEY;
+    axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_ADMIN_KEY;
 
     return axios
       .put(`/admin/users/${id}/suspend`, {
@@ -60,7 +60,7 @@ export class DiscourseController {
     const axios = require('axios');
 
     axios.defaults.baseURL = process.env.DISCOURSE_URL;
-    axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_KEY;
+    axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_ADMIN_KEY;
 
     return axios.put(`/admin/users/${id}/unsuspend`).then((response: any) => {
       this.debug(`User ${id} unsuspended`);

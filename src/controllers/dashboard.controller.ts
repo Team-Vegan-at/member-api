@@ -244,10 +244,12 @@ export class DashboardController {
   async listDiscourseMembers(): Promise<any[] | null> {
     this.debug(`/dashboard/discourse/members`);
 
-    const axios = require('axios');
-
-    axios.defaults.baseURL = process.env.DISCOURSE_URL;
-    axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_KEY;
+    const axios = require('axios').create({
+      baseURL: process.env.DISCOURSE_URL,
+      headers: {
+        'Api-Key': process.env.DISCOURSE_ADMIN_KEY
+      }
+    });
 
     let fetchMore = true;
 
