@@ -156,12 +156,11 @@ export class MollieController {
           data: customer,
           payments: [],
         };
-        RedisUtil.redisClient().set(
+        await RedisUtil.redisClient().set(
           `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
           JSON.stringify(redisCustomerPayload))
-        .then(() => {})
         .catch((err: any) => {
-            this.debug(`Redis: ${err}`);
+            this.debug(`Redis|${err}`);
         });
 
         checkoutUrl = await this.createMollieCheckoutUrl(

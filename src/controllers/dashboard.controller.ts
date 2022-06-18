@@ -201,8 +201,8 @@ export class DashboardController {
 
     result.push(
       await mc.listMembersInfo()
-        .then((response: any) => {
-          response.members?.forEach((mailchimpMember: any) => {
+        .then(async (response: any) => {
+          for (const mailchimpMember of response.members) {
             // Store in Redis
             const redisCustomerPayload = {
               timestamp: moment().utc(),
@@ -210,16 +210,14 @@ export class DashboardController {
               method: 'listMailchimpMembers',
               data: mailchimpMember,
             };
-            RedisUtil.redisClient().set(
+            await RedisUtil.redisClient().set(
               `${RedisUtil.mailchimpMemberPrefix}:${mailchimpMember.id}`,
               JSON.stringify(redisCustomerPayload))
-            .then((r: any) => {
-              this.debug(`${r}`);
-            })
-            .catch((err: any) => {
-              this.debug(`${err}`);
-            });
-          });
+              .then(() => {})
+              .catch((err: any) => {
+                this.debug(`${err}`);
+              });
+          }
 
           return response.data;
         }),
@@ -264,9 +262,9 @@ export class DashboardController {
               page: x,
             },
           })
-          .then((response: any) => {
+          .then(async (response: any) => {
             if (response.data && response.data.length > 0) {
-              response.data.forEach((discourseMember: any) => {
+              for (const discourseMember of response.data) {
                 // Store in Redis
                 const redisCustomerPayload = {
                   timestamp: moment().utc(),
@@ -274,14 +272,14 @@ export class DashboardController {
                   method: 'listDiscourseMembers',
                   data: discourseMember,
                 };
-                RedisUtil.redisClient().set(
+                await RedisUtil.redisClient().set(
                   `${RedisUtil.discourseCustomerPrefix}:${discourseMember.id}`,
-                  JSON.stringify(redisCustomerPayload)
-                ).then(() => {}
-                ).catch((err: any) => {
-                  this.debug(`${err}`);
-                });
-              });
+                  JSON.stringify(redisCustomerPayload))
+                  .then(() => {})
+                  .catch((err: any) => {
+                    this.debug(`${err}`);
+                  });
+              }
             } else {
               fetchMore = false;
             }
@@ -314,7 +312,7 @@ export class DashboardController {
     const mc = new MollieController();
     const mollieCustomers = await mc.listCustomers();
 
-    mollieCustomers.forEach((cust: any) => {
+    for (const cust of mollieCustomers) {
       // Store in Redis
       const redisCustomerPayload = {
         timestamp: moment().utc(),
@@ -322,14 +320,14 @@ export class DashboardController {
         method: 'listMollieMembers',
         data: cust,
       };
-      RedisUtil.redisClient().set(
+      await RedisUtil.redisClient().set(
         `${RedisUtil.mollieCustomerPrefix}:${cust.id}`,
         JSON.stringify(redisCustomerPayload)
       ).then(() => { }
       ).catch((err: any) => {
         this.debug(err);
       });
-    });
+    }
 
     return null;
   }

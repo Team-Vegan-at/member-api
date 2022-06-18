@@ -75,7 +75,6 @@ if (require.main === module) {
 }
 
 async function cronProcessMembers(debugCron: any, debugRedis: any) {
-  const debug = require('debug')('api:app:cronProcessMembers');
   const mc = new MollieController();
   const dbc = new DashboardController();
   const mcc = new MailchimpController();
@@ -99,10 +98,10 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
             custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
           );
 
-          RedisUtil.redisClient().get(
+          await RedisUtil.redisClient().get(
             `${RedisUtil.teamMemberPrefix}:${custObj.data.email.toLowerCase()}`,
           )
-            .then((reply: any) => {
+            .then(async (reply: any) => {
               debugRedis(reply);
               if (reply == null) {
                 // Store new record in Redis
@@ -114,7 +113,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                   mollieSubscriptions: subscriptionObj,
                   discourseObj: null
                 });
-                RedisUtil.redisClient().set(
+                await RedisUtil.redisClient().set(
                   `${
                     RedisUtil.teamMemberPrefix
                   }:${custObj.data.email.toLowerCase()}`,

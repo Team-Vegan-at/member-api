@@ -50,7 +50,7 @@ export class WebhooksController {
       };
       return RedisUtil.redisClient().set(
         `${RedisUtil.whPaymentsPrefix}-${payload.id}`,
-        JSON.stringify(redisPayload))
+        redisPayload)
         .then((result: any) => {
           this.debug(`Redis|${RedisUtil.whPaymentsPrefix}-${payload.id}|${JSON.stringify(redisPayload)}`);
 
@@ -111,6 +111,7 @@ export class WebhooksController {
                       );
 
                       // TODO Invite to Discourse
+                      // Scan through customer objects
                       this.debug(`CustomerObj|${JSON.stringify(redisCustomerUpdate)}`);
 
                       // TODO Send Invitation Mail
@@ -169,9 +170,9 @@ export class WebhooksController {
 
       return RedisUtil.redisClient().set(
         `${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}`,
-        JSON.stringify(redisPayload))
+        redisPayload)
         .then((result: any) => {
-          this.debug(`Redis|${RedisUtil.whPaymentsPrefix}-${payload.subscriptionId}|${JSON.stringify(redisPayload)}`);
+          this.debug(`Redis|${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}|${JSON.stringify(redisPayload)}`);
           resolve(payload.subscriptionId);
         })
         .catch((err: any) => {
