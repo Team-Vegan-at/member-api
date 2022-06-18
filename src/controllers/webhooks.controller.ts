@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import {HttpErrors, post, requestBody} from '@loopback/rest';
-import createMollieClient, {Payment} from '@mollie/api-client';
+import {post, requestBody} from '@loopback/rest';
+import createMollieClient, {Payment, PaymentStatus} from '@mollie/api-client';
 import moment from 'moment';
 import util from 'util';
 import {RedisUtil} from '../utils/redis.util';
@@ -40,80 +40,97 @@ export class WebhooksController {
     this.debug(`${util.inspect(payload, false, null, true)}`);
     this.debug(`Payment update ${payload.id} received`);
 
-    this.mollieClient.payments
-      .get(payload.id)
-      .then(async (payment: Payment) => {
-        this.debug(`Fetched payment details for ${payload.id}`);
+    return new Promise((resolve, reject) => {
+      // Logging incoming webhooks
+      const redisPayload = {
+        timestamp: moment().utc(),
+        controller: 'webhooks',
+        method: 'payments',
+        data: payload,
+      };
+      return RedisUtil.redisClient().set(
+        `${RedisUtil.whPaymentsPrefix}-${payload.id}`,
+        redisPayload)
+        .then((result: any) => {
+          this.debug(`Redis|${RedisUtil.whPaymentsPrefix}-${payload.id}|${JSON.stringify(redisPayload)}`);
 
-        // Update payment payload in customer record
-        await RedisUtil.redisGetAsync(
-          `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
-        ).then((custRecord: string | null) => {
-          if (!custRecord) {
-            this.debug(`Customer not found: ${payment.customerId}`);
-            throw new HttpErrors.InternalServerError(`Customer not found`);
-          }
-          const redisPaymentPayload = {
-            timestamp: moment().utc(),
-            controller: 'mollie',
-            method: 'checkout',
-            data: payment,
-          };
+          return this.mollieClient.payments
+            .get(payload.id)
+            .then(async (payment: Payment) => {
+              this.debug(`Fetched payment details for ${payload.id}`);
 
-          const redisCustomerUpdate = JSON.parse(custRecord);
+              if (payment.status === PaymentStatus.paid) {
+                // Update payment payload in customer record
+                return RedisUtil.redisClient().get(
+                  `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`)
+                  .then((custRecord: string | null) => {
+                    if (!custRecord) {
+                      this.debug(`Customer not found|${payment.customerId}`);
+                      reject(`Customer not found`);
+                    } else {
+                      const redisPaymentPayload = {
+                        timestamp: moment().utc(),
+                        controller: 'mollie',
+                        method: 'checkout',
+                        data: payment,
+                      };
 
-          let found = false;
-          if (!redisCustomerUpdate.payments) {
-            redisCustomerUpdate.payments = [];
-          }
+                      const redisCustomerUpdate = JSON.parse(custRecord);
 
-          redisCustomerUpdate.payments.forEach(
-            (custPayment: any, index: number) => {
-              if (payment.id === custPayment.data.id) {
-                redisCustomerUpdate.payments[index] = redisPaymentPayload;
-                found = true;
-              }
-            },
-            redisCustomerUpdate.payments,
-          );
+                      let found = false;
+                      if (!redisCustomerUpdate.payments) {
+                        redisCustomerUpdate.payments = [];
+                      }
 
-          if (!found) {
-            redisCustomerUpdate.payments.push(redisPaymentPayload);
-          }
+                      redisCustomerUpdate.payments.forEach(
+                        (custPayment: any, index: number) => {
+                          if (payment.id === custPayment.data.id) {
+                            redisCustomerUpdate.payments[index] = redisPaymentPayload;
+                            found = true;
+                          }
+                        },
+                        redisCustomerUpdate.payments,
+                      );
 
-          RedisUtil.redisClient.set(
-            `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
-            JSON.stringify(redisCustomerUpdate),
-            (err: any, _reply: any) => {
-              if (err) {
-                this.debug(`Redis: ${err}`);
-              }
-            },
-          );
+                      if (!found) {
+                        this.debug(`Payment not found|${payment.id}|${payment.customerId}`);
+                        redisCustomerUpdate.payments.push(redisPaymentPayload);
+                        this.debug(`Redis|${JSON.stringify(redisPaymentPayload)}`);
+                      }
+
+                      RedisUtil.redisClient().set(
+                        `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
+                        JSON.stringify(redisCustomerUpdate))
+                        .then(() => {
+                          this.debug(`${RedisUtil.mollieCustomerPrefix}:${payment.customerId}|${JSON.stringify(redisPaymentPayload)}`);
+                        })
+                        .catch((err: any) => {
+                          this.debug(`Redis|ERR|${err}`);
+                          reject(err);
+                        }
+                      );
+
+                      // TODO Invite to Discourse
+                      // Scan through customer objects
+                      this.debug(`CustomerObj|${JSON.stringify(redisCustomerUpdate)}`);
+
+                      // TODO Send Invitation Mail
+
+                      resolve(payload.id);
+
+                    }
+                  });
+                }
+            })
+            .catch((err: any) => {
+              this.debug(`Redis|ERR|${err}`);
+              reject(err);
+            });
+        })
+        .catch((err: any) => {
+          reject(err);
         });
-      })
-      .catch(reason => {
-        this.debug(reason);
-        throw new HttpErrors.InternalServerError(reason);
-      });
-
-    const redisPayload = {
-      timestamp: moment().utc(),
-      controller: 'webhooks',
-      method: 'payments',
-      data: payload,
-    };
-    RedisUtil.redisClient.set(
-      `${RedisUtil.whPaymentsPrefix}-${payload.id}`,
-      JSON.stringify(redisPayload),
-      (err: any, _reply: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      },
-    );
-
-    return '';
+    });
   }
 
   @post('/mollie/subscriptions/webhook', {
@@ -142,22 +159,25 @@ export class WebhooksController {
     this.debug(`${util.inspect(payload, false, null, true)}`);
     this.debug(`Subscription ${payload.subscriptionId} received`);
 
-    const redisPayload = {
-      timestamp: moment().utc(),
-      controller: 'webhooks',
-      method: 'subscription',
-      data: payload,
-    };
-    RedisUtil.redisClient.set(
-      `${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}`,
-      JSON.stringify(redisPayload),
-      (err: any, _reply: any) => {
-        if (err) {
-          this.debug(`Redis: ${err}`);
-        }
-      },
-    );
+    return new Promise((resolve, reject) => {
+      // Logging incoming webhooks
+      const redisPayload = {
+        timestamp: moment().utc(),
+        controller: 'webhooks',
+        method: 'subscription',
+        data: payload,
+      };
 
-    return '';
+      return RedisUtil.redisClient().set(
+        `${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}`,
+        redisPayload)
+        .then((result: any) => {
+          this.debug(`Redis|${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}|${JSON.stringify(redisPayload)}`);
+          resolve(payload.subscriptionId);
+        })
+        .catch((err: any) => {
+          reject(err);
+        });
+    });
   }
 }
