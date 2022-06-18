@@ -7,6 +7,6 @@
 ## Local dev
 
 ```
-docker run --rm -d -v redis:/data -p 6379:6379 --name redis redis:6
+docker run --rm -d -v redis:/data -p 6379:6379 --name redis redis:7
 docker run --rm -d -v redisinsight:/db -p 8001:8001 --name redis-redisinsights redislabs/redisinsight
 ```

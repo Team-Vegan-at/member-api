@@ -38,7 +38,7 @@ export class AuthController {
     const token = jwt.sign({}, this.signSecret, {expiresIn: `${ttlInSec}sec`});
 
     // Store JWT Token in Redis
-    RedisUtil.redisClient.set(token, token, 'EX', ttlInSec);
+    RedisUtil.redisClient().set(token, token, 'EX', ttlInSec);
 
     return token;
   }

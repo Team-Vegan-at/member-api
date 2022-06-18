@@ -14,7 +14,10 @@ export class PATService {
 
     const ttlInSec = 21600; // 6 hours
     const pat = hash.toString('base64').replace(/[^a-zA-Z0-9-_]/g, '').substring(0,10);
-    RedisUtil.redisClient.set(`${RedisUtil.patPrefix}:${pat}`, email, 'EX', ttlInSec);
+    RedisUtil.redisClient().set(`${RedisUtil.patPrefix}:${pat}`, email, { EX: ttlInSec })
+      .then((r: any) => {
+        this.debug(`${r}`);
+      });
     return pat;
   }
 
@@ -27,7 +30,7 @@ export class PATService {
     this.debug(`/PATService/validatePAT`);
 
     return new Promise(async (resolve, reject) => {
-      await RedisUtil.redisGetAsync(`${RedisUtil.patPrefix}:${pat}`).then(
+      await RedisUtil.redisClient().get(`${RedisUtil.patPrefix}:${pat}`).then(
         (email: string | null) => {
           if (!email) {
             this.debug(`PAT ${pat} not found in Redis`);

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/naming-convention */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
-import {param, put} from '@loopback/rest';
+import {get, param, put} from '@loopback/rest';
 import * as process from 'process';
 
 export class DiscourseController {
@@ -74,20 +74,20 @@ export class DiscourseController {
     });
   }
 
-  // @get('/discourse/users/invite', {
-  //   parameters: [
-  //     {
-  //       name: 'email',
-  //       schema: {type: 'string'},
-  //       in: 'query',
-  //       required: true,
-  //     },
-  //   ],
-  //   responses: {
-  //     '200': {},
-  //   },
-  // })
-  // @authenticate('team-vegan-jwt')
+  @get('/discourse/users/invite', {
+    parameters: [
+      {
+        name: 'email',
+        schema: {type: 'string'},
+        in: 'query',
+        required: true,
+      },
+    ],
+    responses: {
+      '200': {},
+    },
+  })
+  @authenticate('team-vegan-jwt')
   public async generateInviteLink(
     @param.query.string('email') email: string,
   ): Promise<any> {
