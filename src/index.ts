@@ -90,7 +90,6 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
         )
         .then(async (custObj: any) => {
-          debugCron(`DEBUG|Processing ${JSON.stringify(custObj)}`);
           debugCron(`DEBUG|Processing ${custObj.data.email}`);
           // Fetch customer payments
           const paymentObj = await mc.listCustomerPayments(
