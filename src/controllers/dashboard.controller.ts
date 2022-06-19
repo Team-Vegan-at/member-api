@@ -36,49 +36,49 @@ export class DashboardController {
     @param.query.number('year') year: number,
   ): Promise<any> {
     const memberList: any = [];
-    const redisScan = require('node-redis-scan');
-    const scanner = new redisScan(RedisUtil.redisClient);
     if (year == null) {
       year = CalcUtil.getCurrentMembershipYear();
     }
 
     return new Promise((resolve, reject) => {
-      scanner.scan(
-        `${RedisUtil.teamMemberPrefix}:*`,
-        async (err: any, matchingKeys: any) => {
-          if (err) {
-            this.debug(`Redis error: ${err}`);
-            reject();
-          }
-          const start = async () => {
-            await DashboardController.asyncForEach(matchingKeys, async memberKey => {
-              await this.redisGetTeamMember(
-                memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
-              ).then((memberObj: any) => {
-                const memberPayload = this.buildMemberPayload(memberObj, year);
+      RedisUtil.scan(
+        `${RedisUtil.teamMemberPrefix}:*`
+      ).then(async (matchingKeys: any) => {
+        const start = async () => {
+          await DashboardController.asyncForEach(matchingKeys, async memberKey => {
+            await this.redisGetTeamMember(
+              memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
+            ).then((memberObj: any) => {
+              const memberPayload = this.buildMemberPayload(memberObj, year);
 
-                // Only return members who have
-                // 1. Paid at least once OR
-                // 2. Have an active subscription OR
-                // 3. Have an active forum user
-                if ( Object.keys(memberPayload.discourse).length > 0
-                  || Object.keys(memberPayload.payment).length > 0
-                  || Object.keys(memberPayload.subscription).length > 0) {
+              // Only return members who have
+              // 1. Paid at least once OR
+              // 2. Have an active subscription OR
+              // 3. Have an active forum user
+              if (Object.keys(memberPayload.discourse).length > 0
+                || Object.keys(memberPayload.payment).length > 0
+                || Object.keys(memberPayload.subscription).length > 0) {
 
-                  memberList.push(memberPayload);
-                }
-              });
+                memberList.push(memberPayload);
+              }
             });
-            resolve(memberList);
-          };
-          start().then(
-            () => {},
-            () => {},
-          );
+          });
+          resolve(memberList);
+        };
+        start().then(
+          () => {
+          },
+          () => {
+          },
+        );
 
-          await matchingKeys.forEach(() => {});
-        },
-      );
+        await matchingKeys.forEach(() => {});
+      }).catch((err: any) => {
+        this.debug(`${err}`);
+        reject(err);
+      }
+
+    );
     });
   }
 
@@ -99,43 +99,38 @@ export class DashboardController {
     @param.query.number('year') year: number,
   ): Promise<number> {
     const memberList: any = [];
-    const redisScan = require('node-redis-scan');
-    const scanner = new redisScan(RedisUtil.redisClient);
     if (year == null) {
       year = CalcUtil.getCurrentMembershipYear();
     }
 
     return new Promise((resolve, reject) => {
-      scanner.scan(
-        `${RedisUtil.teamMemberPrefix}:*`,
-        async (err: any, matchingKeys: any) => {
-          if (err) {
-            this.debug(`Redis error: ${err}`);
-            reject();
-          }
+      RedisUtil.scan(
+        `${RedisUtil.teamMemberPrefix}:*`
+      ).then(async (matchingKeys: any) => {
+        const start = async () => {
+          await DashboardController.asyncForEach(matchingKeys, async memberKey => {
+            await this.redisGetTeamMember(
+              memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
+            ).then((memberObj: any) => {
+              const memberPayload = this.buildMemberPayload(memberObj, year);
 
-          const start = async () => {
-            await DashboardController.asyncForEach(matchingKeys, async memberKey => {
-              await this.redisGetTeamMember(
-                memberKey.replace(`${RedisUtil.teamMemberPrefix}:`, '')
-              ).then((memberObj: any) => {
-                const memberPayload = this.buildMemberPayload(memberObj, year);
-
-                if (memberPayload.paid) {
-                  memberList.push(memberPayload);
-                }
-              });
+              if (memberPayload.paid) {
+                memberList.push(memberPayload);
+              }
             });
-            resolve(memberList.length);
-          };
-          start().then(
-            () => {},
-            () => {},
-          );
+          });
+          resolve(memberList.length);
+        };
+        start().then(
+          () => {},
+          () => {},
+        );
 
-          await matchingKeys.forEach(() => {});
-        },
-      );
+        await matchingKeys.forEach(() => {});
+      }).catch((err: any) => {
+        this.debug(`${err}`);
+        reject(err);
+      });
     });
   }
 
@@ -164,7 +159,7 @@ export class DashboardController {
     @param.query.string('email') email: string
   ): Promise<RedisMemberPayload> {
     return new Promise((resolve, reject) => {
-      RedisUtil.redisGetAsync(
+      RedisUtil.redisClient().get(
         `${RedisUtil.teamMemberPrefix}:${email.toLowerCase()}`,
       )
         .then((memberObj: any) => {
@@ -206,8 +201,8 @@ export class DashboardController {
 
     result.push(
       await mc.listMembersInfo()
-        .then((response: any) => {
-          response.members?.forEach((mailchimpMember: any) => {
+        .then(async (response: any) => {
+          for (const mailchimpMember of response.members) {
             // Store in Redis
             const redisCustomerPayload = {
               timestamp: moment().utc(),
@@ -215,17 +210,14 @@ export class DashboardController {
               method: 'listMailchimpMembers',
               data: mailchimpMember,
             };
-            RedisUtil.redisClient.set(
+            await RedisUtil.redisClient().set(
               `${RedisUtil.mailchimpMemberPrefix}:${mailchimpMember.id}`,
-              JSON.stringify(redisCustomerPayload),
-              (err: any, _reply: any) => {
-                this.debug(`Redis: ${_reply}`);
-                if (err) {
-                  this.debug(`Redis: ${err}`);
-                }
-              },
-            );
-          });
+              JSON.stringify(redisCustomerPayload))
+              .then(() => {})
+              .catch((err: any) => {
+                this.debug(`${err}`);
+              });
+          }
 
           return response.data;
         }),
@@ -250,10 +242,12 @@ export class DashboardController {
   async listDiscourseMembers(): Promise<any[] | null> {
     this.debug(`/dashboard/discourse/members`);
 
-    const axios = require('axios');
-
-    axios.defaults.baseURL = process.env.DISCOURSE_URL;
-    axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_KEY;
+    const axios = require('axios').create({
+      baseURL: process.env.DISCOURSE_URL,
+      headers: {
+        'Api-Key': process.env.DISCOURSE_ADMIN_KEY
+      }
+    });
 
     let fetchMore = true;
 
@@ -268,9 +262,9 @@ export class DashboardController {
               page: x,
             },
           })
-          .then((response: any) => {
+          .then(async (response: any) => {
             if (response.data && response.data.length > 0) {
-              response.data.forEach((discourseMember: any) => {
+              for (const discourseMember of response.data) {
                 // Store in Redis
                 const redisCustomerPayload = {
                   timestamp: moment().utc(),
@@ -278,16 +272,14 @@ export class DashboardController {
                   method: 'listDiscourseMembers',
                   data: discourseMember,
                 };
-                RedisUtil.redisClient.set(
+                await RedisUtil.redisClient().set(
                   `${RedisUtil.discourseCustomerPrefix}:${discourseMember.id}`,
-                  JSON.stringify(redisCustomerPayload),
-                  (err: any, _reply: any) => {
-                    if (err) {
-                      this.debug(`Redis: ${err}`);
-                    }
-                  },
-                );
-              });
+                  JSON.stringify(redisCustomerPayload))
+                  .then(() => {})
+                  .catch((err: any) => {
+                    this.debug(`${err}`);
+                  });
+              }
             } else {
               fetchMore = false;
             }
@@ -320,7 +312,7 @@ export class DashboardController {
     const mc = new MollieController();
     const mollieCustomers = await mc.listCustomers();
 
-    mollieCustomers.forEach((cust: any) => {
+    for (const cust of mollieCustomers) {
       // Store in Redis
       const redisCustomerPayload = {
         timestamp: moment().utc(),
@@ -328,16 +320,14 @@ export class DashboardController {
         method: 'listMollieMembers',
         data: cust,
       };
-      RedisUtil.redisClient.set(
+      await RedisUtil.redisClient().set(
         `${RedisUtil.mollieCustomerPrefix}:${cust.id}`,
-        JSON.stringify(redisCustomerPayload),
-        (err: any, _reply: any) => {
-          if (err) {
-            this.debug(`Redis: ${err}`);
-          }
-        },
-      );
-    });
+        JSON.stringify(redisCustomerPayload)
+      ).then(() => { }
+      ).catch((err: any) => {
+        this.debug(err);
+      });
+    }
 
     return null;
   }
@@ -346,7 +336,7 @@ export class DashboardController {
     @param.query.string('mollieCustomerKey') customerId: string,
   ): Promise<any> {
     return new Promise((resolve, reject) => {
-      RedisUtil.redisGetAsync(
+      RedisUtil.redisClient().get(
         `${RedisUtil.mollieCustomerPrefix}:${customerId}`,
       )
         .then((reply: any) => {
@@ -366,7 +356,7 @@ export class DashboardController {
     @param.query.string('customerId') customerId: string,
   ): Promise<any> {
     return new Promise((resolve, reject) => {
-      RedisUtil.redisGetAsync(
+      RedisUtil.redisClient().get(
         `${RedisUtil.discourseCustomerPrefix}:${customerId}`,
       )
         .then((reply: any) => {
@@ -386,7 +376,7 @@ export class DashboardController {
     memberId: string,
   ): Promise<any> {
     return new Promise((resolve, reject) => {
-      RedisUtil.redisGetAsync(
+      RedisUtil.redisClient().get(
         `${RedisUtil.mailchimpMemberPrefix}:${memberId}`,
       )
         .then((reply: any) => {
@@ -403,70 +393,54 @@ export class DashboardController {
   }
 
   public async redisGetMollieCustomers(): Promise<any> {
-    const redisScan = require('node-redis-scan');
-    const scanner = new redisScan(RedisUtil.redisClient);
-
     return new Promise((resolve, reject) => {
-      scanner.scan(
+      RedisUtil.scan(
         `${RedisUtil.mollieCustomerPrefix}:*`,
-        (err: any, matchingKeys: any) => {
-          if (err) {
-            this.debug(`Redis error: ${err}`);
-            reject();
-          }
-
-          // matchingKeys will be an array of strings if matches were found
-          // otherwise it will be an empty array.
-          this.debug(`Return ${matchingKeys}`);
-          // return JSON.parse(matchingKeys);
-          resolve(matchingKeys);
-        },
-      );
+      ).then(async (matchingKeys: any) => {
+        // matchingKeys will be an array of strings if matches were found
+        // otherwise it will be an empty array.
+        this.debug(`Return ${matchingKeys}`);
+        // return JSON.parse(matchingKeys);
+        resolve(matchingKeys);
+      }).catch((err: any) => {
+        this.debug(`${err}`);
+        reject(err);
+      })
     });
   }
 
   public async redisGetDiscourseCustomers(): Promise<any> {
-    const redisScan = require('node-redis-scan');
-    const scanner = new redisScan(RedisUtil.redisClient);
-
     return new Promise((resolve, reject) => {
-      scanner.scan(
+      RedisUtil.scan(
         `${RedisUtil.discourseCustomerPrefix}:*`,
-        (err: any, matchingKeys: any) => {
-          if (err) {
-            this.debug(`Redis error: ${err}`);
-            reject();
-          }
-
+      ).then((matchingKeys: any) => {
           // matchingKeys will be an array of strings if matches were found
           // otherwise it will be an empty array.
           this.debug(`Return ${matchingKeys}`);
           // return JSON.parse(matchingKeys);
           resolve(matchingKeys);
         },
-      );
+      ).catch((err: any) => {
+        this.debug(err);
+        reject(err);
+      });
     });
   }
 
   public async redisGetMailchimpMembers(): Promise<any> {
-    const redisScan = require('node-redis-scan');
-    const scanner = new redisScan(RedisUtil.redisClient);
-
     return new Promise((resolve, reject) => {
-      scanner.scan(
+      RedisUtil.scan(
         `${RedisUtil.mailchimpMemberPrefix}:*`,
-        (err: any, matchingKeys: any) => {
-          if (err) {
-            this.debug(`Redis error: ${err}`);
-            reject();
-          }
-
+      ).then((matchingKeys: any) => {
           // matchingKeys will be an array of strings if matches were found
           // otherwise it will be an empty array.
           this.debug(`Return ${matchingKeys}`);
           resolve(matchingKeys);
         },
-      );
+      ).catch((err: any) => {
+        this.debug(err);
+        reject(err);
+      });
     });
   }
 

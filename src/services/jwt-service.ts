@@ -39,7 +39,7 @@ export class JWTService implements TokenService {
       // decode user profile from token
       const decodedToken = await verifyAsync(token, this.jwtSecret);
 
-      const valid = await RedisUtil.redisGetAsync(token).then(
+      const valid = await RedisUtil.redisClient().get(token).then(
         (tok: string | null) => {
           if (!tok) {
             this.debug(`x-api-otp ${tok} not found in Redis`);
@@ -47,7 +47,7 @@ export class JWTService implements TokenService {
           }
 
           // Invalidate token
-          RedisUtil.redisClient.del(tok);
+          RedisUtil.redisClient().del(tok);
 
           return true;
         },

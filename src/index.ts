@@ -82,6 +82,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   await dbc.listDiscourseMembers();
   await dbc.listMailchimpMembers();
   await dbc.listMollieMembers();
+
   await dbc.redisGetMollieCustomers().then(async (custList: any) => {
     await custList.forEach((custKey: string) => {
       dbc
@@ -89,18 +90,33 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
         )
         .then(async (custObj: any) => {
-          debugCron(custObj);
+          debugCron(`DEBUG|Processing ${custObj.data.email}`);
+          // Fetch customer payments
           const paymentObj = await mc.listCustomerPayments(
             custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
           );
+          // Store payments as separate Redis records, for reverse lookups
+          debugCron(`DEBUG|Found ${paymentObj.length} payments for ${custObj.data.email.toLowerCase()}`);
+          for (const pymt of paymentObj) {
+            const redisPymtObj = {
+              email: custObj.data.email.toLowerCase(),
+            };
+            await RedisUtil.redisClient().set(
+              `${RedisUtil.molliePaymentPrefix}:${pymt.id}`,
+              JSON.stringify(redisPymtObj)
+            ).catch((err: any) => {
+              debugCron(`ERROR|${err}`);
+            })
+          }
+
           const subscriptionObj = await mc.listCustomerSubscriptions(
             custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
           );
 
-          RedisUtil.redisGetAsync(
+          await RedisUtil.redisClient().get(
             `${RedisUtil.teamMemberPrefix}:${custObj.data.email.toLowerCase()}`,
           )
-            .then((reply: any) => {
+            .then(async (reply: any) => {
               debugRedis(reply);
               if (reply == null) {
                 // Store new record in Redis
@@ -112,17 +128,14 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                   mollieSubscriptions: subscriptionObj,
                   discourseObj: null
                 });
-                RedisUtil.redisClient.set(
+                await RedisUtil.redisClient().set(
                   `${
                     RedisUtil.teamMemberPrefix
                   }:${custObj.data.email.toLowerCase()}`,
-                  JSON.stringify(redisMemberPayload),
-                  (err: any, _reply: any) => {
-                    if (err) {
-                      debugCron(`Redis error: ${err}`);
-                    }
-                  },
-                );
+                  JSON.stringify(redisMemberPayload)
+                ).catch((err: any) => {
+                  debugCron(`ERROR|${err}`);
+                });
               } else {
                 // Update in Redis
                 const updatePayload = JSON.parse(reply);
@@ -130,22 +143,19 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                 updatePayload.mollieObj = custObj.data;
                 updatePayload.molliePayments = paymentObj;
                 updatePayload.mollieSubscriptions = subscriptionObj;
-                RedisUtil.redisClient.set(
+                RedisUtil.redisClient().set(
                   `${
                     RedisUtil.teamMemberPrefix
                   }:${custObj.data.email.toLowerCase()}`,
-                  JSON.stringify(updatePayload),
-                  (err: any, _reply: any) => {
-                    if (err) {
-                      debugCron(`Redis error: ${err}`);
-                    }
-                  },
-                );
+                  JSON.stringify(updatePayload)
+                ).catch((err: any) => {
+                  debugCron(`ERROR|${err}`);
+                });
               }
             })
             .catch((err: any) => {
               if (err) {
-                debugCron(`Redis error: ${err}`);
+                debugCron(`ERROR|${err}`);
               }
             });
         });
@@ -158,7 +168,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           )
           .then((custObj: any) => {
             debugCron(custObj);
-            RedisUtil.redisGetAsync(
+            RedisUtil.redisClient().get(
               `${
                 RedisUtil.teamMemberPrefix
               }:${custObj.data.email.toLowerCase()}`,
@@ -175,32 +185,26 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                     mollieSubscriptions: null,
                     discourseObj: custObj.data,
                   });
-                  RedisUtil.redisClient.set(
+                  RedisUtil.redisClient().set(
                     `${
                       RedisUtil.teamMemberPrefix
                     }:${custObj.data.email.toLowerCase()}`,
-                    JSON.stringify(redisMemberPayload),
-                    (err: any, _reply: any) => {
-                      if (err) {
-                        debugRedis(`${err}`);
-                      }
-                    },
-                  );
+                    JSON.stringify(redisMemberPayload)
+                  ).catch((err: any) => {
+                    debugRedis(`${err}`);
+                  });
                 } else {
                   // Update in Redis
                   const updatePayload = JSON.parse(reply);
                   updatePayload.discourseObj = custObj.data;
-                  RedisUtil.redisClient.set(
+                  RedisUtil.redisClient().set(
                     `${
                       RedisUtil.teamMemberPrefix
                     }:${custObj.data.email.toLowerCase()}`,
-                    JSON.stringify(updatePayload),
-                    (err: any, _reply: any) => {
-                      if (err) {
-                        debugRedis(`${err}`);
-                      }
-                    },
-                  );
+                    JSON.stringify(updatePayload)
+                  ).catch((err: any) => {
+                    debugRedis(`ERROR|${err}`);
+                  });
                 }
               })
               .catch((err: any) => {
@@ -219,7 +223,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           )
           .then((custObj: any) => {
             debugCron(custObj);
-            RedisUtil.redisGetAsync(
+            RedisUtil.redisClient().get(
               `${
                 RedisUtil.teamMemberPrefix
               }:${custObj.data.email_address.toLowerCase()}`,
@@ -237,32 +241,28 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                     discourseObj: null,
                     mailchimpObj: custObj.data,
                   };
-                  RedisUtil.redisClient.set(
+                  RedisUtil.redisClient().set(
                     `${
                       RedisUtil.teamMemberPrefix
                     }:${custObj.data.email_address.toLowerCase()}`,
                     JSON.stringify(redisMemberPayload),
-                    (err: any, _reply: any) => {
-                      if (err) {
-                        debugRedis(`${err}`);
-                      }
-                    },
-                  );
+                  ).catch((err: any) => {
+                    debugRedis(`${err}`);
+                  });
+
                 } else {
                   // Update in Redis
                   const updatePayload = JSON.parse(reply);
                   updatePayload.mailchimpObj = custObj.data;
-                  RedisUtil.redisClient.set(
+                  RedisUtil.redisClient().set(
                     `${
                       RedisUtil.teamMemberPrefix
                     }:${custObj.data.email_address.toLowerCase()}`,
-                    JSON.stringify(updatePayload),
-                    (err: any, _reply: any) => {
-                      if (err) {
-                        debugRedis(`${err}`);
-                      }
-                    },
-                  );
+                    JSON.stringify(updatePayload)
+                  ).catch((err: any) => {
+                    debugRedis(`${err}`);
+                  });
+
                 }
               })
               .catch((err: any) => {
@@ -280,7 +280,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   if (process.env.DISABLE_MAILCHIMP_SYNC !== '1') {
     await RedisUtil.scan(RedisUtil.teamMemberPrefix).then(async (members: any) => {
       await members.forEach(async (memberKey: string) => {
-        await RedisUtil.redisGetAsync(memberKey)
+        await RedisUtil.redisClient().get(memberKey)
         .then(async (memberObj: any) => {
           memberObj = JSON.parse(memberObj);
           const currentYear = CalcUtil.getCurrentMembershipYear();
@@ -344,7 +344,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   //           JSON.stringify(statsPayload),
   //           (err: any, _reply: any) => {
   //             if (err) {
-  //               debugCron(`Redis error: ${err}`);
+  //               debugCron(`ERROR|${err}`);
   //             }
   //           },
   //         );
@@ -360,7 +360,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   //           JSON.stringify(statsPayload),
   //           (err: any, _reply: any) => {
   //             if (err) {
-  //               debugCron(`Redis error: ${err}`);
+  //               debugCron(`ERROR|${err}`);
   //             }
   //           },
   //         );
@@ -368,7 +368,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   //     })
   //     .catch((err: any) => {
   //       if (err) {
-  //         debugCron(`Redis error: ${err}`);
+  //         debugCron(`ERROR|${err}`);
   //       }
   //     });
   // });
