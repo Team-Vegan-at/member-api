@@ -176,7 +176,7 @@ export class MollieController {
 
   /******** PRIVATE FUNCTIONS *************/
 
-  private async createMollieCheckoutUrl(customer: any, redirectUrl?: string,
+  private async createMollieCheckoutUrl(customer: Customer, redirectUrl?: string,
     membershipType = 'regular', membershipRecurring = false) {
     if (!process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR) {
       this.debug('ERROR|MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR not set');
@@ -234,6 +234,7 @@ export class MollieController {
         // Store payments as separate Redis records, for reverse lookups
         const redisPymtObj = {
           email: customer.email.toLowerCase(),
+          name: customer.name,
         };
         await RedisUtil.redisClient().set(
           `${RedisUtil.molliePaymentPrefix}:${payment.id}`,
