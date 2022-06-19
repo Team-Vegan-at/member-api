@@ -100,6 +100,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           for (const pymt of paymentObj) {
             const redisPymtObj = {
               email: custObj.data.email.toLowerCase(),
+              name: custObj.data.name,
             };
             await RedisUtil.redisClient().set(
               `${RedisUtil.molliePaymentPrefix}:${pymt.id}`,
@@ -167,7 +168,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
             custKey.replace(`${RedisUtil.discourseCustomerPrefix}:`, ''),
           )
           .then((custObj: any) => {
-            debugCron(custObj);
+            debugCron(`DEBUG|redisGetDiscourseCustomers|Processing ${custObj.data.email}`);
             RedisUtil.redisClient().get(
               `${
                 RedisUtil.teamMemberPrefix

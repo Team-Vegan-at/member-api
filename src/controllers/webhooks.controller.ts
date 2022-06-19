@@ -116,50 +116,40 @@ export class WebhooksController {
                           `${RedisUtil.molliePaymentPrefix}:${payload.id}`)
                         .then(async (paymentRecord: any) => {
                           paymentRecord = JSON.parse(paymentRecord);
-                          // this.debug(`DEBUG|${util.inspect(paymentRecord, false, null, true)}`)
-                          this.debug(`DEBUG|Payment ${payload.id} mapped to ${paymentRecord.email}`);
-                          return RedisUtil.redisClient().get(
-                              `${RedisUtil.teamMemberPrefix}:${paymentRecord.email.toLowerCase()}`)
-                            .then(async (member: any) => {
-                              member = JSON.parse(member);
-                              // Send welcome mail
-                              this.debug(`INFO|Sending welcome mail to ${member.name} (${member.email})`);
-                              const formData = require('form-data');
-                              const Mailgun = require('mailgun.js');
-                              const mailgun = new Mailgun(formData);
-                              const DOMAIN = "mg.teamvegan.at";
-                              const mg = mailgun.client({
-                                username: 'api',
-                                url: "https://api.eu.mailgun.net",
-                                key: process.env.MAILGUN_API
-                              });
+                          this.debug(`DEBUG|Payment ${payload.id} mapped to ${paymentRecord.email} (${paymentRecord.name})`);
+                          // Send welcome mail
+                          this.debug(`INFO|Sending welcome mail to ${paymentRecord.name} (${paymentRecord.email})`);
+                          const formData = require('form-data');
+                          const Mailgun = require('mailgun.js');
+                          const mailgun = new Mailgun(formData);
+                          const DOMAIN = "mg.teamvegan.at";
+                          const mg = mailgun.client({
+                            username: 'api',
+                            url: "https://api.eu.mailgun.net",
+                            key: process.env.MAILGUN_API
+                          });
 
-                              const data = {
-                                from: process.env.MAILGUN_FROM,
-                                to: member.email,
-                                bcc: process.env.MAILGUN_BCC,
-                                subject: "Willkommen im Team Vegan.at",
-                                template: "welcome",
-                                'h:Reply-To': process.env.MAILGUN_REPLYTO,
-                                'v:membername': member.name,
-                              };
+                          const data = {
+                            from: process.env.MAILGUN_FROM,
+                            to: paymentRecord.email,
+                            bcc: process.env.MAILGUN_BCC,
+                            subject: "Willkommen im Team Vegan.at",
+                            template: "welcome",
+                            'h:Reply-To': process.env.MAILGUN_REPLYTO,
+                            'v:membername': paymentRecord.name,
+                          };
 
-                              mg.messages.create(DOMAIN, data)
-                                .then((msg: any) => {
-                                  this.debug(`INFO|Sent welcome mail to ${member.email}|${JSON.stringify(util.inspect(msg, false, null, true))}`);
-                                })
-                                .catch((error: any) => {
-                                  this.debug(`ERROR|${error}`);
-                                });
-
-                              // TODO Send Discourse invite
-                              this.debug(`INFO|Sending discourse invite to ${member.name} (${member.email})`);
-                              resolve(payload.id);
+                          mg.messages.create(DOMAIN, data)
+                            .then((msg: any) => {
+                              this.debug(`INFO|Sent welcome mail to ${paymentRecord.email}|${JSON.stringify(util.inspect(msg, false, null, true))}`);
                             })
-                            .catch((err: any) => {
-                              this.debug(`ERROR|${err}`);
-                              reject(err);
-                            })
+                            .catch((error: any) => {
+                              this.debug(`ERROR|${error}`);
+                            });
+
+                          // TODO Send Discourse invite
+                          this.debug(`INFO|Sending discourse invite to ${paymentRecord.name} (${paymentRecord.email})`);
+                          resolve(payload.id);
                         })
                         .catch((err: any) => {
                           this.debug(`ERROR|${err}`);
