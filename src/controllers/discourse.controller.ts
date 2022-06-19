@@ -30,13 +30,16 @@ export class DiscourseController {
     axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_ADMIN_KEY;
 
     return axios
-      .put(`/admin/users/${id}/suspend`, {
+      .put(`/admin/users/${id}/suspend.json`, {
         suspend_until: '3020-01-01',
         reason: 'Keine Zahlung für das aktuelle Kalenderjahr erhalten',
       })
       .then((response: any) => {
-        this.debug(`User ${id} suspended`);
+        this.debug(`${id} | ${response.data.suspension}`);
         return response.data.suspension;
+      }).catch((err: any) => {
+        this.debug(err);
+        return err;
       });
   }
 
@@ -62,8 +65,8 @@ export class DiscourseController {
     axios.defaults.baseURL = process.env.DISCOURSE_URL;
     axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_ADMIN_KEY;
 
-    return axios.put(`/admin/users/${id}/unsuspend`).then((response: any) => {
-      this.debug(`User ${id} unsuspended`);
+    return axios.put(`/admin/users/${id}/unsuspend.json`).then((response: any) => {
+      this.debug(`${id} | ${response.data.suspension}`);
       return response.data.suspension;
     }).catch((err: any) => {
       this.debug(err);

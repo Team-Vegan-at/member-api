@@ -51,11 +51,12 @@ export class RedisUtil {
   }
 
   public static discourseCustomerPrefix = 'teamveganat:discourse';
-  public static mailchimpMemberPrefix = 'teamveganat:mailchimp';
-  public static mollieCustomerPrefix = 'teamveganat:mollie';
-  public static patPrefix = 'teamveganat:pat';
-  public static statsPrefix = 'teamveganat:stats';
-  public static teamMemberPrefix = 'teamveganat:member';
-  public static whPaymentsPrefix = 'teamveganat:hook-pay:';
-  public static whSubscriptionPrefix = 'teamveganat:hook-sub:';
+  public static mailchimpMemberPrefix =   'teamveganat:mailchimp';
+  public static mollieCustomerPrefix =    'teamveganat:mollie';
+  public static molliePaymentPrefix =     'teamveganat:mollie:payment';
+  public static patPrefix =               'teamveganat:pat';
+  public static statsPrefix =             'teamveganat:stats';
+  public static teamMemberPrefix =        'teamveganat:member';
+  public static whPaymentsPrefix =        'teamveganat:hook-pay';
+  public static whSubscriptionPrefix =    'teamveganat:hook-sub';
 }
