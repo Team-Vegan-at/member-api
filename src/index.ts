@@ -90,10 +90,25 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
           custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
         )
         .then(async (custObj: any) => {
-          debugCron(custObj);
+          debugCron(`DEBUG|Processing ${custObj.data.email}`);
+          // Fetch customer payments
           const paymentObj = await mc.listCustomerPayments(
             custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
           );
+          // Store payments as separate Redis records, for reverse lookups
+          debugCron(`DEBUG|Found ${paymentObj.length} payments for ${custObj.data.email.toLowerCase()}`);
+          for (const pymt of paymentObj) {
+            const redisPymtObj = {
+              email: custObj.data.email.toLowerCase(),
+            };
+            await RedisUtil.redisClient().set(
+              `${RedisUtil.molliePaymentPrefix}:${pymt.id}`,
+              JSON.stringify(redisPymtObj)
+            ).catch((err: any) => {
+              debugCron(`ERROR|${err}`);
+            })
+          }
+
           const subscriptionObj = await mc.listCustomerSubscriptions(
             custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
           );
@@ -119,7 +134,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                   }:${custObj.data.email.toLowerCase()}`,
                   JSON.stringify(redisMemberPayload)
                 ).catch((err: any) => {
-                  debugCron(`Redis error: ${err}`);
+                  debugCron(`ERROR|${err}`);
                 });
               } else {
                 // Update in Redis
@@ -134,13 +149,13 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                   }:${custObj.data.email.toLowerCase()}`,
                   JSON.stringify(updatePayload)
                 ).catch((err: any) => {
-                  debugCron(`Redis error: ${err}`);
+                  debugCron(`ERROR|${err}`);
                 });
               }
             })
             .catch((err: any) => {
               if (err) {
-                debugCron(`Redis error: ${err}`);
+                debugCron(`ERROR|${err}`);
               }
             });
         });
@@ -188,7 +203,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                     }:${custObj.data.email.toLowerCase()}`,
                     JSON.stringify(updatePayload)
                   ).catch((err: any) => {
-                    debugRedis(`Redis error: ${err}`);
+                    debugRedis(`ERROR|${err}`);
                   });
                 }
               })
@@ -329,7 +344,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   //           JSON.stringify(statsPayload),
   //           (err: any, _reply: any) => {
   //             if (err) {
-  //               debugCron(`Redis error: ${err}`);
+  //               debugCron(`ERROR|${err}`);
   //             }
   //           },
   //         );
@@ -345,7 +360,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   //           JSON.stringify(statsPayload),
   //           (err: any, _reply: any) => {
   //             if (err) {
-  //               debugCron(`Redis error: ${err}`);
+  //               debugCron(`ERROR|${err}`);
   //             }
   //           },
   //         );
@@ -353,7 +368,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   //     })
   //     .catch((err: any) => {
   //       if (err) {
-  //         debugCron(`Redis error: ${err}`);
+  //         debugCron(`ERROR|${err}`);
   //       }
   //     });
   // });

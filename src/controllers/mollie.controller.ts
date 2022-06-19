@@ -179,7 +179,7 @@ export class MollieController {
   private async createMollieCheckoutUrl(customer: any, redirectUrl?: string,
     membershipType = 'regular', membershipRecurring = false) {
     if (!process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR) {
-      this.debug('ERROR: MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR not set');
+      this.debug('ERROR|MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR not set');
       return null;
     }
 
@@ -209,9 +209,7 @@ export class MollieController {
 
     const totalAmount = (amount * discount).toFixed(2);
 
-    this.debug(`Membership Type: ${membershipType},
-                Recurring: ${membershipRecurring},
-                Calculated amount: ${totalAmount} (${amount} * ${discount})`);
+    this.debug(`INFO|Membership Type: ${membershipType},Recurring: ${membershipRecurring},Calculated amount: ${totalAmount} (${amount} * ${discount})`);
 
     return this.mollieClient.payments
       .create({
@@ -232,13 +230,24 @@ export class MollieController {
         webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
       })
       .then(async (payment: Payment) => {
-        this.debug(`Payment ${payment.id} for ${customer.id} created`);
+        this.debug(`INFO|Payment ${payment.id} for ${customer.id} created`);
+        // Store payments as separate Redis records, for reverse lookups
+        const redisPymtObj = {
+          email: customer.email.toLowerCase(),
+        };
+        await RedisUtil.redisClient().set(
+          `${RedisUtil.molliePaymentPrefix}:${payment.id}`,
+          JSON.stringify(redisPymtObj)
+        ).catch((err: any) => {
+          this.debug(`ERROR|${err}`);
+        })
+
         // Add payment payload to customer record
         await RedisUtil.redisClient().get(
           `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
         ).then((custRecord: string | null) => {
           if (!custRecord) {
-            this.debug(`Customer not found: ${customer.id}`);
+            this.debug(`WARN|Customer not found: ${customer.id}`);
             return null;
           }
           const redisPaymentPayload = {
@@ -283,7 +292,7 @@ export class MollieController {
     this.debug(`/mollie/payments`);
 
     return this.mollieClient.customers_payments
-      .all({customerId: custId})
+      .page({customerId: custId})
       .then((payments: List<Payment>) => {
         this.debug(`Fetched ${payments.count} payment(s) for ${custId}`);
         const paymentsArray: Payment[] = [];
