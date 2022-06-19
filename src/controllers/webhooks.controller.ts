@@ -37,11 +37,10 @@ export class WebhooksController {
       id: string;
     },
   ): Promise<string> {
-    this.debug(`${util.inspect(payload, false, null, true)}`);
-    this.debug(`Payment update ${payload.id} received`);
+    this.debug(`DEBUG|${util.inspect(payload, false, null, true)}`);
 
     return new Promise((resolve, reject) => {
-      // Logging incoming webhooks
+      // Persisting incoming webhooks
       const redisPayload = {
         timestamp: moment().utc(),
         controller: 'webhooks',
@@ -50,15 +49,15 @@ export class WebhooksController {
       };
 
       return RedisUtil.redisClient().set(
-        `${RedisUtil.whPaymentsPrefix}-${payload.id}`,
-        redisPayload)
+        `${RedisUtil.whPaymentsPrefix}:${payload.id}`,
+        JSON.stringify(redisPayload))
         .then((result: any) => {
-          this.debug(`Redis|${RedisUtil.whPaymentsPrefix}-${payload.id}|${JSON.stringify(redisPayload)}`);
+          this.debug(`DEBUG|${RedisUtil.whPaymentsPrefix}:${payload.id}|${JSON.stringify(redisPayload)}`);
 
           return this.mollieClient.payments
             .get(payload.id)
             .then(async (payment: Payment) => {
-              this.debug(`Fetched payment details for ${payload.id}`);
+              this.debug(`DEBUG|Fetched Mollie payment for ${payload.id}`);
 
               if (payment.status === PaymentStatus.paid) {
                 // Update payment payload in customer record
@@ -66,7 +65,7 @@ export class WebhooksController {
                   `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`)
                   .then((custRecord: string | null) => {
                     if (!custRecord) {
-                      this.debug(`Customer not found|${payment.customerId}`);
+                      this.debug(`WARN|Customer not found|${payment.customerId}`);
                       reject(`Customer not found`);
                     } else {
                       const redisPaymentPayload = {
@@ -94,37 +93,87 @@ export class WebhooksController {
                       );
 
                       if (!found) {
-                        this.debug(`Payment not found|${payment.id}|${payment.customerId}`);
+                        this.debug(`WARN|Payment not found|${payment.id}|${payment.customerId}`);
                         redisCustomerUpdate.payments.push(redisPaymentPayload);
-                        this.debug(`Redis|${JSON.stringify(redisPaymentPayload)}`);
+                        this.debug(`DEBUG|${JSON.stringify(redisPaymentPayload)}`);
                       }
 
                       RedisUtil.redisClient().set(
                         `${RedisUtil.mollieCustomerPrefix}:${payment.customerId}`,
                         JSON.stringify(redisCustomerUpdate))
                         .then(() => {
-                          this.debug(`${RedisUtil.mollieCustomerPrefix}:${payment.customerId}|${JSON.stringify(redisPaymentPayload)}`);
+                          this.debug(`DEBUG|${RedisUtil.mollieCustomerPrefix}:${payment.customerId}|${JSON.stringify(redisPaymentPayload)}`);
                         })
                         .catch((err: any) => {
-                          this.debug(`Redis|ERR|${err}`);
+                          this.debug(`ERROR|${err}`);
                           reject(err);
                         }
                       );
 
-                      // TODO Invite to Discourse
-                      // Scan through customer objects
-                      this.debug(`CustomerObj|${JSON.stringify(redisCustomerUpdate)}`);
+                      // +++ Send invitation(s)
+                      // Retrieve payment to customer mapped record
+                      return RedisUtil.redisClient().get(
+                          `${RedisUtil.molliePaymentPrefix}:${payload.id}`)
+                        .then(async (paymentRecord: any) => {
+                          paymentRecord = JSON.parse(paymentRecord);
+                          // this.debug(`DEBUG|${util.inspect(paymentRecord, false, null, true)}`)
+                          this.debug(`DEBUG|Payment ${payload.id} mapped to ${paymentRecord.email}`);
+                          return RedisUtil.redisClient().get(
+                              `${RedisUtil.teamMemberPrefix}:${paymentRecord.email.toLowerCase()}`)
+                            .then(async (member: any) => {
+                              member = JSON.parse(member);
+                              // Send welcome mail
+                              this.debug(`INFO|Sending welcome mail to ${member.name} (${member.email})`);
+                              const formData = require('form-data');
+                              const Mailgun = require('mailgun.js');
+                              const mailgun = new Mailgun(formData);
+                              const DOMAIN = "mg.teamvegan.at";
+                              const mg = mailgun.client({
+                                username: 'api',
+                                url: "https://api.eu.mailgun.net",
+                                key: process.env.MAILGUN_API
+                              });
 
-                      // TODO Send Invitation Mail
+                              const data = {
+                                from: process.env.MAILGUN_FROM,
+                                to: member.email,
+                                bcc: process.env.MAILGUN_BCC,
+                                subject: "Willkommen im Team Vegan.at",
+                                template: "welcome",
+                                'h:Reply-To': process.env.MAILGUN_REPLYTO,
+                                'v:membername': member.name,
+                              };
 
-                      resolve(payload.id);
+                              mg.messages.create(DOMAIN, data)
+                                .then((msg: any) => {
+                                  this.debug(`INFO|Sent welcome mail to ${member.email}|${JSON.stringify(util.inspect(msg, false, null, true))}`);
+                                })
+                                .catch((error: any) => {
+                                  this.debug(`ERROR|${error}`);
+                                });
 
+                              // TODO Send Discourse invite
+                              this.debug(`INFO|Sending discourse invite to ${member.name} (${member.email})`);
+                              resolve(payload.id);
+                            })
+                            .catch((err: any) => {
+                              this.debug(`ERROR|${err}`);
+                              reject(err);
+                            })
+                        })
+                        .catch((err: any) => {
+                          this.debug(`ERROR|${err}`);
+                          reject(err);
+                        });
                     }
                   });
-                }
+                } else {
+                this.debug(`WARN|Payment status not 'paid': ${payment.id} - ${payment.status}`);
+                reject(payment.id);
+              }
             })
             .catch((err: any) => {
-              this.debug(`Redis|ERR|${err}`);
+              this.debug(`ERROR|${err}`);
               reject(err);
             });
         })
@@ -170,13 +219,14 @@ export class WebhooksController {
       };
 
       return RedisUtil.redisClient().set(
-        `${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}`,
-        redisPayload)
+        `${RedisUtil.whSubscriptionPrefix}:${payload.subscriptionId}`,
+        JSON.stringify(redisPayload))
         .then((result: any) => {
-          this.debug(`Redis|${RedisUtil.whSubscriptionPrefix}-${payload.subscriptionId}|${JSON.stringify(redisPayload)}`);
+          this.debug(`DEBUG|${RedisUtil.whSubscriptionPrefix}:${payload.subscriptionId}|${JSON.stringify(redisPayload)}`);
           resolve(payload.subscriptionId);
         })
         .catch((err: any) => {
+          this.debug(`ERROR|${err}`);
           reject(err);
         });
     });
