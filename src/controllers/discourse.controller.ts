@@ -74,48 +74,18 @@ export class DiscourseController {
     });
   }
 
-  @get('/discourse/users/invite', {
-    parameters: [
-      {
-        name: 'email',
-        schema: {type: 'string'},
-        in: 'query',
-        required: true,
-      },
-    ],
-    responses: {
-      '200': {},
-    },
-  })
-  @authenticate('team-vegan-jwt')
+  // Internal methods
   public async generateInviteLink(
-    @param.query.string('email') email: string,
+    email: string,
   ): Promise<any> {
     const axios = require('axios');
 
     axios.defaults.baseURL = process.env.DISCOURSE_URL;
     axios.defaults.headers.common['Api-Key'] = process.env.DISCOURSE_ADMIN_KEY;
 
-    const inviteMessage = 'Hallo,\n' +
-      '\n' +
-      'Herzlich Willkommen bei uns im Team! Wir freuen uns sehr, dass du mit dabei bist!\n' +
-      'Anbei findest du die Einladung in unser Mitgliederforum. Nachdem du diese akzeptiert hast, findest du einen Beitrag mit "Erstinformationen" mit allen weiteren wichtigen Informationen.\n' +
-      '\n' +
-      'Melde dich gerne bei uns bei Fragen / Anregungen / Wünschen!\n' +
-      '\n' +
-      'Allerbeste Grüße aus der Team-Außenstelle in Johannesburg!\n' +
-      'Gerhard\n\n' +
-      '---\n' +
-      'Gerhard Dinhof\n' +
-      'Abteilungsleitung Technik\n\n' +
-      'Team Vegan.at - Sportsektion des Vereins\n' +
-      'Vegane Gesellschaft Österreich\n' +
-      'Meidlinger Hauptstr. 63/6, 1120 Wien\n' +
-      'ZVR-Zahl : 208143224';
     const data = {
       "email": email,
-      "skip_email": false,
-      "custom_message": inviteMessage,
+      "skip_email": true,
       "max_redemptions_allowed": 1,
       "topic_id": 830
     };
@@ -127,10 +97,10 @@ export class DiscourseController {
     }
 
     return axios.post(`/invites.json`, data, config).then((response: any) => {
-      this.debug(`${response.data.link} | ${response.data.email}`);
+      this.debug(`INFO|${response.data.link}|${response.data.email}`);
       return response.data.link;
     }).catch((err: any) => {
-      this.debug(err);
+      this.debug(`ERROR|${err}`);
       return err;
     });
   }
