@@ -5,6 +5,7 @@ import createMollieClient, {Payment, PaymentStatus} from '@mollie/api-client';
 import moment from 'moment';
 import util from 'util';
 import {RedisUtil} from '../utils/redis.util';
+import {DiscourseController} from './discourse.controller';
 
 export class WebhooksController {
   private debug = require('debug')('api:WebhooksController');
@@ -129,7 +130,7 @@ export class WebhooksController {
                             key: process.env.MAILGUN_API
                           });
 
-                          const data = {
+                          const mailPayloadWelcome = {
                             from: process.env.MAILGUN_FROM,
                             to: paymentRecord.email,
                             bcc: process.env.MAILGUN_BCC,
@@ -139,7 +140,7 @@ export class WebhooksController {
                             'v:membername': paymentRecord.name,
                           };
 
-                          mg.messages.create(DOMAIN, data)
+                          mg.messages.create(DOMAIN, mailPayloadWelcome)
                             .then((msg: any) => {
                               this.debug(`INFO|Sent welcome mail to ${paymentRecord.email}|${JSON.stringify(util.inspect(msg, false, null, true))}`);
                             })
@@ -147,8 +148,35 @@ export class WebhooksController {
                               this.debug(`ERROR|${error}`);
                             });
 
-                          // TODO Send Discourse invite
+                          // Send Discourse invite
                           this.debug(`INFO|Sending discourse invite to ${paymentRecord.name} (${paymentRecord.email})`);
+                          const dc = new DiscourseController();
+                          await dc.generateInviteLink(paymentRecord.email)
+                            .then((discourseInviteLink: string) => {
+
+                              const discoursePayloadWelcome = {
+                                from: process.env.MAILGUN_FROM,
+                                to: paymentRecord.email,
+                                subject: "Einladung zum Team Vegan.at Forum",
+                                template: "discourse-invite",
+                                'h:Reply-To': process.env.MAILGUN_REPLYTO,
+                                'v:membername': paymentRecord.name,
+                                'v:discourselink': discourseInviteLink,
+                              };
+
+                              mg.messages.create(DOMAIN, discoursePayloadWelcome)
+                                .then((msg: any) => {
+                                  this.debug(`INFO|Sent welcome mail to ${paymentRecord.email}|${JSON.stringify(util.inspect(msg, false, null, true))}`);
+                                })
+                                .catch((error: any) => {
+                                  this.debug(`ERROR|${error}`);
+                                });
+                            })
+                            .catch((err: any) => {
+                              // API returns an HTTP 422 if user already exists => OK
+                              this.debug(`WARN|${err}`);
+                            });
+
                           resolve(payload.id);
                         })
                         .catch((err: any) => {
