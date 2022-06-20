@@ -157,7 +157,6 @@ export class WebhooksController {
                               const discoursePayloadWelcome = {
                                 from: process.env.MAILGUN_FROM,
                                 to: paymentRecord.email,
-                                bcc: process.env.MAILGUN_BCC,
                                 subject: "Einladung zum Team Vegan.at Forum",
                                 template: "discourse-invite",
                                 'h:Reply-To': process.env.MAILGUN_REPLYTO,
