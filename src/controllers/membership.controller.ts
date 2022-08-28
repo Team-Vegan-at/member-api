@@ -22,7 +22,6 @@ import {Subscription} from './membership/subscription';
 import {MollieController} from './mollie.controller';
 import moment = require('moment');
 
-
 export class MembershipController {
   private debug = require('debug')('api:MembershipController');
 
@@ -354,6 +353,74 @@ export class MembershipController {
             this.debug(error);
             reject(error);
           });
+      });
+    });
+  }
+
+  @post('/membership/resumepayment', {
+    parameters: [
+      {name: 'email', schema: {type: 'string'}, in: 'query', required: true}
+    ],
+    responses: {
+      '200': {
+      },
+    },
+  })
+  public async resumepayment(
+    @param.query.string('email') email: string
+  ): Promise<string> {
+    this.debug(`/membership/resumepayment`);
+
+    return new Promise(async (resolve, reject) => {
+      if (email) {
+        email = email.toLowerCase();
+      } else {
+        reject("Parameter email missing");
+      }
+
+      const dc = new DashboardController();
+
+      await dc.redisGetTeamMember(email)
+        .then(async (custObj: any) => {
+          if (custObj) {
+            // Construct URL
+            const resumepaymentUrl = `${process.env.MOLLIE_RESUME_PAYMENT}?email=${email}`;
+
+            const formData = require('form-data');
+            const Mailgun = require('mailgun.js');
+            const mailgun = new Mailgun(formData);
+            const DOMAIN = "mg.teamvegan.at";
+            const mg = mailgun.client({
+              username: 'api',
+              url: "https://api.eu.mailgun.net",
+              key: process.env.MAILGUN_API
+            });
+
+            const data = {
+              from: "Team Vegan <noreply@mg.teamvegan.at>",
+              to: email,
+              bcc: process.env.MAILGUN_BCC,
+              subject: "Team Vegan.at Mitgliedschaft: Zahlung abschließen",
+              template: "resume-payment\n",
+              'h:Reply-To': "info@teamvegan.at; admin@teamvegan.at",
+              'v:membername': custObj.name,
+              'v:resumepaymentUrl': resumepaymentUrl
+            };
+            this.debug(`Sending resume payment to ${email}, using ${process.env.MAILGUN_API}`);
+
+            mg.messages.create(DOMAIN, data)
+              .then((msg: any) => {
+                this.debug(msg);
+                resolve(msg);
+              })
+              .catch((error: any) => {
+                this.debug(error);
+                reject(error);
+              });
+          } else {
+            this.debug(`${email} not found`);
+            return reject(`${email} lookup error`);
+          }
       });
     });
   }
