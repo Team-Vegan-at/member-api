@@ -1,20 +1,10 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-/* eslint-disable no-async-promise-executor */
-/* eslint-disable @typescript-eslint/no-misused-promises */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import {authenticate} from '@loopback/authentication';
 import {get, param} from '@loopback/rest';
+import {MailchimpService} from '../services/mailchimp.service';
 
 export class MailchimpController {
   private debug = require('debug')('api:MailchimpController');
-  private mailchimp = require('@mailchimp/mailchimp_marketing');
-
-  constructor() {
-    this.mailchimp.setConfig({
-      apiKey: process.env.MAILCHIMP_KEY,
-      server: 'us4',
-    });
-  }
+  private mailchimpSvc = new MailchimpService();
 
   @get('/mailchimp/members/', {
     parameters: [
@@ -31,35 +21,10 @@ export class MailchimpController {
     },
   })
   @authenticate('team-vegan-jwt')
-  async listMembersInfo(
+  async listAllMembers(
   ): Promise<any | null> {
     this.debug(`/mailchimp/members`);
-
-    return new Promise(async (resolve, reject) => {
-
-      await this.mailchimp.lists.getListMembersInfo(
-        process.env.MAILCHIMP_LIST,
-        {
-          "count": 1000,
-          "fields": [
-            "members.id",
-            "members.email_address",
-            "members.unique_email_id",
-            "members.web_id",
-            "members.status",
-            "members.merge_fields",
-            "members.last_changed",
-            "members.tags_count",
-            "members.tags",
-          ]
-        }
-      ).then((response: any) => {
-        resolve(response);
-      }).catch((err: any) => {
-        this.debug(`${err}`);
-        reject(err);
-      });
-    });
+    return this.mailchimpSvc.listMembersInfo();
   }
 
   @get('/mailchimp/member/{member_id}', {
@@ -82,56 +47,6 @@ export class MailchimpController {
     @param.path.string('member_id') memberId: string
   ): Promise<any | null> {
     this.debug(`/mailchimp/member/:${memberId}`);
-
-    return new Promise(async (resolve, reject) => {
-      if (!memberId) {
-        resolve(null);
-      }
-
-      await this.mailchimp.lists.getListMember(
-        process.env.MAILCHIMP_LIST,
-        memberId
-      ).then((response: any) => {
-        this.debug(`Found ${response.email_address} for ${memberId}`);
-        resolve(response);
-      }).catch((err: any) => {
-        this.debug(`No result for ${memberId}: ${err}`);
-        reject(err);
-      });
-    });
-  }
-
-  async updateMemberTag(
-    memberId: string, tag: string, status: string
-  ): Promise<any | null> {
-    this.debug(`/mailchimp/member/:${memberId}`);
-
-    if (!memberId) {
-      return;
-    }
-
-    return new Promise(async (resolve, reject) => {
-      if (!memberId) {
-        resolve(null);
-      }
-
-      await this.mailchimp.lists.updateListMemberTags(
-        process.env.MAILCHIMP_LIST,
-        memberId,
-        {
-          tags:
-            [ {
-              "name": tag,
-              "status": status
-            } ]
-        }
-      ).then((response: any) => {
-        this.debug(`Tagged ${memberId} with ${tag} ${status}`);
-        resolve(response);
-      }).catch((err: any) => {
-        this.debug(`ERR: Tagging ${memberId} with ${tag} ${status} failed`);
-        reject(err);
-      });
-    });
+    return this.mailchimpSvc.listMember(memberId);
   }
 }

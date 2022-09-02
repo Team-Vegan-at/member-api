@@ -5,11 +5,11 @@ import {Payment, PaymentStatus, Subscription, SubscriptionStatus} from '@mollie/
 import moment from 'moment';
 import {MemberApiApplication} from './application';
 import {MollieController} from './controllers';
-import {DashboardController} from './controllers/dashboard.controller';
-import {MailchimpController} from './controllers/mailchimp.controller';
+import {DashboardController} from './controllers';
 import {CalcUtil} from './utils/calc.util';
 import {RedisUtil} from './utils/redis.util';
 import {RedisMemberPayload} from './models/redis-member-payload.model';
+import {MailchimpService} from './services/mailchimp.service';
 
 export {MemberApiApplication};
 
@@ -77,7 +77,7 @@ if (require.main === module) {
 async function cronProcessMembers(debugCron: any, debugRedis: any) {
   const mc = new MollieController();
   const dbc = new DashboardController();
-  const mcc = new MailchimpController();
+  const mcsvc = new MailchimpService();
 
   await dbc.listDiscourseMembers();
   await dbc.listMailchimpMembers();
@@ -312,7 +312,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
 
             if (paid ) {
               // call mailchimp api
-              await mcc.updateMemberTag(
+              await mcsvc.updateMemberTag(
                 memberObj.mailchimpObj?.id,
                 currentYear.toString(),
                 "active"

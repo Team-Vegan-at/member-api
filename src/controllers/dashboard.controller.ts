@@ -200,7 +200,7 @@ export class DashboardController {
     const mc = new MailchimpController();
 
     result.push(
-      await mc.listMembersInfo()
+      await mc.listAllMembers()
         .then(async (response: any) => {
           for (const mailchimpMember of response.members) {
             // Store in Redis
