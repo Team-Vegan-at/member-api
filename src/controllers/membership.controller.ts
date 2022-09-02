@@ -19,8 +19,8 @@ import {MollieMandateService} from '../services/mollie.mandate.service';
 import {MolliePaymentService} from '../services/mollie.payment.service';
 import {MollieProfileService} from '../services/mollie.profile.service';
 import {MollieSubscriptionService} from '../services/mollie.subscription.service';
-import {MollieController} from './mollie.controller';
 import moment = require('moment');
+import {MollieService} from '../services/mollie.service';
 
 export class MembershipController {
   private debug = require('debug')('api:MembershipController');
@@ -251,8 +251,8 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const mc = new MollieController();
-      mc.getCheckoutUrl(email, redirectUrl, membershipType, true)
+      const mollieSvc = new MollieService();
+      mollieSvc.getCheckoutUrl(email, redirectUrl, membershipType, true)
         .then((checkoutUrl: any) => resolve(checkoutUrl))
         .catch((reason: any) => reject(reason));
     });
@@ -446,7 +446,7 @@ export class MembershipController {
       this.debug(`Look up members from ${previousYear}`);
 
       await dbc.listTeamMembers(previousYear).then(async (custList: any) => {
-        let filteredList: any = [];
+        const filteredList: any = [];
         this.debug(`Filter active subscriptions only`);
 
         await this.asyncForEach(custList, async custObj => {
@@ -535,8 +535,8 @@ export class MembershipController {
     this.debug(`/membership/reminder-expiring-membership`);
 
     const dbc = new DashboardController();
-    const prof = new MollieProfileService();
-    const sub = new MollieSubscriptionService();
+    // const prof = new MollieProfileService();
+    // const sub = new MollieSubscriptionService();
 
     return new Promise(async (resolve, reject) => {
 
@@ -545,7 +545,7 @@ export class MembershipController {
       this.debug(`Look up members from ${previousYear}`);
 
       await dbc.listTeamMembers(previousYear).then(async (custList: any) => {
-        let filteredList: any = [];
+        const filteredList: any = [];
 
         const custListCurrent = await dbc.listTeamMembers(currentYear);
 

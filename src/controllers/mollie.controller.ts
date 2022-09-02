@@ -15,7 +15,7 @@ import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscript
 import moment from 'moment';
 import {CalcUtil} from '../utils/calc.util';
 import {RedisUtil} from '../utils/redis.util';
-import {DashboardController} from './dashboard.controller';
+import {MollieService} from '../services/mollie.service';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
@@ -46,50 +46,21 @@ export class MollieController {
   async pay(
     @param.query.string('email') email: string,
     @param.query.string('redirectUrl') redirectUrl: string,
-    @param.query.string('type') type: string = 'regular',
-    @param.query.string('recurring') recurring: string = '0',
+    @param.query.string('type') type = 'regular',
+    @param.query.string('recurring') recurring = '0',
     @inject(RestBindings.Http.RESPONSE) response: Response,
   ): Promise<any> {
     this.debug(`/pay`);
+    const recurringParsed = recurring.toLowerCase() === 'true' || !!+recurring;
 
-    let recurringParsed = false;
-    if (typeof recurring === 'string') {
-      recurringParsed = recurring.toLowerCase() === 'true' || !!+recurring;
-      // https://stackoverflow.com/a/50697299
-    } else {
-      recurringParsed = false;
-    }
-
-    const checkoutUrl = await this.getCheckoutUrl(
-      email, redirectUrl, type, recurringParsed);
+    const mollieSvc = new MollieService();
+    const checkoutUrl = await mollieSvc.getCheckoutUrl(email, redirectUrl, type, recurringParsed);
 
     if (checkoutUrl) {
       response.redirect(checkoutUrl);
     } else {
       throw new HttpErrors.InternalServerError();
     }
-  }
-
-  public async getCheckoutUrl(email: string, redirectUrl?: string, membershipType: string = 'regular', membershipRecurring: boolean = false) {
-    const dc = new DashboardController();
-    const checkoutUrl = await dc
-      .redisGetTeamMember(email)
-      .then(async (custObj: any) => {
-        if (custObj?.mollieObj) {
-          return this.createMollieCheckoutUrl(
-            custObj.mollieObj,
-            redirectUrl,
-            membershipType,
-            membershipRecurring
-          );
-        } else {
-          return 'https://teamvegan.at';
-        }
-      })
-      .catch(() => {
-        return 'https://teamvegan.at';
-      });
-    return checkoutUrl;
   }
 
   @get('/mollie/checkout', {
@@ -163,8 +134,8 @@ export class MollieController {
             this.debug(`Redis|${err}`);
         });
 
-        checkoutUrl = await this.createMollieCheckoutUrl(
-          customer, "", membershipType, false);
+        const mollieSvc = new MollieService();
+        checkoutUrl = await mollieSvc.getCheckoutUrl(customer.email, "", membershipType, false);
       })
       .catch(reason => {
         this.debug(reason);
@@ -172,110 +143,6 @@ export class MollieController {
       });
 
     return checkoutUrl;
-  }
-
-  /******** PRIVATE FUNCTIONS *************/
-
-  private async createMollieCheckoutUrl(customer: Customer, redirectUrl?: string,
-    membershipType = 'regular', membershipRecurring = false) {
-    if (!process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR) {
-      this.debug('ERROR|MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR not set');
-      return null;
-    }
-
-    // Default: No discount
-    let discount = 1;
-    if (membershipRecurring) {
-      discount = process.env.MOLLIE_PAYMENT_RECURRING_DISCOUNT ?
-        parseFloat(process.env.MOLLIE_PAYMENT_RECURRING_DISCOUNT) : 1;
-    } else {
-      discount = process.env.MOLLIE_PAYMENT_NEW_DISCOUNT ?
-        parseFloat(process.env.MOLLIE_PAYMENT_NEW_DISCOUNT) : 1;
-    }
-
-    // Default: New Member, regular
-    let amount = parseInt(process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REGULAR!, 10);
-
-    if (membershipType && membershipType === 'reduced') {
-      // 1) New member, reduced
-      amount = parseInt(process.env.MOLLIE_PAYMENT_NEW_AMOUNT_REDUCED!, 10);
-    } else if (membershipRecurring && membershipType === ' regular') {
-      // 2) Recurring member, regular
-      amount = parseInt(process.env.MOLLIE_PAYMENT_RECURRING_AMOUNT_REGULAR!, 10);
-    } else if (membershipRecurring && membershipType === ' reduced') {
-      // 3) Recurring member, reduced
-      amount = parseInt(process.env.MOLLIE_PAYMENT_RECURRING_AMOUNT_REDUCED!, 10);
-    }
-
-    const totalAmount = (amount * discount).toFixed(2);
-
-    this.debug(`INFO|Membership Type: ${membershipType},Recurring: ${membershipRecurring},Calculated amount: ${totalAmount} (${amount} * ${discount})`);
-
-    return this.mollieClient.payments
-      .create({
-        customerId: customer.id,
-        billingEmail: customer.email,
-        dueDate: moment()
-          .add(14, 'days')
-          .format('YYYY-MM-DD'),
-        amount: {
-          currency: 'EUR',
-          value: totalAmount.toString(),
-        },
-        description: `${
-          process.env.MOLLIE_PAYMENT_DESCRIPTION
-        } (${ membershipType === 'regular' ? 'Regulär' : 'Ermässigt'})`,
-        locale: Locale.de_AT,
-        redirectUrl: redirectUrl ? redirectUrl : process.env.MOLLIE_CHECKOUT_REDIRECT_URL,
-        webhookUrl: process.env.MOLLIE_WEBHOOK_PAYMENT,
-      })
-      .then(async (payment: Payment) => {
-        this.debug(`INFO|Payment ${payment.id} for ${customer.id} created`);
-        // Store payments as separate Redis records, for reverse lookups
-        const redisPymtObj = {
-          email: customer.email.toLowerCase(),
-          name: customer.name,
-        };
-        await RedisUtil.redisClient().set(
-          `${RedisUtil.molliePaymentPrefix}:${payment.id}`,
-          JSON.stringify(redisPymtObj)
-        ).catch((err: any) => {
-          this.debug(`ERROR|${err}`);
-        })
-
-        // Add payment payload to customer record
-        await RedisUtil.redisClient().get(
-          `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-        ).then((custRecord: string | null) => {
-          if (!custRecord) {
-            this.debug(`WARN|Customer not found: ${customer.id}`);
-            return null;
-          }
-          const redisPaymentPayload = {
-            timestamp: moment().utc(),
-            controller: 'mollie',
-            method: 'checkout',
-            data: payment,
-          };
-          let redisCustomerUpdate = JSON.parse(custRecord);
-          if (!redisCustomerUpdate.payments) {
-            redisCustomerUpdate = {...redisCustomerUpdate, ...{payments: []}};
-          }
-          redisCustomerUpdate.payments.push(redisPaymentPayload);
-          RedisUtil.redisClient().set(
-            `${RedisUtil.mollieCustomerPrefix}:${customer.id}`,
-            JSON.stringify(redisCustomerUpdate)
-          ).catch((err: any) => {
-            this.debug(`Redis: ${err}`);
-          });
-        });
-        // TODO: send mail
-        return payment.getCheckoutUrl()!;
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return null;
-      });
   }
 
   @get('/mollie/payments', {
