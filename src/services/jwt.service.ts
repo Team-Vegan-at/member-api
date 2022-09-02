@@ -16,8 +16,8 @@ const jwt = require('jsonwebtoken');
 const signAsync = promisify(jwt.sign);
 const verifyAsync = promisify(jwt.verify);
 
-export class JWTService implements TokenService {
-  private debug = require('debug')('service:JWTService');
+export class JwtService implements TokenService {
+  private debug = require('debug')('service:JwtService');
 
   constructor(
     @inject(TokenServiceBindings.JWT_SECRET)

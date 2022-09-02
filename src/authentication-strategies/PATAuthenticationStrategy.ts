@@ -1,7 +1,7 @@
 import {AuthenticationStrategy} from '@loopback/authentication';
 import {HttpErrors, RedirectRoute, Request} from '@loopback/rest';
 import {securityId, UserProfile} from '@loopback/security';
-import {PATService} from '../services/pat-service';
+import {PatService} from '../services/pat.service';
 
 
 export class PATAuthenticationStrategy implements AuthenticationStrategy {
@@ -11,7 +11,7 @@ export class PATAuthenticationStrategy implements AuthenticationStrategy {
 
   async authenticate(request: Request): Promise<UserProfile | RedirectRoute | undefined> {
     const pat: string = this.extractCredentials(request);
-    const valid = await new PATService().validatePAT(pat)
+    const valid = await new PatService().validatePAT(pat)
       .then(() => { return true })
       .catch(() => { return false });
 

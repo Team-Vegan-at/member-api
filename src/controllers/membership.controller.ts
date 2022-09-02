@@ -12,7 +12,7 @@ import {PaymentResult} from '../models/payment-return.model';
 import {ProfileResult} from '../models/profile-return.model';
 import {SubscriptionPayload} from '../models/subscription-payload.model';
 import {SubscriptionResult} from '../models/subscription-return.model';
-import {PATService} from '../services/pat-service';
+import {PatService} from '../services/pat.service';
 import {CalcUtil} from '../utils/calc.util';
 import {DashboardController} from './dashboard.controller';
 import {Mandate} from './membership/mandate';
@@ -50,7 +50,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -83,7 +83,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -117,7 +117,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -150,7 +150,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -177,7 +177,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -210,7 +210,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -247,7 +247,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -280,7 +280,7 @@ export class MembershipController {
     return new Promise(async (resolve, reject) => {
       const pat = this.request.header('x-pat')!;
       let email = '';
-      await new PATService().validatePAT(pat)
+      await new PatService().validatePAT(pat)
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
@@ -319,7 +319,7 @@ export class MembershipController {
         }
 
         // Generate access token
-        const ps = new PATService();
+        const ps = new PatService();
         const pat = ps.generatePAT(email);
 
         // Build Login URL

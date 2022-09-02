@@ -16,7 +16,7 @@ import {JWTAuthenticationStrategy} from './authentication-strategies/JWTAuthenti
 import {PATAuthenticationStrategy} from './authentication-strategies/PATAuthenticationStrategy';
 import {TokenServiceBindings, TokenServiceConstants} from './keys';
 import {MySequence} from './sequence';
-import {JWTService} from './services/jwt-service';
+import {JwtService} from './services/jwt.service';
 
 /**
  * Information from package.json
@@ -88,6 +88,6 @@ export class MemberApiApplication extends BootMixin(
       TokenServiceConstants.JWT_EXPIRES_IN_VALUE,
     );
 
-    this.bind(TokenServiceBindings.TOKEN_SERVICE).toClass(JWTService);
+    this.bind(TokenServiceBindings.TOKEN_SERVICE).toClass(JwtService);
   }
 }

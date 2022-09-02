@@ -27,6 +27,7 @@ export class AuthController {
     responses: {
       '200': {},
     },
+    description: 'Generates a one-time token used for authenticating against an endpoint'
   })
   @authenticate('team-vegan-api-key')
   public async authGetOTP(): Promise<string> {

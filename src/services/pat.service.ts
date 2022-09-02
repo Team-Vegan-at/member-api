@@ -2,8 +2,8 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import {RedisUtil} from '../utils/redis.util';
 
-export class PATService {
-  private debug = require('debug')('api:PATService');
+export class PatService {
+  private debug = require('debug')('api:PatService');
 
   public generatePAT(email: string): string {
     this.debug(`/PATService/generatePAT`);
