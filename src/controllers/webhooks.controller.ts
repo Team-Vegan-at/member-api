@@ -6,9 +6,11 @@ import moment from 'moment';
 import util from 'util';
 import {RedisUtil} from '../utils/redis.util';
 import {DiscourseController} from './discourse.controller';
+import {DiscourseService} from '../services/discourse.service';
 
 export class WebhooksController {
   private debug = require('debug')('api:WebhooksController');
+  private discourseSvc = new DiscourseService();
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
@@ -150,8 +152,7 @@ export class WebhooksController {
 
                           // Send Discourse invite
                           this.debug(`INFO|Sending discourse invite to ${paymentRecord.name} (${paymentRecord.email})`);
-                          const dc = new DiscourseController();
-                          await dc.generateInviteLink(paymentRecord.email)
+                          await this.discourseSvc.generateInviteLink(paymentRecord.email)
                             .then((discourseInviteLink: string) => {
 
                               const discoursePayloadWelcome = {
