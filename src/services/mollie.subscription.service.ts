@@ -4,13 +4,13 @@
 import createMollieClient, {SubscriptionStatus} from '@mollie/api-client';
 import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import moment from 'moment';
-import {MandateResult} from '../../models/mandate-return.model';
-import {SubscriptionPayload} from '../../models/subscription-payload.model';
-import {SubscriptionResult} from '../../models/subscription-return.model';
-import {DashboardController} from '../dashboard.controller';
-import {Mandate} from './mandate';
+import {MandateResult} from '../models/mandate-return.model';
+import {SubscriptionPayload} from '../models/subscription-payload.model';
+import {SubscriptionResult} from '../models/subscription-return.model';
+import {DashboardController} from '../controllers/dashboard.controller';
+import {MollieMandateService} from './mollie.mandate.service';
 
-export class Subscription {
+export class MollieSubscriptionService {
   private debug = require('debug')('api:membership:mandate');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
@@ -39,7 +39,7 @@ export class Subscription {
             );
             this.debug(`Fetched ${subscriptions.length} subscriptions for customer ${custObj.email}`);
 
-            const mm = new Mandate();
+            const mm = new MollieMandateService();
             const mandateId: string = await mm.getMandate(email)
               .then((mandate: MandateResult | null) => {
                 if (mandate) {
@@ -140,7 +140,7 @@ export class Subscription {
           );
           this.debug(`Fetched ${subscriptions.length} subscriptions for customer ${custObj.email}`);
 
-          const mm = new Mandate();
+          const mm = new MollieMandateService();
           const mandate: MandateResult | null = await mm.getMandate(email)
             .then((mand: MandateResult | null) => mand)
             .catch(() => null);

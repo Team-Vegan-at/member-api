@@ -3,11 +3,11 @@
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import createMollieClient, {PaymentStatus} from '@mollie/api-client';
 import moment from 'moment';
-import {ProfileResult} from '../../models/profile-return.model';
-import {CalcUtil} from '../../utils/calc.util';
-import {DashboardController} from '../dashboard.controller';
+import {ProfileResult} from '../models/profile-return.model';
+import {CalcUtil} from '../utils/calc.util';
+import {DashboardController} from '../controllers/dashboard.controller';
 
-export class Profile {
+export class MollieProfileService {
   private debug = require('debug')('api:membership:profile');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,

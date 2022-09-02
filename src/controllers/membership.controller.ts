@@ -15,10 +15,10 @@ import {SubscriptionResult} from '../models/subscription-return.model';
 import {PatService} from '../services/pat.service';
 import {CalcUtil} from '../utils/calc.util';
 import {DashboardController} from './dashboard.controller';
-import {Mandate} from './membership/mandate';
-import {Payment} from './membership/payment';
-import {Profile} from './membership/profile';
-import {Subscription} from './membership/subscription';
+import {MollieMandateService} from '../services/mollie.mandate.service';
+import {MolliePaymentService} from '../services/mollie.payment.service';
+import {MollieProfileService} from '../services/mollie.profile.service';
+import {MollieSubscriptionService} from '../services/mollie.subscription.service';
 import {MollieController} from './mollie.controller';
 import moment = require('moment');
 
@@ -54,7 +54,7 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const mm = new Mandate();
+      const mm = new MollieMandateService();
       mm.createMandate(email, payload)
         .then((mandate: any) => resolve(mandate))
         .catch((reason: any) => reject(reason));
@@ -87,7 +87,7 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const mm = new Mandate();
+      const mm = new MollieMandateService();
       mm.getMandate(email)
         .then((mandate: any) => resolve(mandate))
         .catch((reason: any) => reject(reason));
@@ -121,7 +121,7 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const ms = new Subscription();
+      const ms = new MollieSubscriptionService();
       ms.createSubscription(email, payload)
         .then((subscription: any) => resolve(subscription))
         .catch((reason: any) => reject(reason));
@@ -154,7 +154,7 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const ms = new Subscription();
+      const ms = new MollieSubscriptionService();
       ms.getSubscriptions(email)
         .then((subscriptions: any) => resolve(subscriptions))
         .catch((reason: any) => reject(reason));
@@ -181,7 +181,7 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const ms = new Subscription();
+      const ms = new MollieSubscriptionService();
       ms.deleteSubscriptions(email)
         .then(() => resolve(null))
         .catch((reason: any) => reject(reason));
@@ -214,7 +214,7 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const mp = new Payment();
+      const mp = new MolliePaymentService();
       mp.getPayments(email)
         .then((payments: PaymentResult[] | null) => resolve(payments))
         .catch((reason: any) => reject(reason));
@@ -263,7 +263,7 @@ export class MembershipController {
     ],
     responses: {
       '200': {
-        description: 'User Profile',
+        description: 'User MollieProfileService',
         content: {
           'application/json': {
             schema: {type: 'string'},
@@ -284,7 +284,7 @@ export class MembershipController {
         .then((value: string) => { email = value })
         .catch((reason) => { return reject(reason) });
 
-      const mp = new Profile();
+      const mp = new MollieProfileService();
       mp.getProfile(email)
         .then((profile: any) => resolve(profile))
         .catch((reason: any) => reject(reason));
@@ -438,7 +438,7 @@ export class MembershipController {
     this.debug(`/membership/reminder-dd`);
 
     const dbc = new DashboardController();
-    const sub = new Subscription();
+    const sub = new MollieSubscriptionService();
 
     return new Promise(async (resolve, reject) => {
 
@@ -535,8 +535,8 @@ export class MembershipController {
     this.debug(`/membership/reminder-expiring-membership`);
 
     const dbc = new DashboardController();
-    const prof = new Profile();
-    const sub = new Subscription();
+    const prof = new MollieProfileService();
+    const sub = new MollieSubscriptionService();
 
     return new Promise(async (resolve, reject) => {
 

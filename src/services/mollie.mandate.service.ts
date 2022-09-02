@@ -5,11 +5,11 @@ import createMollieClient, {
   MandateMethod
 } from '@mollie/api-client';
 import {MandateData, MandateDetailsDirectDebit} from '@mollie/api-client/dist/types/src/data/customers/mandates/data';
-import {MandatePayload} from '../../models/mandate-payload.model';
-import {MandateResult} from '../../models/mandate-return.model';
-import {DashboardController} from '../dashboard.controller';
+import {MandatePayload} from '../models/mandate-payload.model';
+import {MandateResult} from '../models/mandate-return.model';
+import {DashboardController} from '../controllers/dashboard.controller';
 
-export class Mandate {
+export class MollieMandateService {
   private debug = require('debug')('api:membership:mandate');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,

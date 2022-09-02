@@ -2,10 +2,10 @@
 /* eslint-disable no-async-promise-executor */
 /* eslint-disable @typescript-eslint/no-misused-promises */
 import createMollieClient, {PaymentStatus} from '@mollie/api-client';
-import {PaymentResult} from '../../models/payment-return.model';
-import {DashboardController} from '../dashboard.controller';
+import {PaymentResult} from '../models/payment-return.model';
+import {DashboardController} from '../controllers/dashboard.controller';
 
-export class Payment {
+export class MolliePaymentService {
   private debug = require('debug')('api:membership:payment');
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
