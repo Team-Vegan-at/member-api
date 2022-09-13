@@ -59,7 +59,10 @@
   var firstnameParam = urlParams['firstname'];
   var lastnameParam = urlParams['lastname'];
   var dobParam = urlParams['dob'];
-  var typeParam = urlParams['membershiptype'];
+  var typeParam = 'regular';
+  if (urlParams['membershiptype'] === 'Ermäßigt') {
+    typeParam = 'reduced';
+  }
 
   console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}, ${dobParam}, ${typeParam}`);
 
