@@ -11,6 +11,7 @@ import {MailchimpController} from './mailchimp.controller';
 import {MollieController} from './mollie.controller';
 import moment = require('moment');
 import {RedisMemberPayload} from '../models/redis-member-payload.model';
+import {MollieService} from '../services/mollie.service';
 
 export class DashboardController {
   private debug = require('debug')('api:DashboardController');
@@ -309,8 +310,8 @@ export class DashboardController {
     this.debug(`/dashboard/mollie/members`);
 
     // const result = [];
-    const mc = new MollieController();
-    const mollieCustomers = await mc.listCustomers();
+    const mollieSvc = new MollieService();
+    const mollieCustomers = await mollieSvc.listCustomers();
 
     for (const cust of mollieCustomers) {
       // Store in Redis

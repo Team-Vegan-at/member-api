@@ -1,7 +1,9 @@
 import {DashboardController} from '../controllers';
-import {createMollieClient, Customer, Locale, Payment} from '@mollie/api-client';
+import {createMollieClient, Customer, List, Locale, Payment, SubscriptionStatus} from '@mollie/api-client';
 import moment from 'moment';
 import {RedisUtil} from '../utils/redis.util';
+import {param} from '@loopback/rest';
+import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 
 export class MollieService {
   private debug = require('debug')('api:MollieService');
@@ -31,6 +33,88 @@ export class MollieService {
         return 'https://teamvegan.at';
       });
     return checkoutUrl;
+  }
+
+  public async listCustomers(): Promise<Customer[]> {
+    const customerList: Customer[] = [];
+
+    await this.mollieClient.customers
+      .all({limit: 200})
+      .then((customers: List<Customer>) => {
+        this.debug(`#1 Fetched ${customers.count} customer entries`);
+        customers.forEach(customer => {
+          customerList.push(customer);
+        });
+
+        if (customers.nextPage) {
+          return customers.nextPage!();
+        } else {
+          return null;
+        }
+      })
+      .then((customers: List<Customer> | null) => {
+        if (customers) {
+          this.debug(`#2 Fetched ${customers.count} customer entries`);
+          customers.forEach(customer => {
+            customerList.push(customer);
+          });
+        }
+      })
+      .catch(reason => {
+        this.debug(reason);
+        return [];
+      });
+
+    return customerList;
+  }
+
+  public async listCustomerSubscriptions(
+    @param.query.string('custId') custId: string,
+  ): Promise<SubscriptionData[]> {
+    this.debug(`/mollie/subscriptions/${custId}`);
+
+    return this.mollieClient.customers_subscriptions
+      .all({customerId: custId})
+      .then((subscriptions: List<SubscriptionData>) => {
+        this.debug(`Fetched ${subscriptions.count} subscription(s) for ${custId}`);
+        const subscriptionsArray: SubscriptionData[] = [];
+
+        subscriptions.forEach(subscription => {
+          // Filter active subscriptions only
+          if (subscription.status === SubscriptionStatus.active) {
+            subscriptionsArray.push(subscription);
+          }
+        });
+
+        return subscriptionsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        return [];
+      });
+  }
+
+  public async listAllActiveSubscriptions(): Promise<SubscriptionData[]> {
+    this.debug(`/mollie/subscriptions`);
+
+    return this.mollieClient.subscription
+      .list()
+      .then((subscriptions: List<SubscriptionData>) => {
+        this.debug(`Fetched ${subscriptions.count} subscription(s)`);
+        const subscriptionsArray: SubscriptionData[] = [];
+
+        subscriptions.forEach(subscription => {
+          if (subscription.status === SubscriptionStatus.active) {
+            subscriptionsArray.push(subscription);
+          }
+        });
+
+        return subscriptionsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        return [];
+      });
   }
 
   private async createMollieCheckoutUrl(customer: Customer, redirectUrl?: string,

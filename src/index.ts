@@ -10,6 +10,7 @@ import {CalcUtil} from './utils/calc.util';
 import {RedisUtil} from './utils/redis.util';
 import {RedisMemberPayload} from './models/redis-member-payload.model';
 import {MailchimpService} from './services/mailchimp.service';
+import {MollieService} from './services/mollie.service';
 
 export {MemberApiApplication};
 
@@ -76,6 +77,7 @@ if (require.main === module) {
 
 async function cronProcessMembers(debugCron: any, debugRedis: any) {
   const mc = new MollieController();
+  const mollieSvc = new MollieService();
   const dbc = new DashboardController();
   const mcsvc = new MailchimpService();
 
@@ -110,7 +112,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
             })
           }
 
-          const subscriptionObj = await mc.listCustomerSubscriptions(
+          const subscriptionObj = await mollieSvc.listCustomerSubscriptions(
             custKey.replace(`${RedisUtil.mollieCustomerPrefix}:`, ''),
           );
 

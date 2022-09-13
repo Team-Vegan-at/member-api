@@ -9,9 +9,7 @@ import {
   Locale,
   Payment,
   PaymentStatus,
-  SubscriptionStatus
 } from '@mollie/api-client';
-import {SubscriptionData} from '@mollie/api-client/dist/types/src/data/subscription/data';
 import moment from 'moment';
 import {CalcUtil} from '../utils/calc.util';
 import {RedisUtil} from '../utils/redis.util';
@@ -19,6 +17,7 @@ import {MollieService} from '../services/mollie.service';
 
 export class MollieController {
   private debug = require('debug')('api:MollieController');
+  private mollieSvc = new MollieService();
   private mollieClient = createMollieClient({
     apiKey: process.env.MOLLIE_API_KEY as string,
   });
@@ -53,8 +52,7 @@ export class MollieController {
     this.debug(`/pay`);
     const recurringParsed = recurring.toLowerCase() === 'true' || !!+recurring;
 
-    const mollieSvc = new MollieService();
-    const checkoutUrl = await mollieSvc.getCheckoutUrl(email, redirectUrl, type, recurringParsed);
+    const checkoutUrl = await this.mollieSvc.getCheckoutUrl(email, redirectUrl, type, recurringParsed);
 
     if (checkoutUrl) {
       response.redirect(checkoutUrl);
@@ -134,8 +132,7 @@ export class MollieController {
             this.debug(`Redis|${err}`);
         });
 
-        const mollieSvc = new MollieService();
-        checkoutUrl = await mollieSvc.getCheckoutUrl(customer.email, "", membershipType, false);
+        checkoutUrl = await this.mollieSvc.getCheckoutUrl(customer.email, "", membershipType, false);
       })
       .catch(reason => {
         this.debug(reason);
@@ -173,59 +170,6 @@ export class MollieController {
         });
 
         return paymentsArray;
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return [];
-      });
-  }
-
-  /**
-   * Methods NOT exposed as endpoints
-   */
-
-  public async listCustomerSubscriptions(
-    @param.query.string('custId') custId: string,
-  ): Promise<SubscriptionData[]> {
-    this.debug(`/mollie/subscriptions/${custId}`);
-
-    return this.mollieClient.customers_subscriptions
-      .all({customerId: custId})
-      .then((subscriptions: List<SubscriptionData>) => {
-        this.debug(`Fetched ${subscriptions.count} subscription(s) for ${custId}`);
-        const subscriptionsArray: SubscriptionData[] = [];
-
-        subscriptions.forEach(subscription => {
-          // Filter active subscriptions only
-          if (subscription.status === SubscriptionStatus.active) {
-            subscriptionsArray.push(subscription);
-          }
-        });
-
-        return subscriptionsArray;
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return [];
-      });
-  }
-
-  public async listAllActiveSubscriptions(): Promise<SubscriptionData[]> {
-    this.debug(`/mollie/subscriptions`);
-
-    return this.mollieClient.subscription
-      .list()
-      .then((subscriptions: List<SubscriptionData>) => {
-        this.debug(`Fetched ${subscriptions.count} subscription(s)`);
-        const subscriptionsArray: SubscriptionData[] = [];
-
-        subscriptions.forEach(subscription => {
-          if (subscription.status === SubscriptionStatus.active) {
-            subscriptionsArray.push(subscription);
-          }
-        });
-
-        return subscriptionsArray;
       })
       .catch(reason => {
         this.debug(reason);
@@ -300,7 +244,7 @@ export class MollieController {
 
     const paymentstatus: any[] = [];
 
-    const customers = await this.listCustomers();
+    const customers = await this.mollieSvc.listCustomers();
 
     for (const customer of customers) {
       await this.mollieClient.customers_payments
@@ -334,37 +278,10 @@ export class MollieController {
     },
   })
   @authenticate('team-vegan-jwt')
-  public async listCustomers(): Promise<Customer[]> {
+  public async getAllCustomers(): Promise<Customer[]> {
     this.debug(`/mollie/customers`);
 
-    const customerList: Customer[] = [];
-
-    await this.mollieClient.customers
-      .all({limit: 200})
-      .then((customers: List<Customer>) => {
-        this.debug(`#1 Fetched ${customers.count} customer entries`);
-        customers.forEach(customer => {
-          customerList.push(customer);
-        });
-
-        if (customers.nextPage) {
-          return customers.nextPage!();
-        } else {
-          return null;
-        }
-        })
-        .then((customers: List<Customer> | null) => {
-          if (customers) {
-            this.debug(`#2 Fetched ${customers.count} customer entries`);
-            customers.forEach(customer => {
-              customerList.push(customer);
-            });
-          }
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return [];
-      });
+    const customerList = await this.mollieSvc.listCustomers();
 
     return customerList;
   }
