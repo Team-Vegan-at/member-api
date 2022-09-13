@@ -60,8 +60,10 @@
   var lastnameParam = urlParams['lastname'];
   var dobParam = urlParams['dob'];
   var typeParam = 'regular';
-  if (urlParams['membershiptype'].startsWith('Erm')) {
-    typeParam = 'reduced';
+  if (urlParams['membershiptype']) {
+    if (urlParams['membershiptype'].toLowerCase().startsWith('erm')) {
+      typeParam = 'reduced';
+    }
   }
 
   console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}, ${dobParam}, ${typeParam}`);
