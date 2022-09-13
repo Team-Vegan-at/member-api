@@ -103,6 +103,7 @@ export class MollieController {
       },
       {name: 'lastname', schema: {type: 'string'}, in: 'query', required: true},
       {name: 'dob', schema: {type: 'string'}, in: 'query'},
+      {name: 'type', schema: {type: 'string'}, in: 'query'},
     ],
     responses: {
       '200': {
@@ -120,11 +121,11 @@ export class MollieController {
     @param.query.string('firstname') firstname: string,
     @param.query.string('lastname') lastname: string,
     @param.query.string('dob') dob: string,
+    @param.query.string('type') type: string,
   ): Promise<string | null> {
     this.debug(`/mollie/checkout`);
 
-    // TODO make dynamic!
-    const membershipType = 'regular';
+    const membershipType = type ? type: 'regular';
 
     let checkoutUrl: string | null = null;
 
