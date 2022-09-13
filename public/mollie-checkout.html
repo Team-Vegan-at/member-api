@@ -60,7 +60,7 @@
   var lastnameParam = urlParams['lastname'];
   var dobParam = urlParams['dob'];
   var typeParam = 'regular';
-  if (urlParams['membershiptype'] === 'Ermäßigt') {
+  if (urlParams['membershiptype'].startsWith('Erm')) {
     typeParam = 'reduced';
   }
 
