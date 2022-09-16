@@ -474,7 +474,7 @@ export class MollieController {
     const customerList: Customer[] = [];
 
     await this.mollieClient.customers
-      .all({limit: 200})
+      .all({limit: 250})
       .then((customers: List<Customer>) => {
         this.debug(`#1 Fetched ${customers.count} customer entries`);
         customers.forEach(customer => {
