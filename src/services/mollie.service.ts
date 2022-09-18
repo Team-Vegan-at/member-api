@@ -38,32 +38,11 @@ export class MollieService {
   public async listCustomers(): Promise<Customer[]> {
     const customerList: Customer[] = [];
 
-    await this.mollieClient.customers
-      .all({limit: 200})
-      .then((customers: List<Customer>) => {
-        this.debug(`#1 Fetched ${customers.count} customer entries`);
-        customers.forEach(customer => {
-          customerList.push(customer);
-        });
+    await this.mollieClient.customers.iterate().forEach((customer) => {
+      customerList.push(customer);
+    });
 
-        if (customers.nextPage) {
-          return customers.nextPage!();
-        } else {
-          return null;
-        }
-      })
-      .then((customers: List<Customer> | null) => {
-        if (customers) {
-          this.debug(`#2 Fetched ${customers.count} customer entries`);
-          customers.forEach(customer => {
-            customerList.push(customer);
-          });
-        }
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return [];
-      });
+    this.debug(`Fetched ${customerList.length} customer(s)`);
 
     return customerList;
   }
@@ -74,7 +53,7 @@ export class MollieService {
     this.debug(`/mollie/subscriptions/${custId}`);
 
     return this.mollieClient.customers_subscriptions
-      .all({customerId: custId})
+      .page({customerId: custId, limit:250})
       .then((subscriptions: List<SubscriptionData>) => {
         this.debug(`Fetched ${subscriptions.count} subscription(s) for ${custId}`);
         const subscriptionsArray: SubscriptionData[] = [];

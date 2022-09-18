@@ -59,8 +59,13 @@
   var firstnameParam = urlParams['firstname'];
   var lastnameParam = urlParams['lastname'];
   var dobParam = urlParams['dob'];
-
-  console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}, ${dobParam}`);
+  var typeParam = 'regular';
+  if (urlParams['membershiptype']) {
+    if (urlParams['membershiptype'].toLowerCase().startsWith('erm')) {
+      typeParam = 'reduced';
+    }
+  }
+  console.trace(`Params: ${firstnameParam}, ${lastnameParam}, ${emailParam}, ${dobParam}, ${typeParam}`);
 
   $.ajax({
     "url": 'https://api-qs.teamvegan.at/mollie/checkout',
@@ -68,7 +73,8 @@
       "email": emailParam,
       "firstname": firstnameParam,
       "lastname": lastnameParam,
-      "dob": dobParam
+      "dob": dobParam,
+      "type": typeParam
     },
     success: async function (checkoutURL) {
       console.trace(`Redirect to Mollie Checkout - URL: ${checkoutURL}`);
