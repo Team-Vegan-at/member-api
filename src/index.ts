@@ -279,14 +279,14 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
   // ******* MAILCHIMP SYNC ********
   // Iterate over all member entries
   if (process.env.DISABLE_MAILCHIMP_SYNC !== '1') {
-    await RedisUtil.scan(RedisUtil.teamMemberPrefix).then(async (members: any) => {
-      await members.forEach(async (memberKey: string) => {
-        await RedisUtil.redisClient().get(memberKey)
-        .then(async (memberObj: any) => {
+    await RedisUtil.scan(`${RedisUtil.teamMemberPrefix}:*`).then(async (memberKeys: any) => {
+      debugCron(`Mailchimp Sync|START|Iterating over ${memberKeys.length} members`);
+      for (const memberKey of memberKeys) {
+        await RedisUtil.redisClient().get(memberKey).then(async (memberObj: any) => {
           memberObj = JSON.parse(memberObj);
           const currentYear = CalcUtil.getCurrentMembershipYear();
           const tags = memberObj.mailchimpObj?.tags;
-
+          debugCron(`Mailchimp Sync|${memberObj.email}: ${memberObj.mailchimpObj?.tags}`);
           let updateTag = true;
           if (tags) {
             tags.forEach((tag: any) => {
@@ -310,7 +310,7 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
                 ? true : paid;
             });
 
-            if (paid ) {
+            if (paid) {
               // call mailchimp api
               await mcc.updateMemberTag(
                 memberObj.mailchimpObj?.id,
@@ -320,7 +320,8 @@ async function cronProcessMembers(debugCron: any, debugRedis: any) {
             }
           }
         });
-      });
+      }
+      debugCron(`Mailchimp Sync|END`);
     });
   }
 
