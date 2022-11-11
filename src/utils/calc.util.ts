@@ -5,27 +5,33 @@ export class CalcUtil {
 
   public static isInMembershipRange(shortDate: string, year: number): boolean {
 
-    let subtractMonthsOfPreviousYear = 2;
-    let subtractMonthsOfCurrentYear = 2;
+    // let subtractMonthsOfPreviousYear = 2;
+    let subtractDaysOfPreviousYear = 61;
+    // let subtractMonthsOfCurrentYear = 2;
+    let subtractDaysOfCurrentYear = 61;
 
     // Exception case 2022: Sportfoerderung for all new members from 01. September
     if (year === 2021) {
-      subtractMonthsOfCurrentYear = 4;
+      // subtractMonthsOfCurrentYear = 4;
+      subtractDaysOfCurrentYear = 30 + 31 + 30 + 31; // 4 months
     } else if (year === 2022) {
-      subtractMonthsOfPreviousYear = 4;
+      // subtractMonthsOfPreviousYear = 4;
+      subtractDaysOfPreviousYear = 30 + 31 + 30 + 31; // 4 months
+      subtractDaysOfCurrentYear = 44; // 18. Nov 2022
+    } else if (year === 2023) {
+      subtractDaysOfPreviousYear = 44; // 18. Nov 2022
     }
 
     const from =  moment(year, "YYYY")
                   .startOf("year")
-                  .subtract(subtractMonthsOfPreviousYear, 'month') // first of november
-                  .startOf("month");
+                  .subtract(subtractDaysOfPreviousYear, 'days'); // first of november
+                  // .startOf("month");
     const to =    moment(year, "YYYY")
                   .endOf("year")
-                  .subtract(subtractMonthsOfCurrentYear, 'month') // first of november
-                  .endOf("month");
+                  .subtract(subtractDaysOfCurrentYear, 'days');
+                  // .endOf("month");
 
     CalcUtil.debug(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
-    // console.log(`Is ${moment(shortDate, "YYYY-MM-DD")} within ${from} and ${to}?`);
 
     return moment(shortDate, "YYYY-MM-DD").isBetween(from, to);
   }
