@@ -313,116 +313,7 @@ export class MollieController {
         return [];
       });
   }
-
-  /**
-   * Methods NOT exposed as endpoints
-   */
-
-  public async listCustomerSubscriptions(
-    @param.query.string('custId') custId: string,
-  ): Promise<SubscriptionData[]> {
-    this.debug(`/mollie/subscriptions/${custId}`);
-
-    return this.mollieClient.customers_subscriptions
-      .all({customerId: custId})
-      .then((subscriptions: List<SubscriptionData>) => {
-        this.debug(`Fetched ${subscriptions.count} subscription(s) for ${custId}`);
-        const subscriptionsArray: SubscriptionData[] = [];
-
-        subscriptions.forEach(subscription => {
-          // Filter active subscriptions only
-          if (subscription.status === SubscriptionStatus.active) {
-            subscriptionsArray.push(subscription);
-          }
-        });
-
-        return subscriptionsArray;
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return [];
-      });
-  }
-
-  public async listAllActiveSubscriptions(): Promise<SubscriptionData[]> {
-    this.debug(`/mollie/subscriptions`);
-
-    return this.mollieClient.subscription
-      .list()
-      .then((subscriptions: List<SubscriptionData>) => {
-        this.debug(`Fetched ${subscriptions.count} subscription(s)`);
-        const subscriptionsArray: SubscriptionData[] = [];
-
-        subscriptions.forEach(subscription => {
-          if (subscription.status === SubscriptionStatus.active) {
-            subscriptionsArray.push(subscription);
-          }
-        });
-
-        return subscriptionsArray;
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return [];
-      });
-  }
-
-  @get('/mollie/payments/paid', {
-    responses: {
-      '200': {},
-    },
-  })
-  public async listAllPaidPayments(membershipYear: number): Promise<Payment[]> {
-    this.debug(`/mollie/payments/paid`);
-
-    // TODO PAGINATION!
-
-    const paymentsArray: Payment[] = [];
-    return this.mollieClient.payments
-      .all({
-        // limit: 2
-      })
-      .then(async payments => {
-        this.debug(`Fetched ${payments.count} payment(s)`);
-        payments.forEach(payment => {
-          if (payment.status === PaymentStatus.paid) {
-            if (CalcUtil.isInMembershipRange(payment.paidAt!.substring(0, 10), membershipYear)) {
-              paymentsArray.push(payment);
-            }
-          }
-        });
-
-        // let nxt = payments.nextPageCursor;
-        // while (nxt) {
-        //   nxt = await this.mollieClient.payments
-        //     .all({
-        //       limit: 2,
-        //       from: nxt
-        //     }).then(pymts => {
-        //       this.debug(`Fetched ${payments.count} payment(s)`);
-        //       pymts.forEach(payment => {
-        //         if (payment.status === PaymentStatus.paid) {
-        //           if (CalcUtil.isInMembershipRange(payment.paidAt!.substring(0, 10), membershipYear)) {
-        //             paymentsArray.push(payment);
-        //           }
-        //         }
-        //       });
-        //       return payments.nextPageCursor;
-        //     })
-        //     .catch(reason => {
-        //       this.debug(reason);
-        //       throw new HttpErrors.InternalServerError(reason);
-        //     });
-        // }
-
-        return paymentsArray;
-      })
-      .catch(reason => {
-        this.debug(reason);
-        return [];
-      });
-  }
-
+  
   @get('/mollie/paymentstatus', {
     responses: {
       '200': {},
@@ -473,33 +364,80 @@ export class MollieController {
 
     const customerList: Customer[] = [];
 
-    await this.mollieClient.customers
-      .all({limit: 200})
-      .then((customers: List<Customer>) => {
-        this.debug(`#1 Fetched ${customers.count} customer entries`);
-        customers.forEach(customer => {
-          customerList.push(customer);
+    await this.mollieClient.customers.iterate().forEach((customer) => {
+      customerList.push(customer);
+    });
+
+    this.debug(`Fetched ${customerList.length} customer(s)`);
+
+    return customerList;
+  }
+
+  /**
+   * Methods NOT exposed as endpoints
+   */
+  public async listCustomerSubscriptions(
+    @param.query.string('custId') custId: string,
+  ): Promise<SubscriptionData[]> {
+    this.debug(`/mollie/subscriptions/${custId}`);
+
+    return this.mollieClient.customers_subscriptions
+      .all({customerId: custId})
+      .then((subscriptions: List<SubscriptionData>) => {
+        this.debug(`Fetched ${subscriptions.count} subscription(s) for ${custId}`);
+        const subscriptionsArray: SubscriptionData[] = [];
+
+        subscriptions.forEach(subscription => {
+          // Filter active subscriptions only
+          if (subscription.status === SubscriptionStatus.active) {
+            subscriptionsArray.push(subscription);
+          }
         });
 
-        if (customers.nextPage) {
-          return customers.nextPage!();
-        } else {
-          return null;
-        }
-        })
-        .then((customers: List<Customer> | null) => {
-          if (customers) {
-            this.debug(`#2 Fetched ${customers.count} customer entries`);
-            customers.forEach(customer => {
-              customerList.push(customer);
-            });
-          }
+        return subscriptionsArray;
       })
       .catch(reason => {
         this.debug(reason);
         return [];
       });
+  }
 
-    return customerList;
+  public async listAllActiveSubscriptions(): Promise<SubscriptionData[]> {
+    this.debug(`/mollie/subscriptions`);
+
+    return this.mollieClient.subscription
+      .list()
+      .then((subscriptions: List<SubscriptionData>) => {
+        this.debug(`Fetched ${subscriptions.count} subscription(s)`);
+        const subscriptionsArray: SubscriptionData[] = [];
+
+        subscriptions.forEach(subscription => {
+          if (subscription.status === SubscriptionStatus.active) {
+            subscriptionsArray.push(subscription);
+          }
+        });
+
+        return subscriptionsArray;
+      })
+      .catch(reason => {
+        this.debug(reason);
+        return [];
+      });
+  }
+
+  public async listAllPaidPayments(membershipYear: number): Promise<Payment[]> {
+    this.debug(`/mollie/payments/paid`);
+
+    const paymentsArray: Payment[] = [];
+    await this.mollieClient.payments.iterate().forEach((payment) => {
+      if (payment.status === PaymentStatus.paid) {
+        if (CalcUtil.isInMembershipRange(payment.paidAt!.substring(0, 10), membershipYear)) {
+          paymentsArray.push(payment);
+        }
+      }
+    });
+    this.debug(`Fetched ${paymentsArray.length} payment(s)`);
+
+    return paymentsArray;
   }
 }
