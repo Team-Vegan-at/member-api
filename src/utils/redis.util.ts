@@ -13,7 +13,7 @@ export class RedisUtil {
       });
 
       RedisUtil.redisClientInstance.on('error', (err: any) => {
-        RedisUtil.logger.debug(err);
+        RedisUtil.logger(err);
       });
 
       RedisUtil.redisClientInstance.connect();

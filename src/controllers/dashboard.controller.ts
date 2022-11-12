@@ -480,7 +480,7 @@ export class DashboardController {
 
     // Subscription Details
     let subscription = {};
-    if (memberObj.mollieSubscriptions && memberObj.mollieSubscriptions !== {}) {
+    if (memberObj.mollieSubscriptions) {
       memberObj.mollieSubscriptions.forEach((subscr: Subscription) => {
         activeSubscription = true;
         subscription = {
